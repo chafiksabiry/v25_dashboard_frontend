@@ -2,7 +2,7 @@ import { io } from 'socket.io-client';
 import { store } from '../store';
 import { updateLiveCall, removeLiveCall } from '../store/slices/dashboardSlice';
 
-const socket = io('http://localhost:5000', {
+const socket = io(`${import.meta.env.VITE_API_URL}`, {
   autoConnect: false
 });
 

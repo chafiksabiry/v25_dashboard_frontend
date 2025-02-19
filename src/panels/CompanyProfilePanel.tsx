@@ -1,112 +1,160 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import Swal from "sweetalert2";
+
 import {
   Building2,
   MapPin,
   Globe,
   Phone,
   Mail,
-  Upload,
+  CheckCircle2,
+  Pencil,
   X,
   Save,
-  Clock,
   AlertCircle,
-  CheckCircle2,
-  Link
-} from 'lucide-react';
-import { useSettings } from '../hooks/useSettings';
+} from "lucide-react";
 
-function CompanyProfilePanel() {
-  const { settings, loading, saving, error: settingsError, updateSettings } = useSettings();
-  const [profile, setProfile] = useState({
-    company_name: settings?.company_name || '',
-    company_logo: settings?.company_logo || '',
-    website: settings?.website || '',
-    phone: settings?.phone || '',
-    email: settings?.email || '',
-    address: settings?.address || '',
-    city: settings?.city || '',
-    state: settings?.state || '',
-    country: settings?.country || '',
-    postal_code: settings?.postal_code || '',
-    industry: settings?.industry || '',
-    description: settings?.description || ''
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+export default function CompanyProfilePanel() {
+  const [company, setCompany] = useState<Record<string, any>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [tempValues, setTempValues] = useState<Record<string, any>>({});
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [hasChanges, setHasChanges] = useState(false);
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    
-    if (!profile.company_name) {
-      newErrors.company_name = 'Company name is required';
-    }
-    
-    if (profile.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email)) {
-      newErrors.email = 'Invalid email address';
-    }
-    
-    if (profile.website && !/^https?:\/\//.test(profile.website)) {
-      newErrors.website = 'Website must start with http:// or https://';
-    }
+  const companyId = "67b4e7f7eff824909f992c81";
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleImageUpload = async (file: File) => {
+  const fetchCompanyDetails = async () => {
     try {
-      if (file.size > 2 * 1024 * 1024) { // 2MB limit
-        setErrors(prev => ({
-          ...prev,
-          company_logo: 'Image must be less than 2MB'
-        }));
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfile(prev => ({
-          ...prev,
-          company_logo: reader.result as string
-        }));
-      };
-      reader.readAsDataURL(file);
+      setLoading(true);
+      const response = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL_COMPANY}/companies/${companyId}`
+      );
+      setCompany(response.data.data);
     } catch (err) {
-      console.error('Failed to process image:', err);
-      setErrors(prev => ({
-        ...prev,
-        company_logo: 'Failed to process image'
-      }));
+      setError("Erreur lors du chargement des détails de l'entreprise.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSave = async () => {
-    try {
-      if (!validateForm()) {
-        return;
-      }
+  const handleEdit = (field: string) => {
+    setEditingField(field);
+    setTempValues((prev) => ({
+      ...prev,
+      [field]: getNestedValue(company, field) || "",
+    }));
+  };
 
-      await updateSettings(profile);
+  const handleCancel = () => {
+    setEditingField(null);
+    setTempValues({});
+  };
+
+  const handleApplyChanges = (field: string) => {
+    setCompany((prev) => ({
+      ...prev,
+      [field]: tempValues[field],
+    }));
+    setEditingField(null);
+    setTempValues({});
+    setHasChanges(true);
+  };
+
+  const handleSaveAll = async () => {
+    try {
+      await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL_COMPANY}/companies/${companyId}`,
+        company
+      );
+      setHasChanges(false);
       setSaveSuccess(true);
+
+      // Afficher un popup SweetAlert2 pour indiquer le succès
+      Swal.fire({
+        title: "Success!",
+        text: "Company profile updated successfully.",
+        icon: "success",
+        confirmButtonText: "Ok",
+      });
+
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
-      console.error('Failed to save company profile:', err);
+      console.error("Erreur lors de la sauvegarde :", err);
+      Swal.fire({
+        title: "Error!",
+        text: "There was an error updating the company profile.",
+        icon: "error",
+        confirmButtonText: "Try Again",
+      });
     }
   };
+
+  const getNestedValue = (obj: Record<string, any>, path: string) => {
+    return path.split(".").reduce((acc, key) => acc && acc[key], obj);
+  };
+
+  useEffect(() => {
+    fetchCompanyDetails();
+  }, []);
 
   if (loading) {
     return (
       <div className="animate-pulse space-y-6">
         <div className="h-8 bg-gray-200 rounded w-1/4"></div>
         <div className="space-y-4">
-          {[1, 2, 3].map(i => (
+          {[1, 2, 3].map((i) => (
             <div key={i} className="h-12 bg-gray-200 rounded"></div>
           ))}
         </div>
       </div>
     );
   }
+
+  const fields = [
+    {
+      key: "name",
+      label: "Company Name",
+      icon: <Building2 className="w-5 h-5" />,
+    },
+    {
+      key: "industry",
+      label: "Industry",
+      icon: <Building2 className="w-5 h-5" />,
+    },
+    {
+      key: "overview",
+      label: "Overview",
+      icon: <Building2 className="w-5 h-5" />,
+    },
+    {
+      key: "mission",
+      label: "Mission",
+      icon: <Building2 className="w-5 h-5" />,
+    },
+    {
+      key: "contact.email",
+      label: "Email",
+      icon: <Mail className="w-5 h-5" />,
+    },
+    {
+      key: "contact.phone",
+      label: "Phone",
+      icon: <Phone className="w-5 h-5" />,
+    },
+    {
+      key: "contact.address",
+      label: "Address",
+      icon: <MapPin className="w-5 h-5" />,
+    },
+    {
+      key: "contact.website",
+      label: "Website",
+      icon: <Globe className="w-5 h-5" />,
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -118,29 +166,12 @@ function CompanyProfilePanel() {
             </div>
             <h2 className="text-xl font-semibold">Company Profile</h2>
           </div>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 flex items-center gap-2"
-          >
-            {saving ? (
-              <>
-                <Clock className="w-5 h-5 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="w-5 h-5" />
-                Save Changes
-              </>
-            )}
-          </button>
         </div>
 
-        {settingsError && (
+        {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-600">
             <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <span>{settingsError.message}</span>
+            <span>{error}</span>
           </div>
         )}
 
@@ -151,225 +182,70 @@ function CompanyProfilePanel() {
           </div>
         )}
 
-        <div className="grid grid-cols-3 gap-6">
-          {/* Logo Upload */}
-          <div className="col-span-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Company Logo
-            </label>
-            {profile.company_logo ? (
-              <div className="relative w-full aspect-square mb-4">
-                <img
-                  src={profile.company_logo}
-                  alt="Company Logo"
-                  className="w-full h-full object-contain rounded-lg border"
-                />
-                <button
-                  onClick={() => setProfile(prev => ({ ...prev, company_logo: '' }))}
-                  className="absolute -top-2 -right-2 p-1 bg-red-100 text-red-600 rounded-full hover:bg-red-200"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full aspect-square border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50"
-              >
-                <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                <span className="text-sm text-gray-500">Upload Logo</span>
-                <span className="text-xs text-gray-400 mt-1">PNG, JPG, SVG (max 2MB)</span>
-              </div>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/svg+xml"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  handleImageUpload(file);
-                }
-              }}
-            />
-            {errors.company_logo && (
-              <p className="mt-1 text-sm text-red-500">{errors.company_logo}</p>
-            )}
-          </div>
-
-          {/* Company Details */}
-          <div className="col-span-2 space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Company Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={profile.company_name}
-                  onChange={e => setProfile(prev => ({ ...prev, company_name: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter company name"
-                />
-                {errors.company_name && (
-                  <p className="mt-1 text-sm text-red-500">{errors.company_name}</p>
+        <div className="space-y-6">
+          {fields.map((field) => (
+            <div key={field.key} className="border rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-gray-600">
+                  {field.icon}
+                  <span className="font-medium">{field.label}</span>
+                </div>
+                {editingField === field.key ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleApplyChanges(field.key)}
+                      className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
+                    >
+                      <CheckCircle2 className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={handleCancel}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => handleEdit(field.key)}
+                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                  >
+                    <Pencil className="w-5 h-5" />
+                  </button>
                 )}
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Industry
-                </label>
-                <input
-                  type="text"
-                  value={profile.industry}
-                  onChange={e => setProfile(prev => ({ ...prev, industry: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter industry"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
-              <textarea
-                value={profile.description}
-                onChange={e => setProfile(prev => ({ ...prev, description: e.target.value }))}
-                rows={3}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter company description"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Website
-                </label>
-                <div className="flex items-center">
-                  <Globe className="w-5 h-5 text-gray-400 mr-2" />
-                  <input
-                    type="url"
-                    value={profile.website}
-                    onChange={e => setProfile(prev => ({ ...prev, website: e.target.value }))}
-                    className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="https://example.com"
-                  />
-                </div>
-                {errors.website && (
-                  <p className="mt-1 text-sm text-red-500">{errors.website}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <div className="flex items-center">
-                  <Mail className="w-5 h-5 text-gray-400 mr-2" />
-                  <input
-                    type="email"
-                    value={profile.email}
-                    onChange={e => setProfile(prev => ({ ...prev, email: e.target.value }))}
-                    className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="contact@example.com"
-                  />
-                </div>
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-500">{errors.email}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone
-                </label>
-                <div className="flex items-center">
-                  <Phone className="w-5 h-5 text-gray-400 mr-2" />
-                  <input
-                    type="tel"
-                    value={profile.phone}
-                    onChange={e => setProfile(prev => ({ ...prev, phone: e.target.value }))}
-                    className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="+1 (555) 123-4567"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Address
-                </label>
-                <div className="flex items-center">
-                  <MapPin className="w-5 h-5 text-gray-400 mr-2" />
+              <div className="mt-2 text-gray-800">
+                {editingField === field.key ? (
                   <input
                     type="text"
-                    value={profile.address}
-                    onChange={e => setProfile(prev => ({ ...prev, address: e.target.value }))}
-                    className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="123 Business St"
+                    value={tempValues[field.key] || ""}
+                    onChange={(e) =>
+                      setTempValues((prev) => ({
+                        ...prev,
+                        [field.key]: e.target.value,
+                      }))
+                    }
+                    className="border rounded-lg p-2 w-full"
                   />
-                </div>
+                ) : (
+                  String(getNestedValue(company, field.key) || "Not set")
+                )}
               </div>
             </div>
+          ))}
 
-            <div className="grid grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  City
-                </label>
-                <input
-                  type="text"
-                  value={profile.city}
-                  onChange={e => setProfile(prev => ({ ...prev, city: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="City"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  State
-                </label>
-                <input
-                  type="text"
-                  value={profile.state}
-                  onChange={e => setProfile(prev => ({ ...prev, state: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="State"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Postal Code
-                </label>
-                <input
-                  type="text"
-                  value={profile.postal_code}
-                  onChange={e => setProfile(prev => ({ ...prev, postal_code: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="12345"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Country
-                </label>
-                <input
-                  type="text"
-                  value={profile.country}
-                  onChange={e => setProfile(prev => ({ ...prev, country: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Country"
-                />
-              </div>
-            </div>
+          <div className="flex justify-end pt-6 border-t">
+            <button
+              onClick={handleSaveAll}
+              disabled={!hasChanges}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <Save className="w-5 h-5" />
+              Save All Changes
+            </button>
           </div>
         </div>
       </div>
     </div>
   );
 }
-
-export default CompanyProfilePanel;

@@ -1,7 +1,9 @@
+import axios from 'axios';
 import api from './index';
 
 export interface CompanySettings {
-  company_name: string;
+  data(data: any): unknown;
+  name: string;
   company_logo?: string;
   website?: string;
   phone?: string;
@@ -17,7 +19,7 @@ export interface CompanySettings {
 
 export const settingsApi = {
   getSettings: async () => {
-    const response = await api.get<CompanySettings>('/settings');
+    const response = await axios.get<CompanySettings>(`${import.meta.env.VITE_API_URL}/companies/67921fce031b145d2e8088ca`);
     return response.data;
   },
 
