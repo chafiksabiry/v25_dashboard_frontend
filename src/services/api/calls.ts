@@ -1,19 +1,23 @@
 import api from './index';
+import { Lead } from './leads';
+import { Agent } from './agents';
+
 
 export interface Call {
-  id: string;
-  agent_id: string;
-  customer_id?: string;
+  _id: string;
+  agent: Agent;
+  lead: Lead;
   phone_number: string;
-  direction: 'inbound' | 'outbound';
-  status: 'active' | 'completed' | 'missed' | 'failed';
+  direction: "inbound" | "outbound";
+  status: "active" | "completed" | "missed" | "failed";
   duration: number;
-  recording_url?: string;
-  notes?: string;
-  tags?: string[];
-  quality_score?: number;
-  created_at: string;
-  updated_at: string;
+  recording_url: string;
+  notes: string;
+  tags: string[];
+  quality_score: number;
+  createdAt: string;
+  updatedAt: string;
+
 }
 
 export const callsApi = {

@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { callsApi, Call } from "../services/api/calls"
 import {
   Phone,
   PhoneIncoming,
@@ -12,7 +14,8 @@ import {
   Share2,
   LineChart,
   PieChart,
-  X
+  X,
+  Info
 } from 'lucide-react';
 import { CallInterface } from '../components/CallInterface';
 
@@ -24,17 +27,41 @@ interface ActiveCall {
 function CallsPanel() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [activeCall, setActiveCall] = useState<ActiveCall | null>(null);
+  const [allCalls, setCalls] = useState<Call[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+
 
   const handleCall = (phoneNumber: string) => {
     // Pour cet exemple, nous utilisons un ID d'agent statique
     // Dans une application réelle, cela viendrait du contexte d'authentification
     // ou des props du composant
     const mockAgentId = '65d8f1234567890123456789';
-    setActiveCall({ 
+    setActiveCall({
       number: phoneNumber,
       agentId: mockAgentId
     });
   };
+
+  useEffect(() => {
+    const fetchCalls = async () => {
+      try {
+        setLoading(true);
+        const response = await callsApi.getAll(); // Fetch calls from API
+        console.log("response :", response)
+        setCalls(response.data);
+      } catch (err) {
+        console.error("Error fetching calls:", err);
+        setError("Failed to load calls.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCalls();
+  }, []);
+
 
   return (
     <div className="space-y-6">
@@ -46,7 +73,7 @@ function CallsPanel() {
             </div>
             <h2 className="text-xl font-semibold">Calls Dashboard</h2>
           </div>
-          <button 
+          <button
             onClick={() => handleCall('+1234567890')}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
@@ -91,41 +118,37 @@ function CallsPanel() {
 
         <div className="flex items-center gap-4 mb-6">
           <button
-            className={`px-4 py-2 rounded-lg ${
-              activeFilter === 'all'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
+            className={`px-4 py-2 rounded-lg ${activeFilter === 'all'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
             onClick={() => setActiveFilter('all')}
           >
             All Calls
           </button>
           <button
-            className={`px-4 py-2 rounded-lg ${
-              activeFilter === 'incoming'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
+            className={`px-4 py-2 rounded-lg ${activeFilter === 'incoming'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
             onClick={() => setActiveFilter('incoming')}
           >
             Incoming
           </button>
           <button
-            className={`px-4 py-2 rounded-lg ${
-              activeFilter === 'outgoing'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
+            className={`px-4 py-2 rounded-lg ${activeFilter === 'outgoing'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
             onClick={() => setActiveFilter('outgoing')}
           >
             Outgoing
           </button>
           <button
-            className={`px-4 py-2 rounded-lg ${
-              activeFilter === 'missed'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
+            className={`px-4 py-2 rounded-lg ${activeFilter === 'missed'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
             onClick={() => setActiveFilter('missed')}
           >
             Missed
@@ -145,49 +168,67 @@ function CallsPanel() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <tr key={i} className="hover:bg-gray-50">
+              {allCalls.map((call, index) => (
+                <tr key={call._id} className="hover:bg-gray-50">
                   <td className="py-3">
                     <div className="flex items-center gap-2">
-                      <PhoneIncoming className="w-5 h-5 text-green-600" />
-                      <span>Incoming</span>
+                      {call.direction === "inbound" ? (
+                        <PhoneIncoming className="w-5 h-5 text-green-600" />
+                      ) : (
+                        <PhoneOutgoing className="w-5 h-5 text-blue-600" />
+                      )}
+                      <span>{call.direction.charAt(0).toUpperCase() + call.direction.slice(1)}</span>
                     </div>
                   </td>
                   <td className="py-3">
                     <div className="flex items-center gap-2">
                       <img
-                        src={`https://i.pravatar.cc/32?img=${i + 10}`}
+                        src={`https://i.pravatar.cc/32?img=${index + 10}`}
                         alt="Customer"
                         className="w-8 h-8 rounded-full"
                       />
                       <div>
-                        <div className="font-medium">John Smith</div>
-                        <div className="text-sm text-gray-500">+1 234 567 890</div>
+                        <div className="font-medium">{call.lead.name}</div>
+                        <div className="text-sm text-gray-500">{call.phone_number}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="py-3">2 hours ago</td>
-                  <td className="py-3">4m 12s</td>
+                  <td className="py-3">{new Date(call.createdAt).toLocaleString()}</td>
+                  <td className="py-3">{call.duration} sec</td>
                   <td className="py-3">
-                    <span className="px-2 py-1 bg-green-100 text-green-600 rounded-full text-sm">
-                      Completed
+                    <span
+                      className={`px-2 py-1 rounded-full text-sm ${call.status === "completed"
+                        ? "bg-green-100 text-green-600"
+                        : call.status === "missed"
+                          ? "bg-red-100 text-red-600"
+                          : "bg-gray-100 text-gray-600"
+                        }`}
+                    >
+                      {call.status.charAt(0).toUpperCase() + call.status.slice(1)}
                     </span>
                   </td>
                   <td className="py-3">
                     <div className="flex items-center gap-2">
-                      <button className="p-2 hover:bg-gray-100 rounded-lg">
+                      <button
+                        className="p-2 hover:bg-gray-100 rounded-lg"
+                        onClick={() => handleCall(call.phone_number)}
+                      >
                         <PhoneCall className="w-5 h-5" />
                       </button>
                       <button className="p-2 hover:bg-gray-100 rounded-lg">
                         <MessageCircle className="w-5 h-5" />
                       </button>
-                      <button className="p-2 hover:bg-gray-100 rounded-lg">
-                        <Share2 className="w-5 h-5" />
+                      <button
+                        className="p-2 hover:bg-gray-100 rounded-lg"
+                        onClick={() => navigate(`/call-report?recording_url=${call.recording_url}`)}
+                      >
+                        <Info className="w-5 h-5" />
                       </button>
                     </div>
                   </td>
                 </tr>
               ))}
+
             </tbody>
           </table>
         </div>
