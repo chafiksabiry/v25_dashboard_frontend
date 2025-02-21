@@ -1,10 +1,9 @@
 import React from 'react';
-import './public-path'; // For proper Qiankun integration
+import './public-path';
 import { qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { HashRouter } from 'react-router-dom'; // Use HashRouter for micro-frontends
 import { Provider } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
 import { store } from './store';
@@ -12,7 +11,6 @@ import App from './App';
 import './index.css';
 import 'react-toastify/dist/ReactToastify.css';
 
-// Store the root instance for proper unmounting
 let root = null;
 
 function render(props) {
@@ -29,10 +27,8 @@ function render(props) {
     root.render(
       <StrictMode>
         <Provider store={store}>
-          <HashRouter>
-            <App />
-            <ToastContainer />
-          </HashRouter>
+          <App />
+          <ToastContainer />
         </Provider>
       </StrictMode>
     );
