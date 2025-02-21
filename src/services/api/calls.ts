@@ -15,6 +15,24 @@ export interface Call {
   notes: string;
   tags: string[];
   quality_score: number;
+  ai_call_score: {
+    "Agent fluency": {
+      score: number; // 0-100 range enforced in logic
+      feedback: string;
+    };
+    "Sentiment analysis": {
+      score: number;
+      feedback: string;
+    };
+    "Fraud detection": {
+      score: number;
+      feedback: string;
+    };
+    "overall": {
+      score: number;
+      feedback: string;
+    };
+  };
   createdAt: string;
   updatedAt: string;
 

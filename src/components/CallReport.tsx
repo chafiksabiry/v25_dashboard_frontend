@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { vertexApi } from "../services/api/vertex";
-import { Target, CheckCircle2, AlertTriangle, FileText, BookOpen, Volume2 } from 'lucide-react';
+import { Call, callsApi } from "../services/api/calls";
+
+import { Info, Target, Volume2, BookOpen, User, Phone, Clock, Calendar, CheckCircle, XCircle, FileText } from 'lucide-react';
 
 interface CallReport {
     "Agent fluency": { score: number; feedback: string };
@@ -18,7 +20,13 @@ const initialReport: CallReport = {
 };
 
 function CallReportCard() {
-    const [report, setReport] = useState<CallReport>(initialReport);
+    const location = useLocation();
+    const callPased = location.state?.call; // Retrieve passed call object
+    console.log("call object : ", callPased)
+
+    const [call, setCall] = useState<Call | null>(callPased || null);
+    const [report, setReport] = useState<CallReport>(callPased?.ai_call_score || initialReport);
+
     const [transcription, setTranscription] = useState<string | null>(null);
     const [summary, setSummary] = useState<string | null>(null);
 
@@ -31,31 +39,39 @@ function CallReportCard() {
     const [errorSummary, setErrorSummary] = useState<string | null>(null);
 
 
-    const location = useLocation();
-    const params = new URLSearchParams(location.search);
-    const recordingUrl = params.get('recording_url') || '';
-
     useEffect(() => {
-        if (!recordingUrl) return;
+        if (!call) return; // Ensure the call object exists
 
-        // Fetch Call Scoring
-        const fetchScoring = async () => {
-            try {
-                setLoadingReport(true);
-                const response = await vertexApi.getCallScoring({ file_uri: recordingUrl });
-                setReport(response);
-            } catch (err) {
-                setErrorReport("Failed to analyze the call.");
-            } finally {
-                setLoadingReport(false);
-            }
-        };
+        if (call.ai_call_score && Object.keys(call.ai_call_score).length > 0) {
+            // If scores exist in the database, use them
+            setReport(call.ai_call_score);
+            setLoadingReport(false);
+        } else {
+            // If no existing score, generate a new one
+            const fetchScoring = async () => {
+                try {
+                    setLoadingReport(true);
+                    const response = await vertexApi.getCallScoring({ file_uri: call.recording_url });
+                    setReport(response);
 
-        // Fetch Call Transcription
+                    // Store the generated score in the database
+                    await callsApi.update(call._id, { ai_call_score: response });
+                    setCall({ ...call, ai_call_score: response }); // Update local state
+                } catch (err) {
+                    setErrorReport("Failed to analyze the call.");
+                } finally {
+                    setLoadingReport(false);
+                }
+            };
+
+            fetchScoring();
+        }
+
+        // Fetch Transcription
         const fetchTranscription = async () => {
             try {
                 setLoadingTranscription(true);
-                const response = await vertexApi.getCallTranscription({ file_uri: recordingUrl });
+                const response = await vertexApi.getCallTranscription({ file_uri: call.recording_url });
                 setTranscription(response.transcription);
             } catch (err) {
                 setErrorTranscription("Failed to transcribe the call.");
@@ -64,13 +80,11 @@ function CallReportCard() {
             }
         };
 
-        // Fetch Call Summarization
+        // Fetch Summary
         const fetchSummary = async () => {
             try {
                 setLoadingSummary(true);
-                const response = await vertexApi.getCallSummary({ file_uri: recordingUrl });
-                console.log("response summary :", response)
-                console.log("response summary :", response.parts[0].text)
+                const response = await vertexApi.getCallSummary({ file_uri: call.recording_url });
                 setSummary(response.parts[0].text);
             } catch (err) {
                 setErrorSummary("Failed to generate call summary.");
@@ -79,10 +93,9 @@ function CallReportCard() {
             }
         };
 
-        fetchScoring();
         fetchTranscription();
         fetchSummary();
-    }, []);
+    }, [call]);
 
     // Spinner Component
     // **Spinner Component with Text**
@@ -103,16 +116,53 @@ function CallReportCard() {
 
     return (
         <div className="bg-white rounded-lg shadow-lg overflow-hidden p-4 space-y-6">
+            {/* Call Information */}
+            <div className="border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center space-x-2 mb-3">
+                    <Info className="h-5 w-5 text-blue-500" />
+                    <h3 className="text-sm font-medium text-blue-900">Call Details</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
+                    <div className="flex items-center gap-2">
+                        <User className="h-5 w-5 text-gray-500" />
+                        <span><strong>Agent:</strong> {call?.agent?.name || 'N/A'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <User className="h-5 w-5 text-gray-500" />
+                        <span><strong>Lead:</strong> {call?.lead?.name || 'N/A'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Phone className="h-5 w-5 text-gray-500" />
+                        <span><strong>Phone Number:</strong> {call?.phone_number || 'N/A'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Clock className="h-5 w-5 text-gray-500" />
+                        <span><strong>Duration:</strong> {call?.duration ? `${call.duration} sec` : 'N/A'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Calendar className="h-5 w-5 text-gray-500" />
+                        <span><strong>Call Date:</strong> {call?.createdAt ? new Date(call.createdAt).toLocaleString() : 'N/A'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {call?.status === 'completed' ? (
+                            <CheckCircle className="h-5 w-5 text-green-500" />
+                        ) : (
+                            <XCircle className="h-5 w-5 text-red-500" />
+                        )}
+                        <span><strong>Status:</strong> {call?.status || 'N/A'}</span>
+                    </div>
+                </div>
+            </div>
+
             {/* Call Recording */}
             <div className="border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center space-x-2 mb-3">
                     <Volume2 className="h-5 w-5 text-blue-500" />
                     <h3 className="text-sm font-medium text-blue-900">Call Recording</h3>
                 </div>
-
-                {recordingUrl ? (
+                {call?.recording_url ? (
                     <audio controls className="w-full">
-                        <source src={recordingUrl} type="audio/mpeg" />
+                        <source src={call?.recording_url} type="audio/mpeg" />
                         Your browser does not support the audio element.
                     </audio>
                 ) : (
@@ -187,6 +237,7 @@ function CallReportCard() {
                         </div>
                     </div>
                 )}
+
             </div>
         </div>
     );

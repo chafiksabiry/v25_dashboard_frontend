@@ -220,7 +220,7 @@ function CallsPanel() {
                       </button>
                       <button
                         className="p-2 hover:bg-gray-100 rounded-lg"
-                        onClick={() => navigate(`/call-report?recording_url=${call.recording_url}`)}
+                        onClick={() => navigate(`/call-report`, { state: { call } })}
                       >
                         <Info className="w-5 h-5" />
                       </button>
