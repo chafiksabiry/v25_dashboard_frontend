@@ -3,12 +3,13 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import qiankun from 'vite-plugin-qiankun';
 import * as cheerio from 'cheerio';
+import { AnyNode } from 'domhandler';
 
 // Plugin to remove React Refresh preamble
 const removeReactRefreshScript = () => {
   return {
     name: 'remove-react-refresh',
-    transformIndexHtml(html) {
+    transformIndexHtml(html: string | AnyNode | AnyNode[] | Buffer<ArrayBufferLike>) {
       const $ = cheerio.load(html);
       $('script[src="/@react-refresh"]').remove();
       return $.html();
@@ -27,7 +28,6 @@ export default defineConfig(({ mode }) => {
       }),
       qiankun('app7', {
         useDevMode: true,
-        scopeCss: true,
       }),
       removeReactRefreshScript(), // Add the script removal plugin
     ],
@@ -37,7 +37,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: 5180,
-      cors: true,
+      cors: false,
       hmr: false,
       fs: {
         strict: true, // Ensure static assets are correctly resolved
@@ -54,7 +54,7 @@ export default defineConfig(({ mode }) => {
           chunkFileNames: 'chunk-[name].js', // Fixed name for chunks
           assetFileNames: (assetInfo) => {
             // Ensure CSS files are consistently named
-            if (assetInfo.name.endsWith('.css')) {
+            if (assetInfo.name && assetInfo.name.endsWith('.css')) {
               return 'index.css';
             }
             return '[name].[ext]'; // Default for other asset types
