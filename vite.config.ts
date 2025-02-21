@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => {
       react({
         jsxRuntime: 'classic',
       }),
-      qiankun('app6', {
+      qiankun('app7', {
         useDevMode: true,
       }),
       removeReactRefreshScript(), // Add the script removal plugin
@@ -48,7 +48,7 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           format: 'umd',
-          name: 'app6',
+          name: 'app7',
           entryFileNames: 'index.js', // Fixed name for the JS entry file
           chunkFileNames: 'chunk-[name].js', // Fixed name for chunks
           assetFileNames: (assetInfo) => {
