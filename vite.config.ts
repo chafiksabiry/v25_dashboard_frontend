@@ -8,7 +8,7 @@ import * as cheerio from 'cheerio';
 const removeReactRefreshScript = () => {
   return {
     name: 'remove-react-refresh',
-    transformIndexHtml(html: any) {
+    transformIndexHtml(html) {
       const $ = cheerio.load(html);
       $('script[src="/@react-refresh"]').remove();
       return $.html();
@@ -27,6 +27,7 @@ export default defineConfig(({ mode }) => {
       }),
       qiankun('app7', {
         useDevMode: true,
+        scopeCss: true,
       }),
       removeReactRefreshScript(), // Add the script removal plugin
     ],
