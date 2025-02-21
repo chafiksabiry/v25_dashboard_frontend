@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Phone,
@@ -24,16 +25,23 @@ interface ActiveCall {
 function CallsPanel() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [activeCall, setActiveCall] = useState<ActiveCall | null>(null);
+  const [showPhoneInput, setShowPhoneInput] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [error, setError] = useState('');
 
   const handleCall = (phoneNumber: string) => {
-    // Pour cet exemple, nous utilisons un ID d'agent statique
-    // Dans une application réelle, cela viendrait du contexte d'authentification
-    // ou des props du composant
-    const mockAgentId = '65d8f1234567890123456789';
-    setActiveCall({ 
-      number: phoneNumber,
-      agentId: mockAgentId
-    });
+    const phoneRegex = /^\+([1-9]{1,4})\d{1,14}$/;  // Expression régulière pour valider le numéro international
+    if (phoneRegex.test(phoneNumber)) {
+      const mockAgentId = '65d8f1234567890123456789';  // ID agent statique
+      setActiveCall({
+        number: phoneNumber,
+        agentId: mockAgentId
+      });
+      setShowPhoneInput(false);
+      setError('');
+    } else {
+      setError('Please enter a valid international phone number (e.g. +13024440090)');
+    }
   };
 
   return (
@@ -46,13 +54,37 @@ function CallsPanel() {
             </div>
             <h2 className="text-xl font-semibold">Calls Dashboard</h2>
           </div>
-          <button 
-            onClick={() => handleCall('+1234567890')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            New Call
-          </button>
+          {!showPhoneInput ? (
+            <button
+              onClick={() => setShowPhoneInput(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              New Call
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="Enter phone number"
+                className="px-4 py-2 border border-gray-300 rounded-lg"
+              />
+              <button
+                onClick={() => handleCall(phoneNumber)}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                Call
+              </button>
+            </div>
+          )}
         </div>
+
+        {error && (
+          <div className="bg-red-100 text-red-600 text-sm p-3 rounded-lg mb-6">
+            {error}
+          </div>
+        )}
 
         <div className="grid grid-cols-4 gap-4 mb-6">
           <div className="bg-green-50 p-4 rounded-lg">
