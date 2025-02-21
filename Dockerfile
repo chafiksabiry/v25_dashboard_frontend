@@ -7,9 +7,10 @@ RUN npm install
 
 COPY . .
 
-ENV VITE_API_URL=http://38.242.208.242:5005/api
-ENV VITE_BACKEND_URL_COMPANY=http://38.242.208.242:5001/api
-ENV VITE_BACKEND_URL_GIGS=http://38.242.208.242:5003/api
+ENV VITE_API_URL=https://api-dashboard.harx.ai/api
+ENV VITE_BACKEND_URL_COMPANY=https://api-companysearchwizard.harx.ai/api
+ENV VITE_BACKEND_URL_GIGS=https://api-gigsmanual.harx.ai/api
+ENV VITE_QIANKUN=true
 
 RUN npm run build
 
