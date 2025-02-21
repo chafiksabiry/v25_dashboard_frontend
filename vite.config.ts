@@ -42,6 +42,14 @@ export default defineConfig(({ mode }) => {
       fs: {
         strict: true, // Ensure static assets are correctly resolved
       },
+      proxy: {
+        '/app7': {
+          target: 'https://dashboard.harx.ai',
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path.replace(/^\/app7/, '')
+        }
+      }
     },
     build: {
       target: 'esnext',
