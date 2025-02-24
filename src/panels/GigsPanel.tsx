@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Briefcase,
   Calendar,
@@ -16,18 +16,18 @@ import {
   Star,
   MapPin,
   Building2,
-  Tags
-} from 'lucide-react';
+  Tags,
+} from "lucide-react";
 
 interface Gig {
   id: string;
   title: string;
   client: string;
   location: string;
-  type: 'onsite' | 'remote' | 'hybrid';
+  category: "onsite" | "remote" | "hybrid";
   rate: number;
   duration: string;
-  status: 'available' | 'assigned' | 'completed' | 'cancelled';
+  status: "available" | "assigned" | "completed" | "cancelled";
   skills: string[];
   startDate: string;
   endDate: string;
@@ -35,78 +35,105 @@ interface Gig {
 
 const mockGigs: Gig[] = [
   {
-    id: '1',
-    title: 'Customer Service Representative',
-    client: 'TechCorp Inc',
-    location: 'New York, NY',
-    type: 'remote',
+    id: "1",
+    title: "Customer Service Representative",
+    client: "TechCorp Inc",
+    location: "New York, NY",
+    category: "onsite",
     rate: 25,
-    duration: '3 months',
-    status: 'available',
-    skills: ['Phone Support', 'Email Support', 'CRM'],
-    startDate: '2024-02-15',
-    endDate: '2024-05-15'
+    duration: "3 months",
+    status: "available",
+    skills: ["Phone Support", "Email Support", "CRM"],
+    startDate: "2024-02-15",
+    endDate: "2024-05-15",
   },
   {
-    id: '2',
-    title: 'Technical Support Specialist',
-    client: 'Global Solutions Ltd',
-    location: 'San Francisco, CA',
-    type: 'hybrid',
+    id: "2",
+    title: "Technical Support Specialist",
+    client: "Global Solutions Ltd",
+    location: "San Francisco, CA",
+    category: "hybrid",
     rate: 35,
-    duration: '6 months',
-    status: 'assigned',
-    skills: ['Hardware', 'Software', 'Networking'],
-    startDate: '2024-02-01',
-    endDate: '2024-08-01'
+    duration: "6 months",
+    status: "assigned",
+    skills: ["Hardware", "Software", "Networking"],
+    startDate: "2024-02-01",
+    endDate: "2024-08-01",
   },
   {
-    id: '3',
-    title: 'Call Center Team Lead',
-    client: 'Support Masters',
-    location: 'Chicago, IL',
-    type: 'onsite',
+    id: "3",
+    title: "Call Center Team Lead",
+    client: "Support Masters",
+    location: "Chicago, IL",
+    category: "onsite",
     rate: 40,
-    duration: '12 months',
-    status: 'available',
-    skills: ['Team Management', 'Quality Assurance', 'Training'],
-    startDate: '2024-03-01',
-    endDate: '2025-03-01'
-  }
+    duration: "12 months",
+    status: "available",
+    skills: ["Team Management", "Quality Assurance", "Training"],
+    startDate: "2024-03-01",
+    endDate: "2025-03-01",
+  },
 ];
 
 function GigsPanel() {
-  const [activeFilter, setActiveFilter] = useState<string>('all');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showNewGigModal, setShowNewGigModal] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  //const [showNewGigModal, setShowNewGigModal] = useState(false);
+
+  const [gigs, setGigs] = useState<Gig[]>([]);
+  const [data, setData] = useState<any[]>([]);
+
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'available':
-        return 'bg-green-100 text-green-600';
-      case 'assigned':
-        return 'bg-blue-100 text-blue-600';
-      case 'completed':
-        return 'bg-gray-100 text-gray-600';
-      case 'cancelled':
-        return 'bg-red-100 text-red-600';
+      case "available":
+        return "bg-green-100 text-green-600";
+      case "assigned":
+        return "bg-blue-100 text-blue-600";
+      case "completed":
+        return "bg-gray-100 text-gray-600";
+      case "cancelled":
+        return "bg-red-100 text-red-600";
       default:
-        return 'bg-gray-100 text-gray-600';
+        return "bg-gray-100 text-gray-600";
     }
   };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'remote':
+      case "remote":
         return <Building2 className="w-4 h-4" />;
-      case 'onsite':
+      case "onsite":
         return <MapPin className="w-4 h-4" />;
-      case 'hybrid':
+      case "hybrid":
         return <Users className="w-4 h-4" />;
       default:
         return null;
     }
   };
+
+  useEffect(() => {
+    const fetchGigs = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs`);
+        if (!response.ok)
+          throw new Error("Erreur lors de la récupération des gigs");
+        const data = await response.json();
+
+        console.log(data.data[0].title);
+        setGigs(data.data);
+      } catch (error) {
+        setError("Impossible de récupérer les gigs.");
+        console.error("Erreur:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGigs();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -119,7 +146,7 @@ function GigsPanel() {
             <h2 className="text-xl font-semibold">Gig Management</h2>
           </div>
           <button
-            onClick={() => setShowNewGigModal(true)}
+            onClick={() => (window.location.href = "/app6")}
             className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
@@ -190,14 +217,14 @@ function GigsPanel() {
           </div>
 
           <div className="flex gap-2">
-            {['all', 'available', 'assigned', 'completed'].map((filter) => (
+            {["all", "available", "assigned", "completed"].map((filter) => (
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
                 className={`px-4 py-2 rounded-lg ${
                   activeFilter === filter
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
                 {filter.charAt(0).toUpperCase() + filter.slice(1)}
@@ -219,77 +246,74 @@ function GigsPanel() {
                 <th className="pb-3">Actions</th>
               </tr>
             </thead>
+
             <tbody className="divide-y">
-              {mockGigs.map((gig) => (
-                <tr key={gig.id} className="hover:bg-gray-50">
-                  <td className="py-3">
-                    <div>
-                      <div className="font-medium">{gig.title}</div>
-                      <div className="text-sm text-gray-500 flex items-center gap-1">
-                        <Building2 className="w-4 h-4" />
-                        {gig.client}
+              {gigs && gigs.length > 0 ? (
+                gigs.map((gig) => (
+                  <tr key={gig.id} className="hover:bg-gray-50">
+                    <td className="py-3">
+                      <div>
+                        <div className="font-medium">{gig.title}</div>
+                        {/* <div className="text-sm text-gray-500 flex items-center gap-1">
+                          <Building2 className="w-4 h-4" />
+                          {gig.client}
+                        </div> */}
+                        {/* <div className="text-sm text-gray-500 flex items-center gap-1">
+                          <MapPin className="w-4 h-4" />
+                          {gig.location}
+                        </div> */}
                       </div>
-                      <div className="text-sm text-gray-500 flex items-center gap-1">
-                        <MapPin className="w-4 h-4" />
-                        {gig.location}
+                    </td>
+                    <td className="py-3">
+                      <div className="flex items-center gap-1">
+                        {/* {getTypeIcon(gig.type)} */}
+                        <span className="capitalize">{gig.category}</span>
                       </div>
-                    </div>
-                  </td>
-                  <td className="py-3">
-                    <div className="flex items-center gap-1">
-                      {getTypeIcon(gig.type)}
-                      <span className="capitalize">{gig.type}</span>
-                    </div>
-                  </td>
-                  <td className="py-3">
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="w-4 h-4" />
-                      {gig.rate}/hr
-                    </div>
-                  </td>
-                  <td className="py-3">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
-                      {gig.duration}
-                    </div>
-                  </td>
-                  <td className="py-3">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
-                        gig.status
-                      )}`}
-                    >
-                      {gig.status}
-                    </span>
-                  </td>
-                  <td className="py-3">
-                    <div className="flex flex-wrap gap-1">
-                      {gig.skills.map((skill) => (
-                        <span
-                          key={skill}
-                          className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="py-3">
-                    <div className="flex items-center gap-2">
-                      <button className="p-2 hover:bg-gray-100 rounded-lg">
-                        <CheckCircle2 className="w-5 h-5 text-green-600" />
-                      </button>
-                      <button className="p-2 hover:bg-gray-100 rounded-lg">
-                        <XCircle className="w-5 h-5 text-red-600" />
-                      </button>
-                      <button className="p-2 hover:bg-gray-100 rounded-lg">
-                        <AlertCircle className="w-5 h-5 text-yellow-600" />
-                      </button>
-                    </div>
+                    </td>
+                    {/* <td className="py-3">
+                      <div className="flex items-center gap-1">
+                        <DollarSign className="w-4 h-4" />
+                        {gig.rate}/hr
+                      </div>
+                    </td>
+                    <td className="py-3">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        {gig.duration}
+                      </div>
+                    </td>
+                    <td className="py-3">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
+                          gig.status
+                        )}`}
+                      >
+                        {gig.status}
+                      </span>
+                    </td>
+                    <td className="py-3">
+                      <div className="flex flex-wrap gap-1">
+                        {gig.skills.map((skill) => (
+                          <span
+                            key={skill}
+                            className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </td> */}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7} className="text-center py-4 text-gray-500">
+                    Aucun gig disponible.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
+
           </table>
         </div>
       </div>

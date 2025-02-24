@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const envSchema = z.object({
-  API_URL: z.string().url().default('http://localhost:3000/api'),
+  API_URL: z.string().url().default(`${import.meta.env.VITE_API_URL}`),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development')
 });
 

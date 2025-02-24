@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Users,
   Search,
@@ -23,15 +23,39 @@ import {
   FileText,
   Edit,
   Trash2,
-  Upload
-} from 'lucide-react';
-import { useLeads } from '../hooks/useLeads';
-import { LeadUploader } from '../components/LeadUploader';
+  Upload,
+} from "lucide-react";
+import { useLeads } from "../hooks/useLeads";
+import { LeadUploader } from "../components/LeadUploader";
 
 function LeadManagementPanel() {
-  const { leads, loading, error, analyzeLead, generateScript, generateResponse } = useLeads();
+  const {
+    leads,
+    loading,
+    error,
+    analyzeLead,
+    generateScript,
+    generateResponse,
+  } = useLeads();
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showNewLeadModal, setShowNewLeadModal] = useState(false);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const leadsPerPage = 10;
+
+  const indexOfLastLead = currentPage * leadsPerPage;
+  const indexOfFirstLead = indexOfLastLead - leadsPerPage;
+  const currentLeads = leads.slice(indexOfFirstLead, indexOfLastLead);
+
+  const handlePageChange = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const totalPages = Math.ceil(leads.length / leadsPerPage);
+
+  const handleLeadAdded = (newLead: any) => {
+    useLeads((prevLeads) => [...prevLeads, newLead]);
+  };
 
   return (
     <div className="space-y-6">
@@ -44,13 +68,13 @@ function LeadManagementPanel() {
             <h2 className="text-xl font-semibold">Lead Management</h2>
           </div>
           <div className="flex gap-2">
-            <button
+            {/* <button
               onClick={() => setShowNewLeadModal(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
             >
               <Plus className="w-5 h-5" />
               New Lead
-            </button>
+            </button> */}
             <button
               onClick={() => setShowUploadModal(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
@@ -67,7 +91,7 @@ function LeadManagementPanel() {
               <Users className="w-5 h-5 text-blue-600" />
               <span className="font-medium">Total Leads</span>
             </div>
-            <div className="text-2xl font-bold">156</div>
+            <div className="text-2xl font-bold">{leads.length}</div>
             <div className="text-sm text-green-600 flex items-center gap-1">
               <ArrowUpRight className="w-4 h-4" />
               12% increase
@@ -122,14 +146,16 @@ function LeadManagementPanel() {
           </div>
 
           <div className="flex gap-2">
-            {['all', 'new', 'contacted', 'qualified', 'proposal', 'won'].map((filter) => (
-              <button
-                key={filter}
-                className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200"
-              >
-                {filter.charAt(0).toUpperCase() + filter.slice(1)}
-              </button>
-            ))}
+            {["all", "new", "contacted", "qualified", "proposal", "won"].map(
+              (filter) => (
+                <button
+                  key={filter}
+                  className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200"
+                >
+                  {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                </button>
+              )
+            )}
           </div>
         </div>
 
@@ -147,7 +173,7 @@ function LeadManagementPanel() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {leads?.map((lead) => (
+              {currentLeads?.map((lead) => (
                 <tr key={lead.id} className="hover:bg-gray-50">
                   <td className="py-3">
                     <div>
@@ -169,25 +195,35 @@ function LeadManagementPanel() {
                   </td>
                   <td className="py-3">
                     <div>
-                      <div className="font-medium">${lead.value?.toLocaleString()}</div>
-                      <div className="text-sm text-gray-500">{lead.probability}% probability</div>
+                      <div className="font-medium">
+                        ${lead.value?.toLocaleString()}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {lead.probability}% probability
+                      </div>
                     </div>
                   </td>
                   <td className="py-3">
                     <div className="space-y-1">
                       <div className="flex items-center gap-1">
                         <Brain className="w-4 h-4 text-purple-600" />
-                        <span>Score: {lead.metadata?.ai_analysis?.score || 'N/A'}</span>
+                        <span>
+                          Score: {lead.metadata?.ai_analysis?.score || "N/A"}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Sparkles className="w-4 h-4 text-yellow-600" />
-                        <span>{lead.metadata?.ai_analysis?.sentiment || 'N/A'}</span>
+                        <span>
+                          {lead.metadata?.ai_analysis?.sentiment || "N/A"}
+                        </span>
                       </div>
                     </div>
                   </td>
                   <td className="py-3">
                     <div>
-                      <div className="text-sm">{new Date(lead.updated_at).toLocaleDateString()}</div>
+                      <div className="text-sm">
+                        {new Date(lead.updated_at).toLocaleDateString()}
+                      </div>
                       <div className="text-sm text-gray-500">Email</div>
                     </div>
                   </td>
@@ -205,7 +241,7 @@ function LeadManagementPanel() {
                         <Brain className="w-5 h-5" />
                       </button>
                       <button
-                        onClick={() => generateScript(lead, 'email')}
+                        onClick={() => generateScript(lead, "email")}
                         className="p-2 hover:bg-gray-100 rounded-lg text-blue-600"
                         title="Generate Script"
                       >
@@ -221,6 +257,35 @@ function LeadManagementPanel() {
             </tbody>
           </table>
         </div>
+      </div>
+      <div className="flex justify-center gap-2 mt-4">
+        <button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200"
+        >
+          Prev
+        </button>
+        {[...Array(totalPages).keys()].map((pageNumber) => (
+          <button
+            key={pageNumber}
+            onClick={() => handlePageChange(pageNumber + 1)}
+            className={`px-4 py-2 ${
+              currentPage === pageNumber + 1
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-600"
+            } rounded-lg hover:bg-gray-200`}
+          >
+            {pageNumber + 1}
+          </button>
+        ))}
+        <button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200"
+        >
+          Next
+        </button>
       </div>
 
       {showUploadModal && (

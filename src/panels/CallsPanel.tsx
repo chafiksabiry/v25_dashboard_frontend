@@ -228,7 +228,6 @@ function CallsPanel() {
                   </td>
                 </tr>
               ))}
-
             </tbody>
           </table>
         </div>
