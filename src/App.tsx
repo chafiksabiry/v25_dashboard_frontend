@@ -12,6 +12,7 @@ import SchedulerPanel from './panels/SchedulerPanel';
 import CallsPanel from './panels/CallsPanel';
 import EmailsPanel from './panels/EmailsPanel';
 import ChatPanel from './panels/ChatPanel';
+import CallReportCard from './components/CallReport';
 import GigsPanel from './panels/GigsPanel';
 import QualityAssurancePanel from './panels/QualityAssurancePanel';
 import OperationsPanel from './panels/OperationsPanel';
@@ -34,6 +35,7 @@ function App() {
                 <Route path="/rep-matching" element={<RepMatchingPanel />} />
                 <Route path="/scheduler" element={<SchedulerPanel />} />
                 <Route path="/calls" element={<CallsPanel />} />
+                <Route path="/call-report" element={<CallReportCard />} />
                 <Route path="/emails" element={<EmailsPanel />} />
                 <Route path="/chat" element={<ChatPanel />} />
                 <Route path="/gigs" element={<GigsPanel />} />
