@@ -15,7 +15,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-export default function CompanyProfilePanel() {
+function CompanyProfilePanel() {
   const [company, setCompany] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -249,3 +249,5 @@ export default function CompanyProfilePanel() {
     </div>
   );
 }
+
+export default CompanyProfilePanel;
