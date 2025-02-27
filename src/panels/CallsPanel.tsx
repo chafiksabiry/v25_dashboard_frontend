@@ -50,7 +50,7 @@ function CallsPanel() {
     // ✅ Fetch Twilio status from the backend
     const fetchTwilioStatus = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/twilio/twilio-status?userId=${userId}`);
+        const response = await axios.get(`http://38.242.208.242:5009/api/twilio/twilio-status?userId=${userId}`);
         setTwilioStatus(response.data.status); // ✅ Update Twilio status in global state
       } catch (err) {
         console.error("Error fetching Twilio status:", err);
