@@ -14,5 +14,10 @@ export const vertexApi = {
     getCallSummary: async (data: Object,) => {
         const response = await api.post('/vertex/audio/summarize', data);
         return response.data;
+    },
+
+    getCallPostActions: async (data: Object,) => {
+        const response = await api.post('/vertex/call/post-actions', data);
+        return response.data;
     }
 };
