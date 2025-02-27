@@ -28,7 +28,7 @@ function CallReportCard() {
     const [report, setReport] = useState<CallReport>(callPased?.ai_call_score || initialReport);
 
     const [transcription, setTranscription] = useState<string | null>(null);
-    const [summary, setSummary] = useState<string | null>(null);
+    const [summary, setSummary] = useState<{ "key-ideas": [] }>({ "key-ideas": [] });
     const [callPostActions, setCallPostActions] = useState<[]>([]);
 
     const [loadingReport, setLoadingReport] = useState<boolean>(true);
@@ -90,7 +90,8 @@ function CallReportCard() {
             try {
                 setLoadingSummary(true);
                 const response = await vertexApi.getCallSummary({ file_uri: call.recording_url });
-                setSummary(response.parts[0].text);
+                console.info('summary response :', response);
+                setSummary(response);
             } catch (err) {
                 setErrorSummary("Failed to generate call summary.");
             } finally {
@@ -206,12 +207,33 @@ function CallReportCard() {
             {/* Call Summarization */}
             <div className="border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center space-x-2 mb-3">
-                    <BookOpen className="h-5 w-5 text-green-500" />
-                    <h3 className="text-sm font-medium text-green-900">Call Summary</h3>
+                    <BookOpen className="h-5 w-5 text-blue-500" />
+                    <h3 className="text-sm font-medium text-blue-900">Call Summary</h3>
                 </div>
                 {loadingSummary ? <LoadingSpinner text="Generating call Summary ..." /> : errorSummary ? <p className="text-red-500">{errorSummary}</p> : (
-                    <div className="bg-gray-100 p-3 rounded-md text-sm text-gray-800">
-                        {summary}
+                    <div className="text-sm text-gray-800">
+                        {/*   {summary} */}
+                        <div className="text-sm text-black-800">
+                            {summary["key-ideas"]?.length === 0 ? (
+                                <p>Unable to generate summary!</p>
+                            ) : (
+                                <ul className="space-y-2">
+                                    {summary["key-ideas"].map((ideaObj, index) => {
+                                        const [idea, details] = Object.entries(ideaObj)[0]; // Extract key-value pair
+                                        return (
+                                            <li key={index} className="flex items-start space-x-2">
+                                                <ArrowRight className="h-4 w-4 text-blue-500 mt-1 flex-shrink-0" />
+                                                <div className="flex-1">
+                                                    <span className="font-medium text-black">{idea} :</span>{" "}
+                                                    <span className="text-gray-800">{details}</span>
+                                                </div>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            )}
+
+                        </div>
                     </div>
                 )}
             </div>
@@ -222,13 +244,15 @@ function CallReportCard() {
                     <h3 className="text-sm font-medium text-blue-900">Call Follow Up Actions</h3>
                 </div>
                 {loadingPostActions ? <LoadingSpinner text="Generating call Follow Up Actions ..." /> : errorPostActions ? <p className="text-red-500">{errorPostActions}</p> : (
-                    <div className="text-sm text-purple-800">
+                    <div className="text-sm text-black-800">
                         {callPostActions.length === 0 ? <p>There are no Follow up actions ! </p> :
                             <ul className="space-y-2">
                                 {callPostActions.map((action, index) => (
-                                    <li key={index} className="flex items-center space-x-2">
-                                        <ArrowRight className="h-4 w-4 text-blue-500" />
-                                        <span className="text-gray-800">{action}</span>
+                                    <li key={index} className="flex items-start space-x-2">
+                                        <ArrowRight className="h-4 w-4 text-blue-500 mt-1 flex-shrink-0" />
+                                        <div className="flex-1">
+                                            <span className="text-gray-800">{action}</span>
+                                        </div>
                                     </li>
                                 ))}
                             </ul>
