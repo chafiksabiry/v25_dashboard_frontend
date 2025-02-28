@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { callsApi, Call } from "../services/api/calls"
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useTwilio } from "../context/twilioContext"; // ✅ Import Twilio context
+import { useUser } from "../context/userContext"; // ✅ Import user context
+import { useNavigate } from "react-router-dom";
+import { callsApi, Call } from "../services/api/calls";
 import {
   Phone,
   PhoneIncoming,
@@ -18,6 +21,8 @@ import {
   Info
 } from 'lucide-react';
 import { CallInterface } from '../components/CallInterface';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
 
 interface ActiveCall {
   number: string;
@@ -32,25 +37,33 @@ function CallsPanel() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-
-  const handleCall = (phoneNumber: string) => {
-    // Pour cet exemple, nous utilisons un ID d'agent statique
-    // Dans une application réelle, cela viendrait du contexte d'authentification
-    // ou des props du composant
-    const mockAgentId = '65d8f1234567890123456789';
-    setActiveCall({
-      number: phoneNumber,
-      agentId: mockAgentId
-    });
-  };
+  const userId = useSelector((state: RootState) => state.user.userId);
+  console.log("the user id is", userId);
+  const { twilioStatus, setTwilioStatus } = useTwilio(); // ✅ Get Twilio status and setter
 
   useEffect(() => {
+    if (!userId) {
+      setError("User ID not found");
+      return;
+    }
+
+    // ✅ Fetch Twilio status from the backend
+    const fetchTwilioStatus = async () => {
+      try {
+        const response = await axios.get(`http://38.242.208.242:5009/api/twilio/twilio-status?userId=${userId}`);
+        setTwilioStatus(response.data.status); // ✅ Update Twilio status in global state
+      } catch (err) {
+        console.error("Error fetching Twilio status:", err);
+        setError("Failed to fetch Twilio status");
+      }
+    };
+
+    // ✅ Fetch Call Data
     const fetchCalls = async () => {
       try {
         setLoading(true);
-        const response = await callsApi.getAll(); // Fetch calls from API
-        console.log("response :", response)
-        setCalls(response.data);
+        const response = await callsApi.getAll();
+        setCalls(response);
       } catch (err) {
         console.error("Error fetching calls:", err);
         setError("Failed to load calls.");
@@ -59,9 +72,22 @@ function CallsPanel() {
       }
     };
 
+    fetchTwilioStatus();
     fetchCalls();
-  }, []);
+  }, [userId]); // ✅ Re-fetch when user ID changes
 
+  // ✅ Handle call logic
+  const handleCall = (phoneNumber: string) => {
+    if (twilioStatus !== "connected") {
+      alert("Twilio is not connected. Please enable Twilio first.");
+      return;
+    }
+
+    setActiveCall({
+      number: phoneNumber,
+      agentId: "65d8f1234567890123456789", // Replace with actual agent ID
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -168,7 +194,7 @@ function CallsPanel() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {allCalls.map((call, index) => (
+              {Array.isArray(allCalls) && allCalls.map((call, index) => (
                 <tr key={call._id} className="hover:bg-gray-50">
                   <td className="py-3">
                     <div className="flex items-center gap-2">
