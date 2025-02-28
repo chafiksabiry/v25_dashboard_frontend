@@ -71,13 +71,29 @@ generateTwilioToken: async () => {
   console.log("response for token",response);
   return response.data;
 },
-saveCallToDB:async (callSid: string, agentId: string, leadId: string) => {
+saveCallToDB:async (callSid: string, agentId: string, leadId: string, call: any, cloudinaryrecord: string) => {
   const response = await api.post('/api/calls/store-call', {
     CallSid: callSid,     // CallSid dans le body
     agentId: agentId,     // agentId dans le body
-    leadId: leadId,  });
-  console.log("response for getcallDetails from backend",response.data);
+    leadId: leadId,
+  call,
+cloudinaryrecord  });
+  console.log("response for saveCallToDB from backend",response.data);
   return response.data;
 },
+fetchTwilioRecording:async (recordingUrl: string, ) => {
+  const response = await api.post('/api/calls/fetch-recording', {
+    recordingUrl,
+      });
+  console.log("response for fetchTwilioRecording from backend",response.data);
+  return response.data;
+},
+getCallDetails:async (callSid: string, ) => {
+  const response = await api.post('/api/calls/call-details', {
+    callSid,
+      });
+  console.log("response for getcallDetails from backend",response.data);
+  return response.data;
 
-};
+},
+}

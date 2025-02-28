@@ -71,11 +71,11 @@ export function CallInterface({ phoneNumber, agentId, onEnd }: CallInterfaceProp
     
           conn.on("disconnect", async () => { // ✅ Marked as async
             console.log("❌ Call disconnected");
-            const callsid = conn.parameters.CallSid;
-            console.log("callsid", callsid);
+            //const callsid = conn.parameters.CallSid;
+           // console.log("callsid", callsid);
             setCallStatus("ended");
           
-            if (callsid) {
+          /*   if (callsid) {
               try {
                 const call = await saveCallToDB(callsid);
                 console.log("Call in db:", call);
@@ -84,7 +84,7 @@ export function CallInterface({ phoneNumber, agentId, onEnd }: CallInterfaceProp
               }
             } else {
               console.warn("CallSid not available, cannot fetch details.");
-            }
+            } */
           
             onEnd();
           });
@@ -120,9 +120,16 @@ export function CallInterface({ phoneNumber, agentId, onEnd }: CallInterfaceProp
   }, [phoneNumber, onEnd]);
   //console.log("callSid props",callSid);
   const saveCallToDB = async (callSid: string) => {
+    const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
     try {
-      const response = await callsApi.saveCallToDB(callSid,'678391e7d95a11713f32cc9b','678391e7d95a11713f32cc9b');
-      return response;
+      const result = await callsApi.getCallDetails(callSid);
+      const call =  result.data;
+      console.log("call",result.data.recordingUrl);
+      await delay(2000);
+    const Cloudinaryrecord = await callsApi.fetchTwilioRecording(call.recordingUrl);
+    console.log("record",Cloudinaryrecord);
+const callInDB = await callsApi.saveCallToDB(callSid,'679a4734b56943f404edb57c','679a4734b56943f404edb57c',call, Cloudinaryrecord);
+    return callInDB;
     } catch (error) {
       console.error("Error fetching call details:", error);
       throw error;
@@ -163,11 +170,23 @@ export function CallInterface({ phoneNumber, agentId, onEnd }: CallInterfaceProp
   
   
 
-  const handleEndCall = () => {
+  const handleEndCall = async () => {
     if (connection) {
       connection.disconnect();
       setCallStatus('ended');
+      console.log('callsid in handleendcall',callSid);
+
       onEnd();
+      if (callSid) {
+        try {
+          const call = await saveCallToDB(callSid);
+          console.log("Call in db:", call);
+        } catch (error) {
+          console.error("Error fetching call details:", error);
+        }
+      } else {
+        console.warn("CallSid not available, cannot fetch details.");
+      } 
     }
   };
 
