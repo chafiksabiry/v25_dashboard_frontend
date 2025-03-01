@@ -42,7 +42,8 @@ export const dashboardApi = {
   getTopReps: async () => {
     const response = await api.get('/dashboard/top-reps');
     return response.data;
-  }
+  },
+  
 };
 
 export default api;

@@ -50,7 +50,7 @@ function CallsPanel() {
         setLoading(true);
         const response = await callsApi.getAll(); // Fetch calls from API
         console.log("response :", response)
-        setCalls(response.data);
+        setCalls(response);
       } catch (err) {
         console.error("Error fetching calls:", err);
         setError("Failed to load calls.");
@@ -80,6 +80,12 @@ function CallsPanel() {
             New Call
           </button>
         </div>
+
+        {error && (
+          <div className="bg-red-100 text-red-600 text-sm p-3 rounded-lg mb-6">
+            {error}
+          </div>
+        )}
 
         <div className="grid grid-cols-4 gap-4 mb-6">
           <div className="bg-green-50 p-4 rounded-lg">
