@@ -25,12 +25,12 @@ function render(props) {
       root = createRoot(rootElement);
     }
     root.render(
-      <StrictMode>
+     // <StrictMode>
         <Provider store={store}>
           <App />
           <ToastContainer />
         </Provider>
-      </StrictMode>
+     // </StrictMode>
     );
   } else {
     console.warn('[App] Root element not found!');
