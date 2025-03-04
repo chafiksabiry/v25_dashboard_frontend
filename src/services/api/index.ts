@@ -8,6 +8,13 @@ const api = axios.create({
     'Content-Type': 'application/json'
   }
 });
+const apiCall = axios.create({
+baseURL: env.API_URL_CALL,
+headers: {
+  'Content-Type': 'application/json'
+}
+});
+
 
 
 // Request interceptor
@@ -31,4 +38,6 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
 export default api ;
+export { apiCall };
