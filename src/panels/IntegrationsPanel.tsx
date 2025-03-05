@@ -74,7 +74,7 @@ export function IntegrationsPanel() {
     // Chat
     { id: 'telegram', name: 'Telegram', description: 'Cloud-based instant messaging and voice service', category: 'chat', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=telegram', config: { fields: [ { key: 'api_token', label: 'API Token', type: 'password', required: true }, { key: 'chat_id', label: 'Chat ID', type: 'text', required: true } ] } },
     { id: 'slack', name: 'Slack', description: 'Collaboration hub for team communication', category: 'chat', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=slack', config: { fields: [ { key: 'workspace', label: 'Workspace Domain', type: 'text', required: true }, { key: 'api_token', label: 'API Token', type: 'password', required: true } ] } },
-    { id: 'whatsapp', name: 'WhatsApp', description: 'Messaging and voice calling service', category: 'chat', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=whatsapp', config: { fields: [ { key: 'phone_number', label: 'Phone Number', type: 'text', required: true }, { key: 'api_token', label: 'API Token', type: 'password', required: true } ] } },
+    { id: 'whatsapp', name: 'WhatsApp', description: 'Messaging and voice calling service', category: 'chat', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=whatsapp', config: { fields: [ { key: 'phone_number', label: 'Phone Number', type: 'text', required: true }, { key: 'api_token', label: 'API Token', type: 'password', required: true } ,{ key: 'phoneNumberId', label: 'Phone Number ID', type: 'text', required: true }] } },
   
     // Email
     { id: 'gmail', name: 'Gmail', description: 'Email service by Google', category: 'email', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=gmail', config: { fields: [ { key: 'client_id', label: 'Client ID', type: 'text', required: true }, { key: 'client_secret', label: 'Client Secret', type: 'password', required: true } ] } },
@@ -143,31 +143,46 @@ export function IntegrationsPanel() {
   // ✅ Fetch the integration status when the component mounts
   useEffect(() => {
     const fetchIntegrationStatus = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get(`http://38.242.208.242:5009/api/twilio/twilio-status?userId=${userId}`);
-        
-        if (response.data.success) {
-          setIntegrations(prevIntegrations =>
-            prevIntegrations.map(integration =>
-              integration.id === "twilio" // Assuming "twilio" is the ID for Twilio integration
-                ? { ...integration, status: response.data.status }
-                : integration
-            )
-          );
-        } else {
-          throw new Error(response.data.message || "Failed to fetch integration status");
+        try {
+            setLoading(true);
+            
+            const integrationEndpoints = [
+                { id: "twilio", url: `http://localhost:5009/api/twilio/twilio-status?userId=${userId}` },
+                { id: "gmail", url: `http://localhost:5009/api/gmail/status?userId=${userId}` },
+                { id: "whatsapp", url: `http://localhost:5009/api/whatsapp/status?userId=${userId}` },
+                { id : 'telegram', url: `http://localhost:5009/api/telegram/status?userId=${userId}`}
+                //{ id: "slack", url: `http://localhost:5009/api/slack/status?userId=${userId}` }
+                // Add more integrations here
+            ];
+            
+            const responses = await Promise.all(
+                integrationEndpoints.map(integration => 
+                    axios.get(integration.url).catch(err => ({ id: integration.id, error: err }))
+                )
+            );
+            
+            setIntegrations(prevIntegrations =>
+                prevIntegrations.map(integration => {
+                    const response = responses.find(res => res.id === integration.id || (res.data && res.data.success && res.config.url.includes(integration.id)));
+                    
+                    if (response && response.data && response.data.success) {
+                        return { ...integration, status: response.data.status };
+                    } else {
+                        return { ...integration, status: "error" };
+                    }
+                })
+            );
+        } catch (err) {
+            console.error("Error fetching integration status:", err);
+            setError("Failed to load integration statuses.");
+        } finally {
+            setLoading(false);
         }
-      } catch (err) {
-        console.error("Error fetching Twilio status:", err);
-        setError("Failed to load Twilio integration status.");
-      } finally {
-        setLoading(false);
-      }
     };
-
+    
     fetchIntegrationStatus();
-  }, [userId]); // Runs on mount and whenever `userId` changes
+}, [userId]); // Runs on mount and whenever `userId` changes
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -211,8 +226,9 @@ export function IntegrationsPanel() {
   };
   const handleConnect = async () => {
     if (!selectedIntegration) return;
+    
     if (selectedIntegration.status === "connected") {
-      alert( `${selectedIntegration}is already connected!`);
+      alert(`${selectedIntegration.name} is already connected!`);
       return;
     }
   
@@ -231,39 +247,80 @@ export function IntegrationsPanel() {
     });
   
     setErrors(newErrors);
-  
-    // If there are validation errors, stop the process
-    if (hasError) return;
+    
+    if (hasError) return; // Stop execution if there are validation errors
   
     try {
-      setLoading(true);  // Set loading to true when the connection starts
+      setLoading(true); // Set loading to true when connection starts
   
-      // Determine the correct endpoint based on the integration status
-      const endpoint = selectedIntegration.status === 'disconnected' ? "reconnect-twilio" : "setup";
+      let endpoint = "";
+      let requestBody = {}; // ✅ Dynamic request body
   
-      // Make the API request to either "setup" or "reconnect-twilio"
-      const response = await fetch(`http://38.242.208.242:5009/api/twilio/${endpoint}`, {
+      // ✅ Switch-case to determine the correct endpoint and request body
+      switch (selectedIntegration.id) {
+        case "twilio":
+          endpoint = selectedIntegration.status === "disconnected" ? "reconnect-twilio" : "setup";
+          requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123", // Use dynamic userId if necessary
+            accountSid: configValues.account_sid,
+            authToken: configValues.auth_token,
+            phoneNumber: configValues.phone_number
+          };
+          break;
+  
+        case "gmail":
+          endpoint = selectedIntegration.status === "disconnected" ? "reconnect-gmail" : "setup-gmail";
+          requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            clientId: configValues.client_id,
+            clientSecret: configValues.client_secret
+          };
+          break;
+  
+          case "whatsapp":
+            endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+            requestBody = {
+              userId: "65d2b8f4e45a3c5a12e8f123",
+              phoneNumber: configValues.phone_number,  // ✅ Match backend field name
+              accessToken: configValues.api_token,  // ✅ Match backend field name
+              phoneNumberId: configValues.phoneNumberId
+
+            };
+            break;
+          
+  
+        case "telegram":
+          endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+          requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            apiToken: configValues.api_token,
+            chatId: configValues.chat_id
+          };
+          break;
+  
+        default:
+          throw new Error("Invalid integration selected");
+      }
+  
+      // Make the API request
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/${selectedIntegration.id}/${endpoint}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          userId: "65d2b8f4e45a3c5a12e8f123", // Use dynamic userId if necessary
-          accountSid: configValues.account_sid,
-          authToken: configValues.auth_token,
-          phoneNumber: configValues.phone_number
-        })
+        body: JSON.stringify(requestBody) // ✅ Send the dynamic request body
       });
+  
       const result = await response.json();
   
       if (result.success) {
-        toast.success("Twilio connected successfully!");
+        toast.success(`${selectedIntegration.name} connected successfully!`);
         console.log(result.status);
   
         // Update the integrations list with the new status
         setIntegrations(prevIntegrations => prevIntegrations.map(integration =>
           integration.id === selectedIntegration.id
-            ? { ...integration, status: result.status }  // Update status
+            ? { ...integration, status: result.status } // Update status
             : integration
         ));
   
@@ -271,51 +328,73 @@ export function IntegrationsPanel() {
         setSelectedIntegration(null);
         setConfigValues({});
       } else {
-        throw new Error(result.message || "Failed to connect Twilio.");
+        throw new Error(result.message || "Failed to connect.");
       }
   
     } catch (error) {
       // Show error message
-      toast.error(error.message || "An unexpected error occurred while connecting Twilio.");
+      toast.error(error.message || "An unexpected error occurred while connecting.");
       console.error(error);
     } finally {
-      setLoading(false);  // Stop loading once the process completes
+      setLoading(false); // Stop loading once the process completes
     }
   };
   
+  
 
-
-  const handleDisconnect = async (integration) => {
-    console.log(`Disconnecting ${integration.name}...`);
+const handleDisconnect = async (integration) => {
+  console.log(`Disconnecting ${integration.name}...`);
+  
+  try {
+    setLoading(integration.id);
     
-    try {
-        setLoading(integration.id);
-        const response = await fetch("http://38.242.208.242:5009/api/twilio/disconnect", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                userId: "65d2b8f4e45a3c5a12e8f123",
-                integrationId: integration.id
-            })
-        });
+    let endpoint = "";
 
-        const result = await response.json();
-
-        if (result.success) {
-            toast.success(`${integration.name} disconnected successfully!`);
-            setIntegrations(prevIntegrations => prevIntegrations.map(i =>
-                i.id === integration.id ? { ...i, status: "disconnected" } : i
-            ));
-        } else {
-            throw new Error(result.error);
-        }
-    } catch (error) {
-        toast.error(error.message || "Failed to disconnect.");
-    } finally {
-        setLoading(null);
+    // ✅ Switch-case to determine the correct endpoint
+    switch (integration.id) {
+      case "twilio":
+        endpoint = "twilio/disconnect";
+        break;
+      /*case "gmail":
+        endpoint = "gmail/disconnect";
+        break;*/
+      case "whatsapp":
+        endpoint = "whatsapp/disconnect";
+        break;
+      case "telegram":
+        endpoint = "telegram/disconnect";
+        break;
+      default:
+        throw new Error("Invalid integration selected");
     }
+
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/${endpoint}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        userId: "65d2b8f4e45a3c5a12e8f123",
+        integrationId: integration.id
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      toast.success(`${integration.name} disconnected successfully!`);
+      setIntegrations(prevIntegrations => prevIntegrations.map(i =>
+        i.id === integration.id ? { ...i, status: "disconnected" } : i
+      ));
+    } else {
+      throw new Error(result.error || "Failed to disconnect.");
+    }
+  } catch (error) {
+    toast.error(error.message || "An unexpected error occurred while disconnecting.");
+    console.error(error);
+  } finally {
+    setLoading(null);
+  }
 };
 
 

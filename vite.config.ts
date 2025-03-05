@@ -37,7 +37,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: 5180,
-      cors: true,
+      cors: "*",
       hmr: false,
       fs: {
         strict: true, // Ensure static assets are correctly resolved
