@@ -56,7 +56,7 @@ function CallReportCard() {
             const fetchScoring = async () => {
                 try {
                     setLoadingReport(true);
-                    const response = await vertexApi.getCallScoring({ file_uri: call.recording_url });
+                    const response = await vertexApi.getCallScoring({ file_uri: (call.recording_url_cloudinary) ? call.recording_url_cloudinary : call.recording_url });
                     setReport(response);
 
                     // Store the generated score in the database
@@ -76,7 +76,7 @@ function CallReportCard() {
         const fetchTranscription = async () => {
             try {
                 setLoadingTranscription(true);
-                const response = await vertexApi.getCallTranscription({ file_uri: call.recording_url });
+                const response = await vertexApi.getCallTranscription({ file_uri: (call.recording_url_cloudinary) ? call.recording_url_cloudinary : call.recording_url });
                 setTranscription(response.transcription);
             } catch (err) {
                 setErrorTranscription("Failed to transcribe the call.");
@@ -89,7 +89,7 @@ function CallReportCard() {
         const fetchSummary = async () => {
             try {
                 setLoadingSummary(true);
-                const response = await vertexApi.getCallSummary({ file_uri: call.recording_url });
+                const response = await vertexApi.getCallSummary({ file_uri: (call.recording_url_cloudinary) ? call.recording_url_cloudinary : call.recording_url });
                 console.info('summary response :', response);
                 setSummary(response);
             } catch (err) {
@@ -103,7 +103,7 @@ function CallReportCard() {
         const fetchCallPostActions = async () => {
             try {
                 setLoadingPostActions(true);
-                const response = await vertexApi.getCallPostActions({ file_uri: call.recording_url });
+                const response = await vertexApi.getCallPostActions({ file_uri: (call.recording_url_cloudinary) ? call.recording_url_cloudinary : call.recording_url });
                 console.log("post actions res :", response);
                 setCallPostActions(response.plan_actions);
             } catch (err) {
@@ -183,7 +183,7 @@ function CallReportCard() {
                 </div>
                 {call?.recording_url ? (
                     <audio controls className="w-full">
-                        <source src={call?.recording_url} type="audio/mpeg" />
+                        <source src={(call.recording_url_cloudinary) ? call.recording_url_cloudinary : call.recording_url} type="audio/mpeg" />
                         Your browser does not support the audio element.
                     </audio>
                 ) : (

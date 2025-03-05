@@ -7,13 +7,18 @@ export interface Call {
   _id: string;
   agent: Agent;
   lead: Lead;
-  phone_number: string;
-  direction: "inbound" | "outbound";
-  status: "active" | "completed" | "missed" | "failed";
+  direction: "inbound" | "outbound-dial";
+  status: string;
   duration: number;
   recording_url: string;
-  notes: string;
-  tags: string[];
+  recording_url_cloudinary: string;
+  startTime: string;
+  endTime:string;
+  sid:string;
+  parentCallSid:string;
+  childCalls: [String],
+  //notes: string;
+  //tags: string[];
   quality_score: number;
   ai_call_score: {
     "Agent fluency": {
@@ -40,7 +45,7 @@ export interface Call {
 
 export const callsApi = {
   getAll: async () => {
-    const response = await apiCall.get<Call[]>('/calls');
+    const response = await apiCall.get<Call[]>('/api/calls');
     return response.data;
   },
 
@@ -50,12 +55,12 @@ export const callsApi = {
   },
 
   create: async (data: Partial<Call>) => {
-    const response = await apiCall.post('/calls', data);
+    const response = await apiCall.post('api/calls', data);
     return response.data;
   },
 
   update: async (id: string, data: Partial<Call>) => {
-    const response = await apiCall.put(`/calls/${id}`, data);
+    const response = await apiCall.put(`/api/calls/${id}`, data);
     return response.data;
   },
 
