@@ -50,21 +50,21 @@ function CallsPanel() {
     }
   };
 
-  useEffect(() => {
-    const fetchCalls = async () => {
-      try {
-        setLoading(true);
-        const response = await callsApi.getAll(); // Fetch calls from API
-        console.log("response :", response)
-        setCalls(response.data);
-      } catch (err) {
-        console.error("Error fetching calls:", err);
-        setError("Failed to load calls.");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchCalls = async () => {
+    try {
+      setLoading(true);
+      const response = await callsApi.getAll(); // Fetch calls from API
+      console.log("response :", response)
+      setCalls(response.data);
+    } catch (err) {
+      console.error("Error fetching calls:", err);
+      setError("Failed to load calls.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchCalls();
   }, []);
 
@@ -275,6 +275,7 @@ function CallsPanel() {
               phoneNumber={activeCall.number}
               agentId={activeCall.agentId}
               onEnd={() => setActiveCall(null)}
+              onCallSaved={fetchCalls}
             />
           </div>
         </div>

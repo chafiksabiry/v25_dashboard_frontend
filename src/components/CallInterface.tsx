@@ -8,9 +8,10 @@ interface CallInterfaceProps {
   phoneNumber: string;
   agentId: string;
   onEnd: () => void;
+  onCallSaved?: () => void;
 }
 
-export function CallInterface({ phoneNumber, agentId, onEnd }: CallInterfaceProps) {
+export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved}: CallInterfaceProps) {
   const [duration, setDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
@@ -129,6 +130,10 @@ export function CallInterface({ phoneNumber, agentId, onEnd }: CallInterfaceProp
       const Cloudinaryrecord = await callsApi.fetchTwilioRecording(call.recordingUrl);
       console.log("record", Cloudinaryrecord);
       const callInDB = await callsApi.saveCallToDB(callSid, '679a4734b56943f404edb57c', '679a4734b56943f404edb57c', call, Cloudinaryrecord);
+      console.log('callInDB :', callInDB);
+      if (onCallSaved) {
+        onCallSaved();
+      }
       return callInDB;
     } catch (error) {
       console.error("Error fetching call details:", error);
