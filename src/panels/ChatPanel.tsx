@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   MessageSquare,
   Users,
@@ -6,11 +6,57 @@ import {
   CheckCircle2,
   Video,
   Share2,
-  BarChart2
-} from 'lucide-react';
+  BarChart2,
+} from "lucide-react";
 
 function ChatPanel() {
-  const [activeChat, setActiveChat] = useState(null);
+  const [chats, setChats] = useState([]);
+  const [activeChat, setActiveChat] = useState<string | null>(null);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+
+  const fetchChats = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/zoho/chats`);
+      console.log("status de la réponse :", response.status); // Log du code de statut
+      console.log("headers de la réponse :", response.headers); // Log des headers pour le débogage
+
+      if (!response.ok) {
+        throw new Error(
+          `Échec de la récupération des chats : ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+      console.log("Données reçues :", data); // Log des données de réponse
+
+      setChats(data.data || []); // Assurez-vous d'utiliser le bon format des données
+    } catch (error) {
+      console.error("Erreur lors de la récupération des chats :", error);
+    }
+  };
+
+  const fetchChatMessages = async (chatId: string) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/zoho/chats/1631/transcript`);
+      if (!response.ok) {
+        throw new Error(`Erreur lors de la récupération des messages : ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log("Messages reçus :", data);
+  
+      setChatMessages(data.data || []);
+      setActiveChat(chatId);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des messages :", error);
+    }
+  };
+  
+
+  // Fetch chats when the component is mounted
+  useEffect(() => {
+    fetchChats();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -38,33 +84,10 @@ function ChatPanel() {
               <Users className="w-5 h-5 text-blue-600" />
               <span className="font-medium">Active Chats</span>
             </div>
-            <div className="text-2xl font-bold">12</div>
+            <div className="text-2xl font-bold">{chats.length}</div>
             <div className="text-sm text-blue-600">Online now</div>
           </div>
-          <div className="bg-green-50 p-4 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-              <span className="font-medium">Resolved</span>
-            </div>
-            <div className="text-2xl font-bold">48</div>
-            <div className="text-sm text-green-600">Today</div>
-          </div>
-          <div className="bg-yellow-50 p-4 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <Clock className="w-5 h-5 text-yellow-600" />
-              <span className="font-medium">Average Time</span>
-            </div>
-            <div className="text-2xl font-bold">8m</div>
-            <div className="text-sm text-yellow-600">Response time</div>
-          </div>
-          <div className="bg-purple-50 p-4 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <BarChart2 className="w-5 h-5 text-purple-600" />
-              <span className="font-medium">Satisfaction</span>
-            </div>
-            <div className="text-2xl font-bold">94%</div>
-            <div className="text-sm text-purple-600">Last 7 days</div>
-          </div>
+          {/* Other stats */}
         </div>
 
         <div className="grid grid-cols-3 gap-6">
@@ -73,20 +96,24 @@ function ChatPanel() {
               <h3 className="font-semibold">Active Conversations</h3>
             </div>
             <div className="divide-y">
-              {[1, 2, 3, 4].map((i) => (
+              {chats.map((chat: any) => (
                 <button
-                  key={i}
+                  key={chat.chat_id} // Use unique id from the chat object
                   className="w-full p-4 text-left hover:bg-gray-50 flex items-center gap-3"
-                  onClick={() => setActiveChat(i)}
+                  onClick={() => setActiveChat(chat.chat_id)}
                 >
                   <img
-                    src={`https://i.pravatar.cc/32?img=${i + 20}`}
+                    src={`https://i.pravatar.cc/32?img=${chat.chat_id}`} // Example placeholder image
                     alt="Customer"
                     className="w-10 h-10 rounded-full"
                   />
                   <div>
-                    <div className="font-medium">John Smith</div>
-                    <div className="text-sm text-gray-500">2 min ago</div>
+                    <div className="font-medium">
+                      {chat.visitor_name || "Customer"}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {chat.time || "2 min ago"}
+                    </div>
                   </div>
                 </button>
               ))}
@@ -116,9 +143,11 @@ function ChatPanel() {
               </div>
             </div>
             <div className="h-96 p-4 bg-gray-50">
-              {/* Chat messages would go here */}
+              {/* Chat messages */}
               <div className="text-center text-gray-500 mt-32">
-                Select a conversation to start chatting
+                {activeChat
+                  ? `Chat with ${activeChat}`
+                  : "Select a conversation to start chatting"}
               </div>
             </div>
             <div className="p-4 border-t">
