@@ -29,16 +29,10 @@ import { useLeads } from "../hooks/useLeads";
 import { LeadUploader } from "../components/LeadUploader";
 
 function LeadManagementPanel() {
-  const {
-    leads,
-    loading,
-    error,
-    analyzeLead,
-    generateScript,
-    generateResponse,
-  } = useLeads();
+  const { leads, analyzeLead, generateScript } = useLeads(
+    (prevLeads) => prevLeads
+  );
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [showNewLeadModal, setShowNewLeadModal] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const leadsPerPage = 10;
@@ -53,10 +47,6 @@ function LeadManagementPanel() {
 
   const totalPages = Math.ceil(leads.length / leadsPerPage);
 
-  const handleLeadAdded = (newLead: any) => {
-    useLeads((prevLeads) => [...prevLeads, newLead]);
-  };
-
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm p-6">
@@ -68,13 +58,6 @@ function LeadManagementPanel() {
             <h2 className="text-xl font-semibold">Lead Management</h2>
           </div>
           <div className="flex gap-2">
-            {/* <button
-              onClick={() => setShowNewLeadModal(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-            >
-              <Plus className="w-5 h-5" />
-              New Lead
-            </button> */}
             <button
               onClick={() => setShowUploadModal(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"

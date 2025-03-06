@@ -80,21 +80,9 @@ export function LeadUploader({ onComplete, onClose }: LeadUploaderProps) {
     const token = params.get("token");
     if (token) {
       localStorage.setItem("zoho_access_token", token);
-      window.history.replaceState({}, document.title, "/leads"); // Nettoyer l'URL
+      window.history.replaceState({}, document.title, "/leads");
     }
   }, []);
-
-  const refreshToken = async () => {
-    try {
-      const response = await axios.get(
-      `${import.meta.env.VITE_API_URL}/zoho/refresh-token`
-      );
-      const newToken = response.data.accessToken;
-      localStorage.setItem("zoho_access_token", newToken);
-    } catch (error) {
-      console.error("Erreur lors du rafraîchissement du token:", error);
-    }
-  };
 
   const fetchLeads = async () => {
     setError("");
@@ -112,7 +100,7 @@ export function LeadUploader({ onComplete, onClose }: LeadUploaderProps) {
             },
         });
 
-        console.log("Zoho API Response:", response.data); // Vérifiez si les leads sont bien retournés
+        console.log("Zoho API Response:", response.data);
 
         Swal.fire({
             title: "Succès",

@@ -14,7 +14,9 @@ import {
   ScrollText,
   UserPlus,
   Building2,
-  Calendar
+  Calendar,
+  DollarSign,
+  ContactIcon
 } from 'lucide-react';
 
 export function Sidebar() {
@@ -22,8 +24,10 @@ export function Sidebar() {
   const menuItems = [
     { icon: <LayoutDashboard size={20} />, label: 'Overview', path: '/' },
     { icon: <Building2 size={20} />, label: 'Company', path: '/company' },
-    { icon: <UserPlus size={20} />, label: 'Leads', path: '/leads' },
     { icon: <Users size={20} />, label: 'Rep Matching', path: '/rep-matching' },
+    { icon: <UserPlus size={20} />, label: 'Leads', path: '/leads' },
+    { icon: <DollarSign size={20} />, label: 'Deals', path: '/deals' },
+    { icon: <ContactIcon size={20} />, label: 'Contacts', path: '/contacts' },
     { icon: <Calendar size={20} />, label: 'Scheduler', path: '/scheduler' },
     { icon: <Phone size={20} />, label: 'Calls', path: '/calls' },
     { icon: <Mail size={20} />, label: 'Emails', path: '/emails' },

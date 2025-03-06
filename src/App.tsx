@@ -18,6 +18,8 @@ import OperationsPanel from './panels/OperationsPanel';
 import AnalyticsPanel from './panels/AnalyticsPanel';
 import IntegrationsPanel from './panels/IntegrationsPanel';
 import SettingsPanel from './panels/SettingsPanel';
+import DealManagementPanel from './panels/DealManagementPanel';
+import ContactManagementPanel from './panels/ContactManagementPanel';
 
 function App() {
   return (
@@ -31,6 +33,8 @@ function App() {
                 <Route path="/" element={<DashboardPanel />} />
                 <Route path="/company" element={<CompanyProfilePanel />} />
                 <Route path="/leads" element={<LeadManagementPanel />} />
+                <Route path="/deals" element={<DealManagementPanel />} />
+                <Route path="/contacts" element={<ContactManagementPanel />} />
                 <Route path="/rep-matching" element={<RepMatchingPanel />} />
                 <Route path="/scheduler" element={<SchedulerPanel />} />
                 <Route path="/calls" element={<CallsPanel />} />
