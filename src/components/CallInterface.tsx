@@ -1,17 +1,17 @@
-
-    import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Phone, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { Device } from '@twilio/voice-sdk';
 import axios from 'axios';
-import {callsApi} from '../services/api/calls';
+import { callsApi } from '../services/api/calls';
 
 interface CallInterfaceProps {
   phoneNumber: string;
   agentId: string;
   onEnd: () => void;
+  onCallSaved?: () => void;
 }
 
-export function CallInterface({ phoneNumber, agentId, onEnd }: CallInterfaceProps) {
+export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved}: CallInterfaceProps) {
   const [duration, setDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
@@ -25,32 +25,32 @@ export function CallInterface({ phoneNumber, agentId, onEnd }: CallInterfaceProp
   useEffect(() => {
     const initiateCall = async () => {
       console.log('Initiating the call...');
-    
+
       try {
         // Get Twilio Access Token from backend
         const response = await callsApi.generateTwilioToken();
-        const  token  = response.token;
+        const token = response.token;
         console.log('Token received:', typeof token, token);
         // Initialize Twilio Device with the token
         const newDevice = new Device(token, {
           codecPreferences: ['pcmu', 'pcma'] as any,  // Force TypeScript to accept it
         });
-        console.log("newDevice",newDevice);
+        console.log("newDevice", newDevice);
         console.log('Device state before call:', newDevice.state);
-         await  newDevice.register();
+        await newDevice.register();
         console.log('Device state after refistration:', newDevice.state);
         try {
           console.log("📞 Making the call to", phoneNumber);
-        
+
           const conn = await newDevice.connect({
             params: { To: phoneNumber },
             rtcConfiguration: { sdpSemantics: "unified-plan" },
-          }  as any );
-          console.log("conn",conn);
+          } as any);
+          console.log("conn", conn);
           conn.on("error", (error) => {
             console.error("⚠️ Twilio Call Error:", error);
           });
-        
+
           setConnection(conn);
           setCallStatus("initiating");
 
@@ -67,28 +67,28 @@ export function CallInterface({ phoneNumber, agentId, onEnd }: CallInterfaceProp
             //console.log("callSid props",callSid);
             setCallStatus("active");
           });
-        
-    
+
+
           conn.on("disconnect", async () => { // ✅ Marked as async
             console.log("❌ Call disconnected");
             //const callsid = conn.parameters.CallSid;
-           // console.log("callsid", callsid);
+            // console.log("callsid", callsid);
             setCallStatus("ended");
-          
-          /*   if (callsid) {
-              try {
-                const call = await saveCallToDB(callsid);
-                console.log("Call in db:", call);
-              } catch (error) {
-                console.error("Error fetching call details:", error);
-              }
-            } else {
-              console.warn("CallSid not available, cannot fetch details.");
-            } */
-          
+
+            /*   if (callsid) {
+                try {
+                  const call = await saveCallToDB(callsid);
+                  console.log("Call in db:", call);
+                } catch (error) {
+                  console.error("Error fetching call details:", error);
+                }
+              } else {
+                console.warn("CallSid not available, cannot fetch details.");
+              } */
+
             onEnd();
           });
-          
+
 
 
         } catch (error) {
@@ -96,8 +96,8 @@ export function CallInterface({ phoneNumber, agentId, onEnd }: CallInterfaceProp
           setError("Failed to initiate call");
           onEnd();
         }
-        
-    
+
+
         newDevice.on('error', (error) => {
           console.error('Twilio Device error:', error);
           setError('Twilio Device error');
@@ -114,7 +114,7 @@ export function CallInterface({ phoneNumber, agentId, onEnd }: CallInterfaceProp
         onEnd();
       }
     };
-    
+
 
     initiateCall();
   }, [phoneNumber, onEnd]);
@@ -123,13 +123,18 @@ export function CallInterface({ phoneNumber, agentId, onEnd }: CallInterfaceProp
     const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
     try {
       const result = await callsApi.getCallDetails(callSid);
-      const call =  result.data;
-      console.log("call",result.data.recordingUrl);
+      const call = result.data;
+      console.log("call details from twilio", result.data);
+      console.log("call", result.data.recordingUrl);
       await delay(2000);
-    const Cloudinaryrecord = await callsApi.fetchTwilioRecording(call.recordingUrl);
-    console.log("record",Cloudinaryrecord);
-const callInDB = await callsApi.saveCallToDB(callSid,'679a4734b56943f404edb57c','679a4734b56943f404edb57c',call, Cloudinaryrecord);
-    return callInDB;
+      const Cloudinaryrecord = await callsApi.fetchTwilioRecording(call.recordingUrl);
+      console.log("record", Cloudinaryrecord);
+      const callInDB = await callsApi.saveCallToDB(callSid, '679a4734b56943f404edb57c', '679a4734b56943f404edb57c', call, Cloudinaryrecord);
+      console.log('callInDB :', callInDB);
+      if (onCallSaved) {
+        onCallSaved();
+      }
+      return callInDB;
     } catch (error) {
       console.error("Error fetching call details:", error);
       throw error;
@@ -160,21 +165,21 @@ const callInDB = await callsApi.saveCallToDB(callSid,'679a4734b56943f404edb57c',
   };
 
   const handleAudioToggle = () => {
-   /*  if (device && device.audio) {
-      // Check the current output volume and toggle between 0 (mute) and 1 (unmute)
-      const newVolume = isAudioEnabled ? 0 : 1;
-      device.audio.setOutputVolume(newVolume);  // Set the audio output volume
-      setIsAudioEnabled(!isAudioEnabled);  // Toggle the audio state
-    } */
+    /*  if (device && device.audio) {
+       // Check the current output volume and toggle between 0 (mute) and 1 (unmute)
+       const newVolume = isAudioEnabled ? 0 : 1;
+       device.audio.setOutputVolume(newVolume);  // Set the audio output volume
+       setIsAudioEnabled(!isAudioEnabled);  // Toggle the audio state
+     } */
   };
-  
-  
+
+
 
   const handleEndCall = async () => {
     if (connection) {
       connection.disconnect();
       setCallStatus('ended');
-      console.log('callsid in handleendcall',callSid);
+      console.log('callsid in handleendcall', callSid);
 
       onEnd();
       if (callSid) {
@@ -186,7 +191,7 @@ const callInDB = await callsApi.saveCallToDB(callSid,'679a4734b56943f404edb57c',
         }
       } else {
         console.warn("CallSid not available, cannot fetch details.");
-      } 
+      }
     }
   };
 
@@ -211,9 +216,8 @@ const callInDB = await callsApi.saveCallToDB(callSid,'679a4734b56943f404edb57c',
       <div className="grid grid-cols-3 gap-4 mb-6">
         <button
           onClick={handleMuteToggle}
-          className={`p-4 rounded-full ${
-            isMuted ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'
-          }`}
+          className={`p-4 rounded-full ${isMuted ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'
+            }`}
         >
           {isMuted ? <MicOff className="w-6 h-6 mx-auto" /> : <Mic className="w-6 h-6 mx-auto" />}
         </button>
@@ -225,9 +229,8 @@ const callInDB = await callsApi.saveCallToDB(callSid,'679a4734b56943f404edb57c',
         </button>
         <button
           onClick={handleAudioToggle}
-          className={`p-4 rounded-full ${
-            !isAudioEnabled ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'
-          }`}
+          className={`p-4 rounded-full ${!isAudioEnabled ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'
+            }`}
         >
           {isAudioEnabled ? (
             <Volume2 className="w-6 h-6 mx-auto" />

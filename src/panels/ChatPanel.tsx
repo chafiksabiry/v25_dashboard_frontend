@@ -22,7 +22,7 @@ function ChatPanel() {
   const [isWhatsAppConnected, setIsWhatsAppConnected] = useState(false);
   const userId = "65d2b8f4e45a3c5a12e8f123";
 
-  /*useEffect(() => {
+  useEffect(() => {
     const checkWhatsAppConnection = async () => {
       try {
         const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/whatsapp/status?userId=${userId}`);
@@ -33,7 +33,7 @@ function ChatPanel() {
       }
     };
     checkWhatsAppConnection();
-  }, [userId]);*/
+  }, [userId]);
 
   useEffect(() => {
     if (!isWhatsAppConnected) return;
