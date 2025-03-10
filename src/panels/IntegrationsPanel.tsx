@@ -74,7 +74,7 @@ export function IntegrationsPanel() {
     // Chat
     { id: 'telegram', name: 'Telegram', description: 'Cloud-based instant messaging and voice service', category: 'chat', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=telegram', config: { fields: [ { key: 'api_token', label: 'API Token', type: 'password', required: true }, { key: 'chat_id', label: 'Chat ID', type: 'text', required: true } ] } },
     { id: 'slack', name: 'Slack', description: 'Collaboration hub for team communication', category: 'chat', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=slack', config: { fields: [ { key: 'workspace', label: 'Workspace Domain', type: 'text', required: true }, { key: 'api_token', label: 'API Token', type: 'password', required: true } ] } },
-    { id: 'whatsapp', name: 'WhatsApp', description: 'Messaging and voice calling service', category: 'chat', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=whatsapp', config: { fields: [ { key: 'phone_number', label: 'Phone Number', type: 'text', required: true }, { key: 'api_token', label: 'API Token', type: 'password', required: true } ,{ key: 'phoneNumberId', label: 'Phone Number ID', type: 'text', required: true }] } },
+    { id: 'whatsapp', name: 'WhatsApp', description: 'Messaging and voice calling service', category: 'chat', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=whatsapp', config: { fields: [ { key: 'phone_number', label: 'Phone Number', type: 'text', required: true }, { key: 'api_token', label: 'API Token', type: 'password', required: true } ] } },
   
     // Email
     { id: 'gmail', name: 'Gmail', description: 'Email service by Google', category: 'email', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=gmail', config: { fields: [ { key: 'client_id', label: 'Client ID', type: 'text', required: true }, { key: 'client_secret', label: 'Client Secret', type: 'password', required: true } ] } },
@@ -147,11 +147,11 @@ export function IntegrationsPanel() {
             setLoading(true);
             
             const integrationEndpoints = [
-                { id: "twilio", url: `http://localhost:5009/api/twilio/twilio-status?userId=${userId}` },
-                { id: "gmail", url: `http://localhost:5009/api/gmail/status?userId=${userId}` },
-                { id: "whatsapp", url: `http://localhost:5009/api/whatsapp/status?userId=${userId}` },
-                { id : 'telegram', url: `http://localhost:5009/api/telegram/status?userId=${userId}`}
-                //{ id: "slack", url: `http://localhost:5009/api/slack/status?userId=${userId}` }
+                { id: "twilio", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/twilio/twilio-status?userId=${userId}` },
+                { id: "gmail", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/gmail/status?userId=${userId}` },
+                { id: "whatsapp", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/whatsapp/status?userId=${userId}` },
+                { id : 'telegram', url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/telegram/status?userId=${userId}`}
+                //{ id: "slack", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/slack/status?userId=${userId}` }
                 // Add more integrations here
             ];
             
@@ -282,8 +282,8 @@ export function IntegrationsPanel() {
             requestBody = {
               userId: "65d2b8f4e45a3c5a12e8f123",
               phoneNumber: configValues.phone_number,  // ✅ Match backend field name
-              accessToken: configValues.api_token,  // ✅ Match backend field name
-              phoneNumberId: configValues.phoneNumberId
+              accessToken: configValues.api_token // ✅ Match backend field name
+              
 
             };
             break;

@@ -20,7 +20,7 @@ function EmailsPanel() {
   useEffect(() => {
     const fetchGmailStatus = async () => {
       try {
-        const response = await axios.get(`http://localhost:5009/api/gmail/gmail-status?userId=${userId}`);
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/gmail/gmail-status?userId=${userId}`);
 
         if (response.data.success) {
           setGmailStatus(response.data.status);

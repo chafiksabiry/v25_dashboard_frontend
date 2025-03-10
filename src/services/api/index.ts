@@ -8,9 +8,17 @@ const api = axios.create({
     'Content-Type': 'application/json'
   }
 });
+const apiCall = axios.create({
+baseURL: env.API_URL_CALL,
+headers: {
+  'Content-Type': 'application/json'
+}
+});
+
+
 
 // Request interceptor
-api.interceptors.request.use(
+/* api.interceptors.request.use(
   config => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -19,7 +27,7 @@ api.interceptors.request.use(
     return config;
   },
   error => Promise.reject(error)
-);
+); */
 
 // Response interceptor
 api.interceptors.response.use(
@@ -31,4 +39,5 @@ api.interceptors.response.use(
   }
 );
 
-export default api;
+export default api ;
+export { apiCall };
