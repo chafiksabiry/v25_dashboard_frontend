@@ -146,13 +146,38 @@ export function IntegrationsPanel() {
         try {
             setLoading(true);
             
-            const integrationEndpoints = [
+           
+              const integrationStatusUrls = [
+                { id: "salesforce", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/salesforce/status?userId=${userId}` },
+                //{ id: "hubspot", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/hubspot/status?userId=${userId}` },
+                //{ id: "zoho-crm", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/zoho-crm/status?userId=${userId}` },
                 { id: "twilio", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/twilio/twilio-status?userId=${userId}` },
-                { id: "gmail", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/gmail/status?userId=${userId}` },
+                //{ id: "ringcentral", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/ringcentral/status?userId=${userId}` },
+                //{ id: "microsoft-teams", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/microsoft-teams/status?userId=${userId}` },
+                //{ id: "zoom", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/zoom/status?userId=${userId}` },
+                { id: "telegram", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/telegram/status?userId=${userId}` },
+                //{ id: "slack", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/slack/status?userId=${userId}` },
                 { id: "whatsapp", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/whatsapp/status?userId=${userId}` },
-                { id : 'telegram', url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/telegram/status?userId=${userId}`}
-                //{ id: "slack", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/slack/status?userId=${userId}` }
-                // Add more integrations here
+                { id: "gmail", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/gmail/status?userId=${userId}` },
+                //{ id: "microsoft-outlook", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/microsoft-outlook/status?userId=${userId}` },
+                //{ id: "zoho-mail", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/zoho-mail/status?userId=${userId}` },
+                //{ id: "aws-ses", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/aws-ses/status?userId=${userId}` },
+                //{ id: "sendgrid", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/sendgrid/status?userId=${userId}` },
+                //{ id: "mailchimp", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/mailchimp/status?userId=${userId}` },
+                //{ id: "freshdesk", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/freshdesk/status?userId=${userId}` },
+                //{ id: "zendesk", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/zendesk/status?userId=${userId}` },
+                //{ id: "servicenow", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/servicenow/status?userId=${userId}` },
+                //{ id: "microsoft-azure-ad", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/microsoft-azure-ad/status?userId=${userId}` },
+                //{ id: "aws-connect", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/aws-connect/status?userId=${userId}` },
+                //{ id: "google-analytics", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/google-analytics/status?userId=${userId}` },
+                //{ id: "jira", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/jira/status?userId=${userId}` },
+                //{ id: "intercom", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/intercom/status?userId=${userId}` },
+                //{ id: "livechat", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/livechat/status?userId=${userId}` },
+                //{ id: "ovh", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/ovh/status?userId=${userId}` },
+                //{ id: "aws-sns", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/aws-sns/status?userId=${userId}` },
+                //{ id: "facebook", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/facebook/status?userId=${userId}` },
+                //{ id: "twitter", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/twitter/status?userId=${userId}` },
+                //{ id: "instagram", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/instagram/status?userId=${userId}` },
             ];
             
             const responses = await Promise.all(
