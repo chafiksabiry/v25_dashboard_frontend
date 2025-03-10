@@ -147,8 +147,8 @@ export function IntegrationsPanel() {
             setLoading(true);
             
            
-              const integrationStatusUrls = [
-                { id: "salesforce", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/salesforce/status?userId=${userId}` },
+              const integrationEndpoints = [
+                //{ id: "salesforce", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/salesforce/status?userId=${userId}` },
                 //{ id: "hubspot", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/hubspot/status?userId=${userId}` },
                 //{ id: "zoho-crm", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/zoho-crm/status?userId=${userId}` },
                 { id: "twilio", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/twilio/twilio-status?userId=${userId}` },
