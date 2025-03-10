@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   MessageSquare,
   Users,
@@ -6,11 +7,92 @@ import {
   CheckCircle2,
   Video,
   Share2,
-  BarChart2
+  BarChart2,
+  Send,
+  Loader2
 } from 'lucide-react';
 
 function ChatPanel() {
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [conversations, setConversations] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
+  const [isWhatsAppConnected, setIsWhatsAppConnected] = useState(false);
+  const userId = "65d2b8f4e45a3c5a12e8f123";
+
+  useEffect(() => {
+    const checkWhatsAppConnection = async () => {
+      try {
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/whatsapp/status?userId=${userId}`);
+        setIsWhatsAppConnected(response.data?.success && response.data.status === 'connected');
+      } catch (error) {
+        console.error('Failed to check WhatsApp connection:', error);
+        setIsWhatsAppConnected(false);
+      }
+    };
+    checkWhatsAppConnection();
+  }, [userId]);
+
+  useEffect(() => {
+    if (!isWhatsAppConnected) return;
+
+    const fetchConversations = async () => {
+      try {
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/whatsapp/conversations?userId=${userId}`);
+        if (response.data.success) {
+          setConversations(response.data.conversations);
+        }
+      } catch (error) {
+        console.error('Failed to fetch conversations:', error);
+      }
+    };
+    fetchConversations();
+  }, [isWhatsAppConnected]);
+
+  useEffect(() => {
+    if (!activeChat) return;
+
+    const fetchMessages = async () => {
+      console.log('Fetching messages for:', activeChat);
+      try {
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/whatsapp/messages?contact=${activeChat}`);
+        console.log('Messages fetched:', response.data);
+        setMessages(response.data || []);
+      } catch (error) {
+        console.error('Failed to fetch messages:', error);
+      }
+    };
+    fetchMessages();
+  }, [activeChat]);
+
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !phoneNumber.trim()) return;
+    setLoading(true);
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/whatsapp/send`, {
+        userId,
+        to: phoneNumber,
+        text: newMessage,
+      });
+      if (response.data.success) {
+        setMessages(prev => [...prev, { text: newMessage, fromMe: true, timestamp: new Date().toISOString() }]);
+        setNewMessage('');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+    setLoading(false);
+  };
+
+  if (!isWhatsAppConnected) {
+    return (
+      <div className="space-y-6 p-6 bg-white rounded-xl shadow-sm">
+        <div className="text-center text-gray-500">WhatsApp is not connected. Please integrate WhatsApp from the Integrations Panel.</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -73,19 +155,23 @@ function ChatPanel() {
               <h3 className="font-semibold">Active Conversations</h3>
             </div>
             <div className="divide-y">
-              {[1, 2, 3, 4].map((i) => (
+              {conversations.map((chat, index) => (
                 <button
-                  key={i}
+                  key={index}
                   className="w-full p-4 text-left hover:bg-gray-50 flex items-center gap-3"
-                  onClick={() => setActiveChat(i)}
+                  onClick={() => {
+                    console.log('Selected chat:', chat.contact);
+                    setActiveChat(chat.contact);
+                    setPhoneNumber(chat.contact); // Autofill phone number
+                  }}
                 >
                   <img
-                    src={`https://i.pravatar.cc/32?img=${i + 20}`}
+                    src={`https://i.pravatar.cc/32?img=${index + 20}`}
                     alt="Customer"
                     className="w-10 h-10 rounded-full"
                   />
                   <div>
-                    <div className="font-medium">John Smith</div>
+                    <div className="font-medium">{chat.contact}</div>
                     <div className="text-sm text-gray-500">2 min ago</div>
                   </div>
                 </button>
@@ -102,7 +188,7 @@ function ChatPanel() {
                   className="w-10 h-10 rounded-full"
                 />
                 <div>
-                  <div className="font-medium">John Smith</div>
+                  <div className="font-medium">{activeChat}</div>
                   <div className="text-sm text-gray-500">Online</div>
                 </div>
               </div>
@@ -115,21 +201,32 @@ function ChatPanel() {
                 </button>
               </div>
             </div>
-            <div className="h-96 p-4 bg-gray-50">
-              {/* Chat messages would go here */}
-              <div className="text-center text-gray-500 mt-32">
-                Select a conversation to start chatting
-              </div>
+            <div className="h-96 p-4 bg-gray-50 overflow-y-auto">
+              {messages.length ? (
+                messages.map((msg, index) => (
+                  <div key={index} className={`p-3 my-1 rounded-lg max-w-xs ${msg.fromMe ? 'bg-green-200 self-end' : 'bg-gray-200 self-start'}`}>
+                    <div className="text-sm">{msg.text}</div>
+                    <div className="text-xs text-gray-500 text-right">{new Date(msg.timestamp).toLocaleTimeString()}</div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center text-gray-500 mt-32">No messages yet</div>
+              )}
             </div>
             <div className="p-4 border-t">
               <div className="flex gap-2">
                 <input
                   type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Type your message..."
                   className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
-                <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                  Send
+                <button 
+                  onClick={sendMessage} 
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center"
+                >
+                  {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <Send className="w-5 h-5" />}
                 </button>
               </div>
             </div>
