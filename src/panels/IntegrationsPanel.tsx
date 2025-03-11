@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect  } from 'react';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import axios from 'axios';
 import {
   Plug,
   Search,
@@ -38,12 +41,14 @@ interface Integration {
   name: string;
   description: string;
   category: string;
-  status: 'connected' | 'error' | 'pending';
+  status: 'connected' | 'error' | 'pending' | 'disconnected';
   icon_url: string;
   config?: {
     fields: ConfigField[];
   };
 }
+
+
 
 export function IntegrationsPanel() {
   const [activeFilter, setActiveFilter] = useState<string>('all');
@@ -54,375 +59,53 @@ export function IntegrationsPanel() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
 
-  const integrations: Integration[] = [
-    {
-      id: 'twilio',
-      name: 'Twilio',
-      description: 'Cloud communications platform for voice, SMS, and video',
-      category: 'phone',
-      status: 'pending',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=twilio',
-      config: {
-        fields: [
-          {
-            key: 'account_sid',
-            label: 'Account SID',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'auth_token',
-            label: 'Auth Token',
-            type: 'password',
-            required: true
-          },
-          {
-            key: 'phone_number',
-            label: 'Phone Number',
-            type: 'text',
-            required: true,
-            placeholder: '+1234567890'
-          }
-        ]
-      }
-    },
-    {
-      id: 'intercom',
-      name: 'Intercom',
-      description: 'Customer messaging and engagement platform',
-      category: 'chat',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=intercom',
-      config: {
-        fields: [
-          {
-            key: 'access_token',
-            label: 'Access Token',
-            type: 'password',
-            required: true
-          },
-          {
-            key: 'workspace_id',
-            label: 'Workspace ID',
-            type: 'text',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'livechat',
-      name: 'LiveChat',
-      description: 'Live chat and customer service platform',
-      category: 'chat',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=livechat',
-      config: {
-        fields: [
-          {
-            key: 'api_key',
-            label: 'API Key',
-            type: 'password',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'zendesk',
-      name: 'Zendesk',
-      description: 'Customer service and engagement',
-      category: 'ticketing',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=zendesk',
-      config: {
-        fields: [
-          {
-            key: 'subdomain',
-            label: 'Subdomain',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'api_token',
-            label: 'API Token',
-            type: 'password',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'slack',
-      name: 'Slack',
-      description: 'Team communication and collaboration',
-      category: 'communication',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=slack',
-      config: {
-        fields: [
-          {
-            key: 'bot_token',
-            label: 'Bot Token',
-            type: 'password',
-            required: true
-          },
-          {
-            key: 'signing_secret',
-            label: 'Signing Secret',
-            type: 'password',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'teams',
-      name: 'Microsoft Teams',
-      description: 'Team collaboration and meetings',
-      category: 'communication',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=msteams',
-      config: {
-        fields: [
-          {
-            key: 'client_id',
-            label: 'Client ID',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'client_secret',
-            label: 'Client Secret',
-            type: 'password',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'zoom',
-      name: 'Zoom',
-      description: 'Video conferencing and meetings',
-      category: 'communication',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=zoom',
-      config: {
-        fields: [
-          {
-            key: 'api_key',
-            label: 'API Key',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'api_secret',
-            label: 'API Secret',
-            type: 'password',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'ovh',
-      name: 'OVH',
-      description: 'Enterprise-grade telephony and cloud communications',
-      category: 'phone',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=ovh',
-      config: {
-        fields: [
-          {
-            key: 'application_key',
-            label: 'Application Key',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'application_secret',
-            label: 'Application Secret',
-            type: 'password',
-            required: true
-          },
-          {
-            key: 'consumer_key',
-            label: 'Consumer Key',
-            type: 'password',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'zoho-crm',
-      name: 'Zoho CRM',
-      description: 'Customer relationship management and sales automation',
-      category: 'crm',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=zohocrm',
-      config: {
-        fields: [
-          {
-            key: 'client_id',
-            label: 'Client ID',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'client_secret',
-            label: 'Client Secret',
-            type: 'password',
-            required: true
-          },
-          {
-            key: 'refresh_token',
-            label: 'Refresh Token',
-            type: 'password',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'zoho-mail',
-      name: 'Zoho Mail',
-      description: 'Professional email and collaboration platform',
-      category: 'email',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=zohomail',
-      config: {
-        fields: [
-          {
-            key: 'client_id',
-            label: 'Client ID',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'client_secret',
-            label: 'Client Secret',
-            type: 'password',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'gmail',
-      name: 'Gmail',
-      description: 'Google email and messaging platform with OAuth2 integration',
-      category: 'email',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=gmail',
-      config: {
-        fields: [
-          {
-            key: 'client_id',
-            label: 'Client ID',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'client_secret',
-            label: 'Client Secret',
-            type: 'password',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'azure-ad',
-      name: 'Microsoft Azure AD',
-      description: 'Enterprise identity and access management',
-      category: 'authentication',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=azuread',
-      config: {
-        fields: [
-          {
-            key: 'tenant_id',
-            label: 'Tenant ID',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'client_id',
-            label: 'Client ID',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'client_secret',
-            label: 'Client Secret',
-            type: 'password',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'aws-ses',
-      name: 'AWS SES',
-      description: 'Amazon Simple Email Service for scalable email communication',
-      category: 'email',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=awsses',
-      config: {
-        fields: [
-          {
-            key: 'access_key_id',
-            label: 'Access Key ID',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'secret_access_key',
-            label: 'Secret Access Key',
-            type: 'password',
-            required: true
-          },
-          {
-            key: 'region',
-            label: 'Region',
-            type: 'text',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'aws-connect',
-      name: 'AWS Connect',
-      description: 'Amazon Connect cloud contact center service',
-      category: 'phone',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=awsconnect',
-      config: {
-        fields: [
-          {
-            key: 'access_key_id',
-            label: 'Access Key ID',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'secret_access_key',
-            label: 'Secret Access Key',
-            type: 'password',
-            required: true
-          },
-          {
-            key: 'instance_id',
-            label: 'Instance ID',
-            type: 'text',
-            required: true
-          }
-        ]
-      }
-    }
-  ];
+  const [integrations,setIntegrations] = useState( [
+    // CRM
+    { id: 'salesforce', name: 'Salesforce', description: 'Customer relationship management platform', category: 'crm', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=salesforce', config: { fields: [ { key: 'client_id', label: 'Client ID', type: 'text', required: true }, { key: 'client_secret', label: 'Client Secret', type: 'password', required: true }, { key: 'refresh_token', label: 'Refresh Token', type: 'password', required: true } ] } },
+    { id: 'hubspot', name: 'HubSpot', description: 'Inbound marketing, sales, and customer service platform', category: 'crm', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=hubspot', config: { fields: [ { key: 'api_key', label: 'API Key', type: 'password', required: true } ] } },
+    { id: 'zoho-crm', name: 'Zoho CRM', description: 'Cloud-based customer relationship management platform', category: 'crm', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=zohocrm', config: { fields: [ { key: 'client_id', label: 'Client ID', type: 'text', required: true }, { key: 'client_secret', label: 'Client Secret', type: 'password', required: true } ] } },
+  
+    // Communication
+    { id: 'twilio', name: 'Twilio', description: 'Cloud communications platform for voice, SMS, and video', category: 'communication', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=twilio', config: { fields: [ { key: 'account_sid', label: 'Account SID', type: 'text', required: true }, { key: 'auth_token', label: 'Auth Token', type: 'password', required: true }, { key: 'phone_number', label: 'Phone Number', type: 'text', required: true, placeholder: '+1234567890' } ] } },
+    { id: 'ringcentral', name: 'RingCentral', description: 'Cloud-based communication and collaboration platform', category: 'communication', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=ringcentral', config: { fields: [ { key: 'client_id', label: 'Client ID', type: 'text', required: true }, { key: 'client_secret', label: 'Client Secret', type: 'password', required: true } ] } },
+    { id: 'microsoft-teams', name: 'Microsoft Teams', description: 'Collaborative communication platform', category: 'communication', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=microsoftteams', config: { fields: [ { key: 'client_id', label: 'Client ID', type: 'text', required: true }, { key: 'client_secret', label: 'Client Secret', type: 'password', required: true } ] } },
+    { id: 'zoom', name: 'Zoom', description: 'Video conferencing and webinar platform', category: 'communication', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=zoom', config: { fields: [ { key: 'api_key', label: 'API Key', type: 'text', required: true }, { key: 'api_secret', label: 'API Secret', type: 'password', required: true } ] } },
+  
+    // Chat
+    { id: 'telegram', name: 'Telegram', description: 'Cloud-based instant messaging and voice service', category: 'chat', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=telegram', config: { fields: [ { key: 'api_token', label: 'API Token', type: 'password', required: true }, { key: 'chat_id', label: 'Chat ID', type: 'text', required: true } ] } },
+    { id: 'slack', name: 'Slack', description: 'Collaboration hub for team communication', category: 'chat', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=slack', config: { fields: [ { key: 'workspace', label: 'Workspace Domain', type: 'text', required: true }, { key: 'api_token', label: 'API Token', type: 'password', required: true } ] } },
+    { id: 'whatsapp', name: 'WhatsApp', description: 'Messaging and voice calling service', category: 'chat', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=whatsapp', config: { fields: [ { key: 'phone_number', label: 'Phone Number', type: 'text', required: true }, { key: 'api_token', label: 'API Token', type: 'password', required: true } ] } },
+  
+    // Email
+    { id: 'gmail', name: 'Gmail', description: 'Email service by Google', category: 'email', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=gmail', config: { fields: [ { key: 'client_id', label: 'Client ID', type: 'text', required: true }, { key: 'client_secret', label: 'Client Secret', type: 'password', required: true } ] } },
+    { id: 'microsoft-outlook', name: 'Microsoft Outlook', description: 'Email and personal information manager', category: 'email', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=microsoftoutlook', config: { fields: [ { key: 'client_id', label: 'Client ID', type: 'text', required: true }, { key: 'tenant_id', label: 'Tenant ID', type: 'text', required: true }, { key: 'client_secret', label: 'Client Secret', type: 'password', required: true } ] } },
+    { id: 'zoho-mail', name: 'Zoho Mail', description: 'Email hosting and collaboration suite', category: 'email', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=zohomail', config: { fields: [ { key: 'email', label: 'Email Address', type: 'text', required: true }, { key: 'api_key', label: 'API Key', type: 'password', required: true } ] } },
+    { id: 'aws-ses', name: 'AWS SES', description: 'Amazon Simple Email Service', category: 'email', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=awsses', config: { fields: [ { key: 'access_key', label: 'Access Key ID', type: 'text', required: true }, { key: 'secret_key', label: 'Secret Access Key', type: 'password', required: true }, { key: 'region', label: 'AWS Region', type: 'text', required: true } ] } },
+    { id: 'sendgrid', name: 'SendGrid', description: 'Email delivery service for transactional and marketing emails', category: 'email', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=sendgrid', config: { fields: [ { key: 'api_key', label: 'API Key', type: 'password', required: true } ] } },
+    { id: 'mailchimp', name: 'Mailchimp', description: 'Marketing automation and email marketing platform', category: 'email', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=mailchimp', config: { fields: [ { key: 'api_key', label: 'API Key', type: 'password', required: true }, { key: 'server_prefix', label: 'Server Prefix', type: 'text', required: true } ] } },
+  
+    // Ticketing
+    { id: 'freshdesk', name: 'Freshdesk', description: 'Cloud-based customer support software', category: 'ticketing', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=freshdesk', config: { fields: [ { key: 'domain', label: 'Domain', type: 'text', required: true, placeholder: 'yourcompany.freshdesk.com' }, { key: 'api_key', label: 'API Key', type: 'password', required: true } ] } },
+    { id: 'zendesk', name: 'Zendesk', description: 'Customer service platform and support ticketing system', category: 'ticketing', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=zendesk', config: { fields: [ { key: 'subdomain', label: 'Subdomain', type: 'text', required: true }, { key: 'email', label: 'Account Email', type: 'text', required: true }, { key: 'api_token', label: 'API Token', type: 'password', required: true } ] } },
+    { id: 'servicenow', name: 'ServiceNow', description: 'Cloud computing platform for IT service management', category: 'ticketing', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=servicenow', config: { fields: [ { key: 'instance_url', label: 'Instance URL', type: 'text', required: true }, { key: 'username', label: 'Username', type: 'text', required: true }, { key: 'password', label: 'Password', type: 'password', required: true } ] } },
+  
+    // Authentication
+    { id: 'microsoft-azure-ad', name: 'Microsoft Azure AD', description: 'Enterprise identity service', category: 'authentication', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=microsoftazuread', config: { fields: [ { key: 'tenant_id', label: 'Tenant ID', type: 'text', required: true }, { key: 'client_id', label: 'Client ID', type: 'text', required: true }, { key: 'client_secret', label: 'Client Secret', type: 'password', required: true } ] } },
+  
+    // Phone
+    { id: 'aws-connect', name: 'AWS Connect', description: 'Cloud contact center service', category: 'phone', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=awsconnect', config: { fields: [ { key: 'access_key', label: 'Access Key ID', type: 'text', required: true }, { key: 'secret_key', label: 'Secret Access Key', type: 'password', required: true }, { key: 'instance_id', label: 'Instance ID', type: 'text', required: true } ] } },
+  
+    // Default (Network)
+    { id: 'google-analytics', name: 'Google Analytics', description: 'Web analytics service by Google', category: 'analytics', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=googleanalytics', config: { fields: [ { key: 'tracking_id', label: 'Tracking ID', type: 'text', required: true } ] } },
+    { id: 'jira', name: 'Jira', description: 'Project and issue tracking platform', category: 'project-management', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=jira', config: { fields: [ { key: 'domain', label: 'Jira Domain', type: 'text', required: true }, { key: 'api_token', label: 'API Token', type: 'password', required: true } ] } },
+    { id: 'intercom', name: 'Intercom', description: 'Customer messaging platform for live chat and support', category: 'support', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=intercom', config: { fields: [ { key: 'api_key', label: 'API Key', type: 'password', required: true }, { key: 'app_id', label: 'App ID', type: 'text', required: true } ] } },
+    { id: 'livechat', name: 'LiveChat', description: 'Live chat software for customer service', category: 'support', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=livechat', config: { fields: [ { key: 'license_id', label: 'License ID', type: 'text', required: true }, { key: 'api_key', label: 'API Key', type: 'password', required: true } ] } },
+    { id: 'ovh', name: 'OVH', description: 'Cloud hosting and web services provider', category: 'cloud', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=ovh', config: { fields: [ { key: 'api_key', label: 'API Key', type: 'password', required: true }, { key: 'application_secret', label: 'Application Secret', type: 'password', required: true } ] } },
+    { id: 'aws-sns', name: 'AWS SNS', description: 'Amazon Simple Notification Service', category: 'cloud', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=awssns', config: { fields: [ { key: 'access_key', label: 'Access Key ID', type: 'text', required: true }, { key: 'secret_key', label: 'Secret Access Key', type: 'password', required: true }, { key: 'region', label: 'AWS Region', type: 'text', required: true } ] } },
+    { id: 'facebook', name: 'Facebook', description: 'Social media platform', category: 'social', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=facebook', config: { fields: [ { key: 'app_id', label: 'App ID', type: 'text', required: true }, { key: 'app_secret', label: 'App Secret', type: 'password', required: true } ] } },
+    { id: 'twitter', name: 'Twitter', description: 'Social media platform', category: 'social', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=twitter', config: { fields: [ { key: 'api_key', label: 'API Key', type: 'password', required: true }, { key: 'api_secret', label: 'API Secret', type: 'password', required: true } ] } },
+    { id: 'instagram', name: 'Instagram', description: 'Social media platform', category: 'social', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=instagram', config: { fields: [ { key: 'app_id', label: 'App ID', type: 'text', required: true }, { key: 'app_secret', label: 'App Secret', type: 'password', required: true } ] } }
+  ],);
 
   const categories = [
     { id: 'all', label: 'All' },
@@ -455,6 +138,76 @@ export function IntegrationsPanel() {
         return <Network className="w-5 h-5" />;
     }
   };
+  const userId = "65d2b8f4e45a3c5a12e8f123"; // Use dynamic user ID if needed
+
+  // ✅ Fetch the integration status when the component mounts
+  useEffect(() => {
+    const fetchIntegrationStatus = async () => {
+        try {
+            setLoading(true);
+            
+           
+              const integrationEndpoints = [
+                //{ id: "salesforce", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/salesforce/status?userId=${userId}` },
+                //{ id: "hubspot", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/hubspot/status?userId=${userId}` },
+                //{ id: "zoho-crm", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/zoho-crm/status?userId=${userId}` },
+                { id: "twilio", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/twilio/twilio-status?userId=${userId}` },
+                //{ id: "ringcentral", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/ringcentral/status?userId=${userId}` },
+                //{ id: "microsoft-teams", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/microsoft-teams/status?userId=${userId}` },
+                //{ id: "zoom", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/zoom/status?userId=${userId}` },
+                { id: "telegram", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/telegram/status?userId=${userId}` },
+                //{ id: "slack", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/slack/status?userId=${userId}` },
+                { id: "whatsapp", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/whatsapp/status?userId=${userId}` },
+                { id: "gmail", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/gmail/status?userId=${userId}` },
+                //{ id: "microsoft-outlook", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/microsoft-outlook/status?userId=${userId}` },
+                //{ id: "zoho-mail", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/zoho-mail/status?userId=${userId}` },
+                //{ id: "aws-ses", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/aws-ses/status?userId=${userId}` },
+                //{ id: "sendgrid", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/sendgrid/status?userId=${userId}` },
+                //{ id: "mailchimp", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/mailchimp/status?userId=${userId}` },
+                //{ id: "freshdesk", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/freshdesk/status?userId=${userId}` },
+                //{ id: "zendesk", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/zendesk/status?userId=${userId}` },
+                //{ id: "servicenow", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/servicenow/status?userId=${userId}` },
+                //{ id: "microsoft-azure-ad", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/microsoft-azure-ad/status?userId=${userId}` },
+                //{ id: "aws-connect", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/aws-connect/status?userId=${userId}` },
+                //{ id: "google-analytics", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/google-analytics/status?userId=${userId}` },
+                //{ id: "jira", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/jira/status?userId=${userId}` },
+                //{ id: "intercom", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/intercom/status?userId=${userId}` },
+                //{ id: "livechat", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/livechat/status?userId=${userId}` },
+                //{ id: "ovh", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/ovh/status?userId=${userId}` },
+                //{ id: "aws-sns", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/aws-sns/status?userId=${userId}` },
+                //{ id: "facebook", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/facebook/status?userId=${userId}` },
+                //{ id: "twitter", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/twitter/status?userId=${userId}` },
+                //{ id: "instagram", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/instagram/status?userId=${userId}` },
+            ];
+            
+            const responses = await Promise.all(
+                integrationEndpoints.map(integration => 
+                    axios.get(integration.url).catch(err => ({ id: integration.id, error: err }))
+                )
+            );
+            
+            setIntegrations(prevIntegrations =>
+                prevIntegrations.map(integration => {
+                    const response = responses.find(res => res.id === integration.id || (res.data && res.data.success && res.config.url.includes(integration.id)));
+                    
+                    if (response && response.data && response.data.success) {
+                        return { ...integration, status: response.data.status };
+                    } else {
+                        return { ...integration, status: "error" };
+                    }
+                })
+            );
+        } catch (err) {
+            console.error("Error fetching integration status:", err);
+            setError("Failed to load integration statuses.");
+        } finally {
+            setLoading(false);
+        }
+    };
+    
+    fetchIntegrationStatus();
+}, [userId]); // Runs on mount and whenever `userId` changes
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -492,30 +245,183 @@ export function IntegrationsPanel() {
     setErrors(newErrors);
     return !hasErrors;
   };
-
-  const handleConnect = async (integration: Integration) => {
+  const handleConnectClick = (integration) => {
+    setSelectedIntegration(integration);
+    console.log("you selected", integration.name);
+  };
+  const handleConnect = async () => {
+    if (!selectedIntegration) return;
+    
+    if (selectedIntegration.status === "connected") {
+      alert(`${selectedIntegration.name} is already connected!`);
+      return;
+    }
+  
+    console.log(`Connecting ${selectedIntegration.name}...`);
+  
+    // Gather required fields and check for errors
+    const requiredFields = selectedIntegration.config?.fields || [];
+    let hasError = false;
+    const newErrors = {};
+  
+    requiredFields.forEach(field => {
+      if (field.required && !configValues[field.key]) {
+        newErrors[field.key] = `${field.label} is required`;
+        hasError = true;
+      }
+    });
+  
+    setErrors(newErrors);
+    
+    if (hasError) return; // Stop execution if there are validation errors
+  
     try {
-      setLoading(integration.id);
-      setError(null);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      setLoading(true); // Set loading to true when connection starts
+  
+      let endpoint = "";
+      let requestBody = {}; // ✅ Dynamic request body
+  
+      // ✅ Switch-case to determine the correct endpoint and request body
+      switch (selectedIntegration.id) {
+        case "twilio":
+          endpoint = selectedIntegration.status === "disconnected" ? "reconnect-twilio" : "setup";
+          requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123", // Use dynamic userId if necessary
+            accountSid: configValues.account_sid,
+            authToken: configValues.auth_token,
+            phoneNumber: configValues.phone_number
+          };
+          break;
+  
+        case "gmail":
+          endpoint = selectedIntegration.status === "disconnected" ? "reconnect-gmail" : "setup-gmail";
+          requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            clientId: configValues.client_id,
+            clientSecret: configValues.client_secret
+          };
+          break;
+  
+          case "whatsapp":
+            endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+            requestBody = {
+              userId: "65d2b8f4e45a3c5a12e8f123",
+              phoneNumber: configValues.phone_number,  // ✅ Match backend field name
+              accessToken: configValues.api_token // ✅ Match backend field name
+              
+
+            };
+            break;
+          
+  
+        case "telegram":
+          endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+          requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            apiToken: configValues.api_token,
+            chatId: configValues.chat_id
+          };
+          break;
+  
+        default:
+          throw new Error("Invalid integration selected");
+      }
+  
+      // Make the API request
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/${selectedIntegration.id}/${endpoint}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestBody) // ✅ Send the dynamic request body
+      });
+  
+      const result = await response.json();
+  
+      if (result.success) {
+        toast.success(`${selectedIntegration.name} connected successfully!`);
+        console.log(result.status);
+  
+        // Update the integrations list with the new status
+        setIntegrations(prevIntegrations => prevIntegrations.map(integration =>
+          integration.id === selectedIntegration.id
+            ? { ...integration, status: result.status } // Update status
+            : integration
+        ));
+  
+        // Clear the selected integration and config values
+        setSelectedIntegration(null);
+        setConfigValues({});
+      } else {
+        throw new Error(result.message || "Failed to connect.");
+      }
+  
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to connect integration');
+      // Show error message
+      toast.error(error.message || "An unexpected error occurred while connecting.");
+      console.error(error);
     } finally {
-      setLoading(null);
+      setLoading(false); // Stop loading once the process completes
     }
   };
+  
+  
 
-  const handleDisconnect = async (integration: Integration) => {
-    try {
-      setLoading(integration.id);
-      setError(null);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to disconnect integration');
-    } finally {
-      setLoading(null);
+const handleDisconnect = async (integration) => {
+  console.log(`Disconnecting ${integration.name}...`);
+  
+  try {
+    setLoading(integration.id);
+    
+    let endpoint = "";
+
+    // ✅ Switch-case to determine the correct endpoint
+    switch (integration.id) {
+      case "twilio":
+        endpoint = "twilio/disconnect";
+        break;
+      /*case "gmail":
+        endpoint = "gmail/disconnect";
+        break;*/
+      case "whatsapp":
+        endpoint = "whatsapp/disconnect";
+        break;
+      case "telegram":
+        endpoint = "telegram/disconnect";
+        break;
+      default:
+        throw new Error("Invalid integration selected");
     }
-  };
+
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/${endpoint}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        userId: "65d2b8f4e45a3c5a12e8f123",
+        integrationId: integration.id
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      toast.success(`${integration.name} disconnected successfully!`);
+      setIntegrations(prevIntegrations => prevIntegrations.map(i =>
+        i.id === integration.id ? { ...i, status: "disconnected" } : i
+      ));
+    } else {
+      throw new Error(result.error || "Failed to disconnect.");
+    }
+  } catch (error) {
+    toast.error(error.message || "An unexpected error occurred while disconnecting.");
+    console.error(error);
+  } finally {
+    setLoading(null);
+  }
+};
+
 
   const handleConfigure = (integration: Integration) => {
     setSelectedIntegration(integration);
@@ -713,7 +619,7 @@ export function IntegrationsPanel() {
                   </>
                 ) : (
                   <button
-                    onClick={() => handleConnect(integration)}
+                    onClick={() => handleConnectClick(integration)}
                     disabled={loading === integration.id}
                     className="flex-1 px-3 py-1.5 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 disabled:bg-cyan-300"
                   >
@@ -799,7 +705,7 @@ export function IntegrationsPanel() {
                   Cancel
                 </button>
                 <button
-                  onClick={handleSaveConfig}
+                  onClick={handleConnect}
                   disabled={loading === selectedIntegration.id}
                   className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 disabled:bg-cyan-300"
                 >

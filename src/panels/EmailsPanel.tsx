@@ -1,20 +1,68 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   Mail,
   Inbox,
   Send,
   Clock,
   Archive,
-  Filter,
-  Calendar,
   Share2
 } from 'lucide-react';
 
 function EmailsPanel() {
   const [activeFilter, setActiveFilter] = useState('inbox');
+  const [gmailStatus, setGmailStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const userId = "65d2b8f4e45a3c5a12e8f123"; // Replace with dynamic user ID if needed
+
+  useEffect(() => {
+    const fetchGmailStatus = async () => {
+      try {
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/gmail/gmail-status?userId=${userId}`);
+
+        if (response.data.success) {
+          setGmailStatus(response.data.status);
+        } else {
+          throw new Error("Failed to fetch Gmail status.");
+        }
+      } catch (err) {
+        console.error("Error fetching Gmail status:", err);
+        setError("Failed to load Gmail integration status.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGmailStatus();
+  }, [userId]);
+
+  // ✅ Show modal when trying to perform an action while Gmail is not connected
+  const handleRestrictedAction = () => {
+    if (gmailStatus !== "connected") {
+      setShowModal(true);
+      
+    }
+  };
 
   return (
     <div className="space-y-6">
+      {showModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h2 className="text-lg font-semibold mb-4">Gmail is not connected</h2>
+            <p className="mb-4">Please connect your Gmail account to access emails.</p>
+            <button 
+              onClick={() => setShowModal(false)}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
@@ -23,7 +71,10 @@ function EmailsPanel() {
             </div>
             <h2 className="text-xl font-semibold">Email Management</h2>
           </div>
-          <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+          <button 
+            onClick={handleRestrictedAction}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+          >
             Compose
           </button>
         </div>
@@ -65,32 +116,32 @@ function EmailsPanel() {
 
         <div className="flex items-center gap-4 mb-6">
           <button
+            onClick={handleRestrictedAction}
             className={`px-4 py-2 rounded-lg ${
               activeFilter === 'inbox'
                 ? 'bg-purple-600 text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
-            onClick={() => setActiveFilter('inbox')}
           >
             Inbox
           </button>
           <button
+            onClick={handleRestrictedAction}
             className={`px-4 py-2 rounded-lg ${
               activeFilter === 'sent'
                 ? 'bg-purple-600 text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
-            onClick={() => setActiveFilter('sent')}
           >
             Sent
           </button>
           <button
+            onClick={handleRestrictedAction}
             className={`px-4 py-2 rounded-lg ${
               activeFilter === 'archived'
                 ? 'bg-purple-600 text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
-            onClick={() => setActiveFilter('archived')}
           >
             Archived
           </button>
@@ -103,45 +154,25 @@ function EmailsPanel() {
                 <th className="pb-3">From</th>
                 <th className="pb-3">Subject</th>
                 <th className="pb-3">Time</th>
-                <th className="pb-3">Status</th>
                 <th className="pb-3">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {[1, 2, 3, 4, 5].map((i) => (
                 <tr key={i} className="hover:bg-gray-50">
-                  <td className="py-3">
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={`https://i.pravatar.cc/32?img=${i + 15}`}
-                        alt="Sender"
-                        className="w-8 h-8 rounded-full"
-                      />
-                      <div>
-                        <div className="font-medium">Sarah Johnson</div>
-                        <div className="text-sm text-gray-500">sarah@example.com</div>
-                      </div>
-                    </div>
-                  </td>
+                  <td className="py-3">Sarah Johnson</td>
                   <td className="py-3">Question about product features</td>
                   <td className="py-3">3 hours ago</td>
                   <td className="py-3">
-                    <span className="px-2 py-1 bg-blue-100 text-blue-600 rounded-full text-sm">
-                      New
-                    </span>
-                  </td>
-                  <td className="py-3">
-                    <div className="flex items-center gap-2">
-                      <button className="p-2 hover:bg-gray-100 rounded-lg">
-                        <Mail className="w-5 h-5" />
-                      </button>
-                      <button className="p-2 hover:bg-gray-100 rounded-lg">
-                        <Archive className="w-5 h-5" />
-                      </button>
-                      <button className="p-2 hover:bg-gray-100 rounded-lg">
-                        <Share2 className="w-5 h-5" />
-                      </button>
-                    </div>
+                    <button onClick={handleRestrictedAction} className="p-2 hover:bg-gray-100 rounded-lg">
+                      <Mail className="w-5 h-5" />
+                    </button>
+                    <button onClick={handleRestrictedAction} className="p-2 hover:bg-gray-100 rounded-lg">
+                      <Archive className="w-5 h-5" />
+                    </button>
+                    <button onClick={handleRestrictedAction} className="p-2 hover:bg-gray-100 rounded-lg">
+                      <Share2 className="w-5 h-5" />
+                    </button>
                   </td>
                 </tr>
               ))}

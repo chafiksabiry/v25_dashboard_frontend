@@ -18,6 +18,8 @@ import {
   Info
 } from 'lucide-react';
 import { CallInterface } from '../components/CallInterface';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
 
 interface ActiveCall {
   number: string;
@@ -197,7 +199,7 @@ function CallsPanel() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {allCalls.map((call, index) => (
+              {Array.isArray(allCalls) && allCalls.map((call, index) => (
                 <tr key={call._id} className="hover:bg-gray-50">
                   <td className="py-3">
                     <div className="flex items-center gap-2">
