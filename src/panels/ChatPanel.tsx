@@ -23,7 +23,7 @@ function ChatPanel() {
       }
     };
     checkWhatsAppConnection();
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     if (!isWhatsAppConnected) return;
@@ -45,11 +45,11 @@ function ChatPanel() {
     if (!activeChat) return;
 
     const fetchMessages = async () => {
-      console.log('Fetching messages for:', activeChat);
       try {
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/whatsapp/messages?contact=${activeChat}`);
-        console.log('Messages fetched:', response.data);
-        setMessages(response.data || []);
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/whatsapp/conversation?userId=${userId}&contact=${activeChat}`);
+        if (response.data.success) {
+          setMessages(response.data.conversation);
+        }
       } catch (error) {
         console.error('Failed to fetch messages:', error);
       }
@@ -67,13 +67,24 @@ function ChatPanel() {
         text: newMessage,
       });
       if (response.data.success) {
-        setMessages(prev => [...prev, { text: newMessage, fromMe: true, timestamp: new Date().toISOString() }]);
+        const newSentMessage = {
+          text: newMessage,
+          fromMe: true,
+          timestamp: new Date().toISOString(),
+        };
+        setMessages(prev => [...prev, newSentMessage]);
         setNewMessage('');
       }
     } catch (error) {
       console.error('Error sending message:', error);
     }
     setLoading(false);
+  };
+
+  const startNewConversation = () => {
+    setActiveChat(null);
+    setPhoneNumber('');
+    setMessages([]);
   };
 
   if (!isWhatsAppConnected) {
@@ -94,16 +105,21 @@ function ChatPanel() {
             <li 
               key={index} 
               onClick={() => {
-                console.log('Selected chat:', chat.contact);
                 setActiveChat(chat.contact);
                 setPhoneNumber(chat.contact); // Autofill phone number
               }} 
-              className="cursor-pointer p-2 hover:bg-gray-200 rounded"
+              className={`cursor-pointer p-2 hover:bg-gray-200 rounded ${activeChat === chat.contact ? 'bg-gray-300' : ''}`}
             >
               {chat.contact}
             </li>
           ))}
         </ul>
+        <button
+          onClick={startNewConversation}
+          className="mt-4 w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+        >
+          Start New Conversation
+        </button>
       </div>
 
       {/* Chat Panel */}
@@ -127,7 +143,11 @@ function ChatPanel() {
         <div className="h-96 p-4 bg-gray-50 overflow-y-auto border rounded-lg flex flex-col">
           {messages.length ? (
             messages.map((msg, index) => (
-              <div key={index} className={`p-3 my-1 rounded-lg max-w-xs ${msg.fromMe ? 'bg-green-200 self-end' : 'bg-gray-200 self-start'}`}>
+              <div 
+                key={index} 
+                className={`p-3 my-1 rounded-lg max-w-xs 
+                  ${msg.fromMe ? 'bg-green-200 self-end' : 'bg-gray-200 self-start'}`}
+              >
                 <div className="text-sm">{msg.text}</div>
                 <div className="text-xs text-gray-500 text-right">{new Date(msg.timestamp).toLocaleTimeString()}</div>
               </div>
