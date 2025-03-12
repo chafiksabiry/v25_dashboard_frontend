@@ -10,6 +10,7 @@ function ChatPanel() {
   const [conversations, setConversations] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [isWhatsAppConnected, setIsWhatsAppConnected] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
   const userId = "65d2b8f4e45a3c5a12e8f123";
 
   useEffect(() => {
@@ -90,13 +91,15 @@ function ChatPanel() {
     setMessages([]);
   };
 
-  if (!isWhatsAppConnected) {
-    return (
-      <div className="space-y-6 p-6 bg-white rounded-xl shadow-sm">
-        <div className="text-center text-gray-500">WhatsApp is not connected. Please integrate WhatsApp from the Integrations Panel.</div>
-      </div>
-    );
-  }
+  const handleActionIfNotConnected = (action) => {
+    if (!isWhatsAppConnected) {
+      setShowPopup(true);
+      return;
+    }
+    action();
+  };
+
+  const closePopup = () => setShowPopup(false);
 
   return (
     <div className="flex h-screen">
@@ -118,7 +121,7 @@ function ChatPanel() {
           ))}
         </ul>
         <button
-          onClick={startNewConversation}
+          onClick={() => handleActionIfNotConnected(startNewConversation)}
           className="mt-4 w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
         >
           Start New Conversation
@@ -137,7 +140,7 @@ function ChatPanel() {
           <input
             type="text"
             value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
+            onChange={(e) => handleActionIfNotConnected(() => setPhoneNumber(e.target.value))}
             placeholder="Enter phone number..."
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
           />
@@ -169,13 +172,22 @@ function ChatPanel() {
             className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
           />
           <button 
-            onClick={sendMessage} 
+            onClick={() => handleActionIfNotConnected(sendMessage)}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center"
           >
             {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <Send className="w-5 h-5" />}
           </button>
         </div>
       </div>
+
+      {showPopup && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <p className="mb-4">Please connect to WhatsApp from the Integrations Panel.</p>
+            <button onClick={closePopup} className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Close</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
