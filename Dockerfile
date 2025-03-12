@@ -11,7 +11,7 @@ ENV VITE_API_URL=https://api-dashboard.harx.ai/api
 ENV VITE_BACKEND_URL_COMPANY=https://api-companysearchwizard.harx.ai/api
 ENV VITE_BACKEND_URL_GIGS=https://api-gigsmanual.harx.ai/api
 ENV TWILIO_ACCOUNT_SID=AC8a453959a6cb01cbbd1c819b00c5782f
-ENV VITE_BACKEND_URL_INTEGRATIONS=http://api-integration.harx.ai
+ENV VITE_BACKEND_URL_INTEGRATIONS=https://api-integration.harx.ai/api
 ENV TWILIO_AUTH_TOKEN=7ade91a170bff98bc625543287ee62c8
 ENV VITE_QIANKUN=true
 
