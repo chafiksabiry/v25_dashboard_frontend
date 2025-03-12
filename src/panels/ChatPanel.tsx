@@ -54,7 +54,10 @@ function ChatPanel() {
         console.error('Failed to fetch messages:', error);
       }
     };
+
     fetchMessages();
+    const interval = setInterval(fetchMessages, 1000);
+    return () => clearInterval(interval);
   }, [activeChat]);
 
   const sendMessage = async () => {
