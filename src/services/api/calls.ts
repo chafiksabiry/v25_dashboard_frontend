@@ -123,4 +123,10 @@ getCallDetails:async (callSid: string, ) => {
   return response.data;
 
 },
+  storeCallInDBAtStartCall: async (callData: any) => {
+    const response = await apiCall.post('/store-call-in-db-at-start-call', callData);
+    console.log("response from storeCallInDBAtStartCall:", response);
+    return response.data;
+  },
+
 }
