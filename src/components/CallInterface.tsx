@@ -56,31 +56,45 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
       logLevel: false
     },
     headerData: {
-      callerId: 8678,
-      outCallerId: "0522774125",
-      CampaignID: 3,
-      agent: 7,  // id agent
-      sipNumber: 8595,   // extension id for agent
-      QueueName: 'DigitalWorksQueueMA', //call center queue name
-      queueId: 11,   //call center queue id
-      CountryCode: 212,
-      outRouteId: 72,
-      outGatewayId: 94,
-      outGatewayName: 'Ma_GW',
+      ...(phoneNumber.startsWith('+212') || phoneNumber.startsWith('00212') ? {
+        callerId: 8678,
+        outCallerId: "0522774125", 
+        CampaignID: 3,
+        agent: 7,
+        sipNumber: 8595,
+        QueueName: 'DigitalWorksQueueMA',
+        queueId: 11,
+        CountryCode: 212,
+        outRouteId: 72,
+        outGatewayId: 94,
+        outGatewayName: 'Ma_GW',
+      } : phoneNumber.startsWith('+33') || phoneNumber.startsWith('0033') ? {
+        callerId: 8678,
+        outCallerId: "33162151114",
+        CampaignID: 3, 
+        agent: 7,
+        sipNumber: 8595,
+        QueueName: 'DigitalWorksQueueFR',
+        queueId: 2,
+        CountryCode: 33,
+        outRouteId: 47,
+        outGatewayId: 29,
+        outGatewayName: 'GW_FR_new',
+      } : {}),
       agentusername: 'Agent.1',
-      CampaignName : "",
-      Disposition : "",
-      InteractionID : null,
+      CampaignName: "",
+      Disposition: "",
+      InteractionID: null,
       PCIRecord: false,
       RecordChannel: "",
       UniqueID: null,
-      WrapupStrict: `No`, // No|Yes|Strict|Loose
+      WrapupStrict: 'No', // No|Yes|Strict|Loose
       WrapupTime: 0,
       DispositionType: 'Yes', // No|Yes
       transfer: false,
       WrapupStatus: false,
       profileId: '16045',
-  }
+    }
   };
   let callManage: NodeJS.Timeout | undefined;
   let intervalTimer;
@@ -102,7 +116,20 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
       clearInterval(intervalTimer);
       await setCallStatus('ended');
       console.log("terminated call -> popup to register info in DB");
+      //function to update the rest of call details in DB
+      if (uuId) {
+        await updateCallDetailsInDB(uuId);
+      }
     }
+  };
+  let updateCallDetailsInDB = async (callSid: string) => {
+    console.log("update call details in DB:", callSid);
+    //function to update the rest of call details in DB
+
+    const res = await callsApi.storeCallInDBAtEndCall(phoneNumber, callSid);
+    const callDetails = res.data.data;
+    console.log("call details from DB:", callDetails);
+
   };
   let updateCallsState = async () => {
     console.log("Début de la fonction : updateCallsState");
@@ -224,6 +251,8 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
 
     // La gestion après l'appel sera déléguée à la fonction callback
     console.log("Hangup logic done. Waiting for callback to handle post-call actions.");
+    await qalqulSDK?.logout();
+    console.log("qalqulSDK logged out");
   };
   const storeQalqulCallInDbInStart = async (callUuid: string) => {
     console.log("storing call from qalqul in DB au lancement de l'appel:", callUuid);
@@ -232,7 +261,7 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
       const storeCall = {
         call_id: callUuid,
        // script: script_form._id,
-        id_lead: phoneNumber,
+        id_lead: "65d2b8f4e45a3c5a12e8f123",
         //sip_started_at: start_time,
         caller: agentId,
        // project: project,
@@ -240,7 +269,7 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
       console.log("data call to store:", storeCall);
       const res = await callsApi.storeCallInDBAtStartCall(storeCall);
       console.log("result of storing call:", res);
-      const storedCallId = res.data.data._id;
+      const storedCallId = res._id;
       console.log("id of callObject in DB:", storedCallId);
     } catch (error) {
       console.log("error in storing qalqul call in DB:", error);
@@ -278,14 +307,6 @@ if(isSdkInitialized){
           });
           
           await newDevice.register();
-          
-        /*   const conn = await newDevice.connect({
-            params: { 
-              To: phoneNumber,
-              userId: '65d2b8f4e45a3c5a12e8f123'
-            },
-            rtcConfiguration: { sdpSemantics: "unified-plan" },
-          } as any); */
           const conn = await newDevice.connect({
             params: { To: phoneNumber },
             rtcConfiguration: { sdpSemantics: "unified-plan" },
