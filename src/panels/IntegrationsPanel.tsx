@@ -74,7 +74,7 @@ export function IntegrationsPanel() {
     // Chat
     { id: 'telegram', name: 'Telegram', description: 'Cloud-based instant messaging and voice service', category: 'chat', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=telegram', config: { fields: [ { key: 'api_token', label: 'API Token', type: 'password', required: true }, { key: 'chat_id', label: 'Chat ID', type: 'text', required: true } ] } },
     { id: 'slack', name: 'Slack', description: 'Collaboration hub for team communication', category: 'chat', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=slack', config: { fields: [ { key: 'workspace', label: 'Workspace Domain', type: 'text', required: true }, { key: 'api_token', label: 'API Token', type: 'password', required: true } ] } },
-    { id: 'whatsapp', name: 'WhatsApp', description: 'Messaging and voice calling service', category: 'chat', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=whatsapp', config: { fields: [ { key: 'phone_number', label: 'Phone Number', type: 'text', required: true }, { key: 'api_token', label: 'API Token', type: 'password', required: true } ,{ key: 'phoneNumberId', label: 'Phone Number ID', type: 'text', required: true }] } },
+    { id: 'whatsapp', name: 'WhatsApp', description: 'Messaging and voice calling service', category: 'chat', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=whatsapp', config: { fields: [ { key: 'phone_number', label: 'Phone Number', type: 'text', required: true }, { key: 'api_token', label: 'API Token', type: 'password', required: true } ,{ key: 'phoneNumberId', label: 'Phone Number ID', type: 'text', required: true }, { key: 'businessId', label: 'businessId', type: 'text', required: true }] } },
   
     // Email
     { id: 'gmail', name: 'Gmail', description: 'Email service by Google', category: 'email', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=gmail', config: { fields: [ { key: 'client_id', label: 'Client ID', type: 'text', required: true }, { key: 'client_secret', label: 'Client Secret', type: 'password', required: true } ] } },
@@ -147,12 +147,36 @@ export function IntegrationsPanel() {
             setLoading(true);
             
             const integrationEndpoints = [
-                { id: "twilio", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/twilio/twilio-status?userId=${userId}` },
-                { id: "gmail", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/gmail/status?userId=${userId}` },
-                { id: "whatsapp", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/whatsapp/status?userId=${userId}` },
-                { id : 'telegram', url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/telegram/status?userId=${userId}`}
-                //{ id: "slack", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/slack/status?userId=${userId}` }
-                // Add more integrations here
+              { id: "salesforce", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/salesforce/status?userId=${userId}` },
+              { id: "hubspot", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/hubspot/status?userId=${userId}` },
+              //{ id: "zoho-crm", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/zoho-crm/status?userId=${userId}` },
+              { id: "twilio", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/twilio/twilio-status?userId=${userId}` },
+              { id: "ringcentral", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/ringcentral/status?userId=${userId}` },
+              { id: "microsoft-teams", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/teams/status?userId=${userId}` },
+              { id: "zoom", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/zoom/status?userId=${userId}` },
+              { id: "telegram", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/telegram/status?userId=${userId}` },
+              { id: "slack", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/slack/status?userId=${userId}` },
+              { id: "whatsapp", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/whatsapp/status?userId=${userId}` },
+              { id: "gmail", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/gmail/status?userId=${userId}` },
+              { id: "microsoft-outlook", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/outlook/status?userId=${userId}` },
+              //{ id: "zoho-mail", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/zoho-mail/status?userId=${userId}` },
+              { id: "aws-ses", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/awsses/status?userId=${userId}` },
+              { id: "sendgrid", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/sendgrid/status?userId=${userId}` },
+              { id: "mailchimp", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/mailchimp/status?userId=${userId}` },
+              { id: "freshdesk", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/freshdesk/status?userId=${userId}` },
+              { id: "zendesk", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/zendesk/status?userId=${userId}` },
+              { id: "servicenow", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/servicenow/status?userId=${userId}` },
+              { id: "microsoft-azure-ad", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/microsoft-azure-ad/status?userId=${userId}` },
+              { id: "aws-connect", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/awsConnect/status?userId=${userId}` },
+              { id: "google-analytics", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/googleAnalytics/status?userId=${userId}` },
+              { id: "jira", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/jira/status?userId=${userId}` },
+              { id: "intercom", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/intercom/status?userId=${userId}` },
+              { id: "livechat", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/liveChat/status?userId=${userId}` },
+              { id: "ovh", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/ovh/status?userId=${userId}` },
+              { id: "aws-sns", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/awsSns/status?userId=${userId}` },
+              { id: "facebook", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/facebook/status?userId=${userId}` },
+              { id: "twitter", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/twitter/status?userId=${userId}` },
+              { id: "instagram", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/instagram/status?userId=${userId}` },
             ];
             
             const responses = await Promise.all(
@@ -283,7 +307,8 @@ export function IntegrationsPanel() {
               userId: "67b4e7f7eff824909f992c81",
               phoneNumber: configValues.phone_number,  // ✅ Match backend field name
               accessToken: configValues.api_token,  // ✅ Match backend field name
-              phoneNumberId: configValues.phoneNumberId
+              phoneNumberId: configValues.phoneNumberId,
+              businessId : configValues.businessId
 
             };
             break;
