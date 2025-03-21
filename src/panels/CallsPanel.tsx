@@ -62,10 +62,12 @@ function CallsPanel() {
     try {
       if (!currentUser?.id) return;
       
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/calls`, {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL_CALL}/api/calls`, {
         params: { userId: currentUser.id }
       });
-      setCalls(response.data);
+      console.log("response.data.data",response.data.data);
+       setCalls(response.data.data);
+      console.log("allCalls", allCalls);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching calls:', error);
@@ -95,7 +97,7 @@ function CallsPanel() {
       </div>
     );
   }
-
+  console.log("allCallss", allCalls);
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm p-6">
@@ -261,7 +263,7 @@ function CallsPanel() {
                           : "bg-gray-100 text-gray-600"
                         }`}
                     >
-                      {call.status.charAt(0).toUpperCase() + call.status.slice(1)}
+                      {call.status ? call.status.charAt(0).toUpperCase() + call.status.slice(1) : ''}
                     </span>
                   </td>
                   <td className="py-3">
