@@ -55,7 +55,7 @@ export function IntegrationsPanel() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
   const [configValues, setConfigValues] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
 
@@ -138,7 +138,7 @@ export function IntegrationsPanel() {
         return <Network className="w-5 h-5" />;
     }
   };
-  const userId = "65d2b8f4e45a3c5a12e8f123"; // Use dynamic user ID if needed
+  const userId = "67b4e7f7eff824909f992c81"; // Use dynamic user ID if needed
 
   // ✅ Fetch the integration status when the component mounts
   useEffect(() => {
@@ -285,7 +285,7 @@ export function IntegrationsPanel() {
         case "twilio":
           endpoint = selectedIntegration.status === "disconnected" ? "reconnect-twilio" : "setup";
           requestBody = {
-            userId: "65d2b8f4e45a3c5a12e8f123", // Use dynamic userId if necessary
+            userId: "67b4e7f7eff824909f992c81", // Use dynamic userId if necessary
             accountSid: configValues.account_sid,
             authToken: configValues.auth_token,
             phoneNumber: configValues.phone_number
@@ -295,7 +295,7 @@ export function IntegrationsPanel() {
         case "gmail":
           endpoint = selectedIntegration.status === "disconnected" ? "reconnect-gmail" : "setup-gmail";
           requestBody = {
-            userId: "65d2b8f4e45a3c5a12e8f123",
+            userId: "67b4e7f7eff824909f992c81",
             clientId: configValues.client_id,
             clientSecret: configValues.client_secret
           };
@@ -304,7 +304,7 @@ export function IntegrationsPanel() {
           case "whatsapp":
             endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
             requestBody = {
-              userId: "65d2b8f4e45a3c5a12e8f123",
+              userId: "67b4e7f7eff824909f992c81",
               phoneNumber: configValues.phone_number,  // ✅ Match backend field name
               accessToken: configValues.api_token,  // ✅ Match backend field name
               phoneNumberId: configValues.phoneNumberId,
@@ -317,7 +317,7 @@ export function IntegrationsPanel() {
         case "telegram":
           endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
           requestBody = {
-            userId: "65d2b8f4e45a3c5a12e8f123",
+            userId: "67b4e7f7eff824909f992c81",
             apiToken: configValues.api_token,
             chatId: configValues.chat_id
           };
@@ -371,7 +371,7 @@ const handleDisconnect = async (integration) => {
   console.log(`Disconnecting ${integration.name}...`);
   
   try {
-    setLoading(integration.id);
+    setLoading(true);
     
     let endpoint = "";
 
@@ -399,7 +399,7 @@ const handleDisconnect = async (integration) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        userId: "65d2b8f4e45a3c5a12e8f123",
+        userId: "67b4e7f7eff824909f992c81",
         integrationId: integration.id
       })
     });
@@ -414,13 +414,13 @@ const handleDisconnect = async (integration) => {
     } else {
       throw new Error(result.error || "Failed to disconnect.");
     }
-  } catch (error) {
+    } catch (error) {
     toast.error(error.message || "An unexpected error occurred while disconnecting.");
     console.error(error);
-  } finally {
-    setLoading(null);
-  }
-};
+    } finally {
+    setLoading(false);
+    }
+  };
 
 
   const handleConfigure = (integration: Integration) => {
@@ -455,7 +455,7 @@ const handleDisconnect = async (integration) => {
     }
 
     try {
-      setLoading(selectedIntegration.id);
+      setLoading(true);
       setError(null);
       await new Promise(resolve => setTimeout(resolve, 1000));
       setSelectedIntegration(null);
@@ -464,7 +464,7 @@ const handleDisconnect = async (integration) => {
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to save configuration');
     } finally {
-      setLoading(null);
+      setLoading(false);
     }
   };
 
@@ -620,10 +620,10 @@ const handleDisconnect = async (integration) => {
                 ) : (
                   <button
                     onClick={() => handleConnectClick(integration)}
-                    disabled={loading === integration.id}
+                    disabled={loading}
                     className="flex-1 px-3 py-1.5 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 disabled:bg-cyan-300"
                   >
-                    {loading === integration.id ? 'Connecting...' : 'Connect'}
+                    {loading ? 'Connecting...' : 'Connect'}
                   </button>
                 )}
               </div>
@@ -706,10 +706,10 @@ const handleDisconnect = async (integration) => {
                 </button>
                 <button
                   onClick={handleConnect}
-                  disabled={loading === selectedIntegration.id}
+                  disabled={loading}
                   className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 disabled:bg-cyan-300"
                 >
-                  {loading === selectedIntegration.id ? 'Saving...' : 'Save Settings'}
+                  {loading ? 'Saving...' : 'Save Settings'}
                 </button>
               </div>
             </div>
