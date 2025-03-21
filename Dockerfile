@@ -5,6 +5,10 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
+# Copier et installer le SDK local
+COPY @qalqul/sdk-call /app/sdk
+RUN cd /app/sdk && npm install .
+
 COPY . .
 
 ENV VITE_API_URL=https://api-dashboard.harx.ai/api
