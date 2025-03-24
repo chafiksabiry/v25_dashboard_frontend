@@ -7,7 +7,6 @@ COPY package*.json ./
 RUN apk add --no-cache git
 
 RUN npm install
-RUN npm install --save-dev @babel/plugin-transform-react-jsx @babel/core
 
 # Copier et installer le SDK local
 #COPY ./qalqul/sdk-call /app/sdk
