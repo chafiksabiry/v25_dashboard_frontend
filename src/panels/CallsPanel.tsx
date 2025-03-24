@@ -67,7 +67,7 @@ function CallsPanel() {
       });
       console.log("response.data.data",response.data.data);
        setCalls(response.data.data);
-      console.log("allCalls", allCalls);
+      //console.log("allCalls", allCalls);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching calls:', error);
@@ -97,7 +97,7 @@ function CallsPanel() {
       </div>
     );
   }
-  console.log("allCallss", allCalls);
+  //console.log("allCallss", allCalls);
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm p-6">

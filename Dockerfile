@@ -1,13 +1,17 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
 COPY package*.json ./
+
+RUN apk add --no-cache git
+
 RUN npm install
 
 # Copier et installer le SDK local
-COPY @qalqul/sdk-call /app/sdk
-RUN cd /app/sdk && npm install .
+#COPY ./qalqul/sdk-call /app/sdk
+
+#RUN cd /app/sdk && npm install .
 
 COPY . .
 
