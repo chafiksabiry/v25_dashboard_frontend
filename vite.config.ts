@@ -23,7 +23,12 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     base: 'https://dashboard.harx.ai/',
     plugins: [
       react({
-        jsxRuntime: 'classic',
+        jsxRuntime: 'automatic',
+        babel: {
+          plugins: [
+            ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }]
+          ]
+        }
       }),
       qiankun('app7', {
         useDevMode: true,
@@ -69,10 +74,12 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
         '@': path.resolve(__dirname, './src'),
         '@qalqul/sdk-call': path.resolve(__dirname, 'node_modules/@qalqul/sdk-call'),
         '@qalqul/sdk-call/dist/model/QalqulSDK': path.resolve(__dirname, 'node_modules/@qalqul/sdk-call/dist/model/QalqulSDK'),
+        'react': path.resolve(__dirname, 'node_modules/react'),
+        'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
       },
     },
     optimizeDeps: {
-      include: ['@qalqul/sdk-call', '@qalqul/sdk-call/dist/model/QalqulSDK'],
+      include: ['@qalqul/sdk-call', '@qalqul/sdk-call/dist/model/QalqulSDK', 'react', 'react-dom'],
       esbuildOptions: {
         target: 'esnext',
         format: 'esm'
