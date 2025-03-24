@@ -38,7 +38,6 @@ function CallsPanel() {
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedProvider, setSelectedProvider] = useState<'twilio' | 'qalqul'>('twilio');
   const navigate = useNavigate();
-  const { currentUser, loading: authLoading } = useAuth();
 
   const handleCall = (phoneNumber: string) => {
     const phoneRegex = /^(\+|00)([1-9]{1})\d{1,14}$/;
