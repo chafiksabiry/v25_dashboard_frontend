@@ -152,7 +152,7 @@ export function IntegrationsPanel() {
               //{ id: "zoho-crm", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/zoho-crm/status?userId=${userId}` },
               { id: "twilio", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/twilio/twilio-status?userId=${userId}` },
               { id: "ringcentral", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/ringcentral/status?userId=${userId}` },
-              { id: "microsoft-teams", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/teams/status?userId=${userId}` },
+              { id: "teams", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/teams/status?userId=${userId}` },
               { id: "zoom", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/zoom/status?userId=${userId}` },
               { id: "telegram", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/telegram/status?userId=${userId}` },
               { id: "slack", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/slack/status?userId=${userId}` },
@@ -330,7 +330,7 @@ export function IntegrationsPanel() {
         };
         break;
 
-    case "microsoft-teams":
+    case "teams":
         endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
         requestBody = {
             userId: "65d2b8f4e45a3c5a12e8f123",

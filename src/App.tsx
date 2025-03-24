@@ -41,6 +41,7 @@ function App() {
             <div className="p-8">
               <Routes>
                 <Route path="/" element={<DashboardPanel />} />
+                <Route path="/app7" element={<DashboardPanel />} />
                 <Route path="/company" element={<CompanyProfilePanel />} />
                 <Route path="/leads" element={<LeadManagementPanel />} />
                 <Route path="/rep-matching" element={<RepMatchingPanel />} />

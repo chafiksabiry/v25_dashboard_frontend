@@ -36,7 +36,6 @@ function CallsPanel() {
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
 
-
   const handleCall = (phoneNumber: string) => {
     const phoneRegex = /^\+([1-9]{1,4})\d{1,14}$/;  // Expression régulière pour valider le numéro international
     if (phoneRegex.test(phoneNumber)) {
@@ -56,7 +55,7 @@ function CallsPanel() {
     try {
       setLoading(true);
       const response = await callsApi.getAll(); // Fetch calls from API
-      console.log("response :", response)
+      console.log("response :", response);
       setCalls(response.data);
     } catch (err) {
       console.error("Error fetching calls:", err);
@@ -71,7 +70,35 @@ function CallsPanel() {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* Start a New Call Button */}
+      <div className="absolute top-6 right-6">
+        {!showPhoneInput ? (
+          <button
+            onClick={() => setShowPhoneInput(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            New Call
+          </button>
+        ) : (
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="Enter phone number"
+              className="px-4 py-2 border border-gray-300 rounded-lg"
+            />
+            <button
+              onClick={() => handleCall(phoneNumber)}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            >
+              Call
+            </button>
+          </div>
+        )}
+      </div>
+
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
@@ -80,30 +107,6 @@ function CallsPanel() {
             </div>
             <h2 className="text-xl font-semibold">Calls Dashboard</h2>
           </div>
-          {!showPhoneInput ? (
-            <button
-              onClick={() => setShowPhoneInput(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              New Call
-            </button>
-          ) : (
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="Enter phone number"
-                className="px-4 py-2 border border-gray-300 rounded-lg"
-              />
-              <button
-                onClick={() => handleCall(phoneNumber)}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-              >
-                Call
-              </button>
-            </div>
-          )}
         </div>
 
         {error && (

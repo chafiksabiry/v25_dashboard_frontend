@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { MessageSquare, Send, Loader2 } from 'lucide-react';
 
@@ -12,6 +12,33 @@ function ChatPanel() {
   const [isWhatsAppConnected, setIsWhatsAppConnected] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const userId = "65d2b8f4e45a3c5a12e8f123";
+
+  const messagesEndRef = useRef(null);
+  const [isUserScrolling, setIsUserScrolling] = useState(false);
+  const chatContainerRef = useRef(null);
+
+  const scrollToBottom = () => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  };
+
+  const handleScroll = (e) => {
+    const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
+    setIsUserScrolling(scrollHeight - scrollTop > clientHeight + 50);
+  };
+
+  useEffect(() => {
+    if (!isUserScrolling) {
+      scrollToBottom();
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    if (activeChat) {
+      scrollToBottom();
+    }
+  }, [activeChat]);
 
   useEffect(() => {
     const checkWhatsAppConnection = async () => {
@@ -89,6 +116,7 @@ function ChatPanel() {
     setActiveChat(null);
     setPhoneNumber('');
     setMessages([]);
+    scrollToBottom();
   };
 
   const handleActionIfNotConnected = (action) => {
@@ -120,16 +148,16 @@ function ChatPanel() {
             </li>
           ))}
         </ul>
-        <button
-          onClick={() => handleActionIfNotConnected(startNewConversation)}
-          className="mt-4 w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-        >
-          Start New Conversation
-        </button>
+        
       </div>
 
       {/* Chat Panel */}
       <div className="flex-1 space-y-6 p-6 bg-white rounded-xl shadow-sm">
+      <button
+    onClick={() => handleActionIfNotConnected(startNewConversation)}
+    className="absolute top-17 right-10 px-3 py-1 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600">
+    + New
+  </button>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold flex items-center gap-2">
             <MessageSquare className="w-6 h-6 text-green-600" /> Live Chat
@@ -146,7 +174,7 @@ function ChatPanel() {
           />
         </div>
 
-        <div className="h-96 p-4 bg-gray-50 overflow-y-auto border rounded-lg flex flex-col">
+        <div ref={chatContainerRef} className="h-96 p-4 bg-gray-50 overflow-y-auto border rounded-lg flex flex-col" onScroll={handleScroll}>
           {messages.length ? (
             messages.map((msg, index) => (
               <div 
@@ -161,6 +189,7 @@ function ChatPanel() {
           ) : (
             <div className="text-center text-gray-500 mt-32">No messages yet</div>
           )}
+          <div ref={messagesEndRef} />
         </div>
 
         <div className="p-4 border-t flex gap-2">
