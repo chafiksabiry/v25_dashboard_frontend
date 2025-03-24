@@ -20,6 +20,8 @@ import {
 import { CallInterface } from '../components/CallInterface';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
+import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 
 interface ActiveCall {
   number: string;
@@ -34,41 +36,68 @@ function CallsPanel() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState<boolean>(true);
+  const [selectedProvider, setSelectedProvider] = useState<'twilio' | 'qalqul'>('twilio');
   const navigate = useNavigate();
+  const { currentUser, loading: authLoading } = useAuth();
 
   const handleCall = (phoneNumber: string) => {
-    const phoneRegex = /^\+([1-9]{1,4})\d{1,14}$/;  // Expression régulière pour valider le numéro international
+    const phoneRegex = /^(\+|00)([1-9]{1})\d{1,14}$/;
     if (phoneRegex.test(phoneNumber)) {
-      const mockAgentId = '65d8f1234567890123456789';  // ID agent statique
+      if (!currentUser) {
+        setError('You must be logged in to make calls');
+        return;
+      }
       setActiveCall({
         number: phoneNumber,
-        agentId: mockAgentId
+        agentId: currentUser.id
       });
       setShowPhoneInput(false);
       setError('');
     } else {
-      setError('Please enter a valid international phone number (e.g. +13024440090)');
+      setError('Please enter a valid international phone number (e.g. +13024440090 or 0013024440090)');
     }
   };
 
   const fetchCalls = async () => {
     try {
-      setLoading(true);
-      const response = await callsApi.getAll(); // Fetch calls from API
-      console.log("response :", response);
-      setCalls(response.data);
-    } catch (err) {
-      console.error("Error fetching calls:", err);
-      setError("Failed to load calls.");
-    } finally {
+      if (!currentUser?.id) return;
+      
+      const response = await axios.get(`${import.meta.env.VITE_API_URL_CALL}/api/calls`, {
+        params: { userId: currentUser.id }
+      });
+      console.log("response.data.data",response.data.data);
+       setCalls(response.data.data);
+      console.log("allCalls", allCalls);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching calls:', error);
+      setError('Failed to fetch calls');
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCalls();
-  }, []);
+    if (!authLoading) {
+      fetchCalls();
+    }
+  }, [currentUser?.id, authLoading]);
 
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-gray-500">Please log in to access calls.</p>
+      </div>
+    );
+  }
+  console.log("allCallss", allCalls);
   return (
     <div className="space-y-6 relative">
       {/* Start a New Call Button */}
@@ -238,7 +267,7 @@ function CallsPanel() {
                           : "bg-gray-100 text-gray-600"
                         }`}
                     >
-                      {call.status.charAt(0).toUpperCase() + call.status.slice(1)}
+                      {call.status ? call.status.charAt(0).toUpperCase() + call.status.slice(1) : ''}
                     </span>
                   </td>
                   <td className="py-3">
@@ -281,7 +310,57 @@ function CallsPanel() {
               agentId={activeCall.agentId}
               onEnd={() => setActiveCall(null)}
               onCallSaved={fetchCalls}
+              provider={selectedProvider}
             />
+          </div>
+        </div>
+      )}
+
+      {showPhoneInput && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Call Provider
+              </label>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setSelectedProvider('twilio')}
+                  className={`px-4 py-2 rounded-lg ${
+                    selectedProvider === 'twilio'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Twilio
+                </button>
+                <button
+                  onClick={() => setSelectedProvider('qalqul')}
+                  className={`px-4 py-2 rounded-lg ${
+                    selectedProvider === 'qalqul'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Qalqul
+                </button>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="Enter phone number"
+                className="px-4 py-2 border border-gray-300 rounded-lg flex-1"
+              />
+              <button
+                onClick={() => handleCall(phoneNumber)}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                Call
+              </button>
+            </div>
           </div>
         </div>
       )}

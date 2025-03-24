@@ -123,4 +123,16 @@ getCallDetails:async (callSid: string, ) => {
   return response.data;
 
 },
+  storeCallInDBAtStartCall: async (storeCall: any) => {
+    console.log("Sending storeCall data:", storeCall);
+    const response = await apiCall.post('/api/calls/store-call-in-db-at-start-call', { storeCall });
+    console.log("response from storeCallInDBAtStartCall:", response);
+    return response.data;
+  },
+  storeCallInDBAtEndCall: async (phoneNumber: string, callSid: string) => {
+    const response = await apiCall.post('/api/calls/store-call-in-db-at-end-call', { phoneNumber, callSid });
+    console.log("response from storeCallInDBAtEndCall:", response);
+    return response.data;
+  },
+
 }
