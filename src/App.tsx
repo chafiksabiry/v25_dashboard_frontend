@@ -20,8 +20,6 @@ import OperationsPanel from './panels/OperationsPanel';
 import AnalyticsPanel from './panels/AnalyticsPanel';
 import IntegrationsPanel from './panels/IntegrationsPanel';
 import SettingsPanel from './panels/SettingsPanel';
-import KnowledgeBase from './panels/KnowledgeBase';
-import KnowledgeInsights from './panels/KnowledgeInsights';
 import { setUserId } from "./store/slices/userSlice"; // Import Redux action
 import { useDispatch } from "react-redux";
 import { useEffect } from "react";
@@ -43,7 +41,6 @@ function App() {
             <div className="p-8">
               <Routes>
                 <Route path="/" element={<DashboardPanel />} />
-                <Route path="/app7" element={<DashboardPanel />} />
                 <Route path="/company" element={<CompanyProfilePanel />} />
                 <Route path="/leads" element={<LeadManagementPanel />} />
                 <Route path="/rep-matching" element={<RepMatchingPanel />} />
@@ -58,8 +55,6 @@ function App() {
                 <Route path="/analytics" element={<AnalyticsPanel />} />
                 <Route path="/integrations" element={<IntegrationsPanel />} />
                 <Route path="/settings" element={<SettingsPanel />} />
-                <Route path="/knowledge-base" element={<KnowledgeBase />} />
-                <Route path="/kb-insight" element={<KnowledgeInsights />} />
               </Routes>
             </div>
           </div>
