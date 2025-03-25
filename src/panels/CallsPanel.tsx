@@ -28,7 +28,7 @@ interface ActiveCall {
   agentId: string;
 }
 
-function CallsPanel() {
+function CallsPanel() {}
   const [activeFilter, setActiveFilter] = useState('all');
   const [activeCall, setActiveCall] = useState<ActiveCall | null>(null);
   const [allCalls, setCalls] = useState<Call[]>([]);

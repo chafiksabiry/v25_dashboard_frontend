@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -14,11 +14,17 @@ import {
   ScrollText,
   UserPlus,
   Building2,
-  Calendar
+  Calendar,
+  ChevronDown,
+  ChevronRight,
+  Book,
+  Lightbulb
 } from 'lucide-react';
 
 export function Sidebar() {
   const location = useLocation();
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const menuItems = [
     { icon: <LayoutDashboard size={20} />, label: 'Overview', path: '/' },
     { icon: <Building2 size={20} />, label: 'Company', path: '/company' },
@@ -60,6 +66,51 @@ export function Sidebar() {
             <span>{item.label}</span>
           </NavLink>
         ))}
+
+        {/* Knowledge Base - Collapsible Section */}
+        <div>
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center justify-between w-full p-3 rounded-lg transition-colors hover:bg-gray-800 text-gray-300 hover:text-white"
+          >
+            <div className="flex items-center gap-3">
+              <Book size={20} />
+              <span>Knowledge Base</span>
+            </div>
+            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          </button>
+
+          {isExpanded && (
+            <div className="ml-6 space-y-2">
+              <NavLink
+                to="/knowledge-base"
+                className={({ isActive }) =>
+                  `flex items-center gap-3 w-full p-2 rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-blue-600 text-white'
+                      : 'hover:bg-gray-800 text-gray-300 hover:text-white'
+                  }`
+                }
+              >
+                <Book size={18} />
+                <span>Knowledge Base</span>
+              </NavLink>
+              <NavLink
+                to="/kb-insight"
+                className={({ isActive }) =>
+                  `flex items-center gap-3 w-full p-2 rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-blue-600 text-white'
+                      : 'hover:bg-gray-800 text-gray-300 hover:text-white'
+                  }`
+                }
+              >
+                <Lightbulb size={18} />
+                <span>KB Insight</span>
+              </NavLink>
+            </div>
+          )}
+        </div>
       </nav>
     </div>
   );
