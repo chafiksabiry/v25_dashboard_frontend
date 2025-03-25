@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { MessageSquare, Send, Loader2 } from 'lucide-react';
 
@@ -10,7 +10,35 @@ function ChatPanel() {
   const [conversations, setConversations] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [isWhatsAppConnected, setIsWhatsAppConnected] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
   const userId = "65d2b8f4e45a3c5a12e8f123";
+
+  const messagesEndRef = useRef(null);
+  const [isUserScrolling, setIsUserScrolling] = useState(false);
+  const chatContainerRef = useRef(null);
+
+  const scrollToBottom = () => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  };
+
+  const handleScroll = (e) => {
+    const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
+    setIsUserScrolling(scrollHeight - scrollTop > clientHeight + 50);
+  };
+
+  useEffect(() => {
+    if (!isUserScrolling) {
+      scrollToBottom();
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    if (activeChat) {
+      scrollToBottom();
+    }
+  }, [activeChat]);
 
   useEffect(() => {
     const checkWhatsAppConnection = async () => {
@@ -88,15 +116,18 @@ function ChatPanel() {
     setActiveChat(null);
     setPhoneNumber('');
     setMessages([]);
+    scrollToBottom();
   };
 
-  if (!isWhatsAppConnected) {
-    return (
-      <div className="space-y-6 p-6 bg-white rounded-xl shadow-sm">
-        <div className="text-center text-gray-500">WhatsApp is not connected. Please integrate WhatsApp from the Integrations Panel.</div>
-      </div>
-    );
-  }
+  const handleActionIfNotConnected = (action) => {
+    if (!isWhatsAppConnected) {
+      setShowPopup(true);
+      return;
+    }
+    action();
+  };
+
+  const closePopup = () => setShowPopup(false);
 
   return (
     <div className="flex h-screen">
@@ -117,16 +148,16 @@ function ChatPanel() {
             </li>
           ))}
         </ul>
-        <button
-          onClick={startNewConversation}
-          className="mt-4 w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-        >
-          Start New Conversation
-        </button>
+        
       </div>
 
       {/* Chat Panel */}
       <div className="flex-1 space-y-6 p-6 bg-white rounded-xl shadow-sm">
+      <button
+    onClick={() => handleActionIfNotConnected(startNewConversation)}
+    className="absolute top-17 right-10 px-3 py-1 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600">
+    + New
+  </button>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold flex items-center gap-2">
             <MessageSquare className="w-6 h-6 text-green-600" /> Live Chat
@@ -137,13 +168,13 @@ function ChatPanel() {
           <input
             type="text"
             value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
+            onChange={(e) => handleActionIfNotConnected(() => setPhoneNumber(e.target.value))}
             placeholder="Enter phone number..."
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
           />
         </div>
 
-        <div className="h-96 p-4 bg-gray-50 overflow-y-auto border rounded-lg flex flex-col">
+        <div ref={chatContainerRef} className="h-96 p-4 bg-gray-50 overflow-y-auto border rounded-lg flex flex-col" onScroll={handleScroll}>
           {messages.length ? (
             messages.map((msg, index) => (
               <div 
@@ -158,6 +189,7 @@ function ChatPanel() {
           ) : (
             <div className="text-center text-gray-500 mt-32">No messages yet</div>
           )}
+          <div ref={messagesEndRef} />
         </div>
 
         <div className="p-4 border-t flex gap-2">
@@ -169,13 +201,22 @@ function ChatPanel() {
             className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
           />
           <button 
-            onClick={sendMessage} 
+            onClick={() => handleActionIfNotConnected(sendMessage)}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center"
           >
             {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <Send className="w-5 h-5" />}
           </button>
         </div>
       </div>
+
+      {showPopup && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <p className="mb-4">Please connect to WhatsApp from the Integrations Panel.</p>
+            <button onClick={closePopup} className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Close</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
