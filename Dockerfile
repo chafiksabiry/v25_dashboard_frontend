@@ -31,8 +31,7 @@ ENV VITE_QALQUL_PASSWORD=ewyaHtvzDPRdXrZL
 ENV VITE_BACKEND_KNOWLEDGEBASE_BACKEND=https://api-knowledge-base.harx.ai
 
 # WebSocket URL for Speech-to-Text
-#ENV VITE_WS_URL=ws://38.242.208.242:5006
-ENV VITE_WS_URL=wss://api-calls.harx.ai/speech-to-text
+ENV VITE_WS_URL=ws://api-calls.harx.ai/speech-to-text
 
 RUN npm run build
 
