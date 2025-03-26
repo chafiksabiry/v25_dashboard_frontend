@@ -22,6 +22,8 @@ import IntegrationsPanel from './panels/IntegrationsPanel';
 import SettingsPanel from './panels/SettingsPanel';
 import KnowledgeBase from './panels/KnowledgeBase';
 import KnowledgeInsights from './panels/KnowledgeInsights';
+import MatchingDashboard from './panels/MatchingDashboard';
+
 import { setUserId } from "./store/slices/userSlice"; // Import Redux action
 import { useDispatch } from "react-redux";
 import { useEffect } from "react";
@@ -51,6 +53,10 @@ function App() {
                   <Route path="/analytics" element={<AnalyticsPanel />} />
                   <Route path="/integrations" element={<IntegrationsPanel />} />
                   <Route path="/settings" element={<SettingsPanel />} />
+                  <Route path="/knowledge-base" element={<KnowledgeBase />} />
+                <Route path="/kb-insight" element={<KnowledgeInsights />} />
+                <Route path="/matching" element={<MatchingDashboard />} />
+
                 </Routes>
               </div>
             </div>

@@ -39,6 +39,7 @@ export function Sidebar() {
     { icon: <ScrollText size={20} />, label: 'Operations', path: '/operations' },
     { icon: <TrendingUp size={20} />, label: 'Analytics', path: '/analytics' },
     { icon: <Plug size={20} />, label: 'Integrations', path: '/integrations' },
+    { icon: <Users size={20} />, label: 'Matching', path: '/matching' },
     { icon: <Settings size={20} />, label: 'Settings', path: '/settings' },
   ];
 
