@@ -1,9 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-//import { Provider } from 'react-redux';
-import Providers from "./Providers";
+import { Provider } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
-//import { store } from './store';
+import { store } from './store';
 import Sidebar from './components/Sidebar';
 import DashboardPanel from './panels/DashboardPanel';
 import CompanyProfilePanel from './panels/CompanyProfilePanel';
@@ -20,20 +19,10 @@ import OperationsPanel from './panels/OperationsPanel';
 import AnalyticsPanel from './panels/AnalyticsPanel';
 import IntegrationsPanel from './panels/IntegrationsPanel';
 import SettingsPanel from './panels/SettingsPanel';
-import { setUserId } from "./store/slices/userSlice"; // Import Redux action
-import { useDispatch } from "react-redux";
-import { useEffect } from "react";
 
 function App() {
-  const dispatch = useDispatch();
-
-  useEffect(() => {
-    const staticUserId = "65d2b8f4e45a3c5a12e8f123"; // ✅ Static test user ID
-    localStorage.setItem("userId", staticUserId); // ✅ Store in localStorage
-    dispatch(setUserId(staticUserId)); // ✅ Store in Redux for global access
-  }, []);
   return (
-    <Providers >
+    <Provider store={store}>
       <Router>
         <div className="flex min-h-screen bg-gray-100">
           <Sidebar />
@@ -61,7 +50,7 @@ function App() {
         </div>
         <ToastContainer />
       </Router>
-    </Providers>
+    </Provider>
   );
 }
 
