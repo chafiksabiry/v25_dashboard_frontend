@@ -20,39 +20,42 @@ import IntegrationsPanel from './panels/IntegrationsPanel';
 import SettingsPanel from './panels/SettingsPanel';
 import DealManagementPanel from './panels/DealManagementPanel';
 import ContactManagementPanel from './panels/ContactManagementPanel';
+import { AuthProvider } from './contexts/AuthContext';
 
 function App() {
   return (
-    <Provider store={store}>
-      <Router>
-        <div className="flex min-h-screen bg-gray-100">
-          <Sidebar />
-          <div className="flex-1 pl-64">
-            <div className="p-8">
-              <Routes>
-                <Route path="/" element={<DashboardPanel />} />
-                <Route path="/company" element={<CompanyProfilePanel />} />
-                <Route path="/leads" element={<LeadManagementPanel />} />
-                <Route path="/deals" element={<DealManagementPanel />} />
-                <Route path="/contacts" element={<ContactManagementPanel />} />
-                <Route path="/rep-matching" element={<RepMatchingPanel />} />
-                <Route path="/scheduler" element={<SchedulerPanel />} />
-                <Route path="/calls" element={<CallsPanel />} />
-                <Route path="/emails" element={<EmailsPanel />} />
-                <Route path="/chat" element={<ChatPanel />} />
-                <Route path="/gigs" element={<GigsPanel />} />
-                <Route path="/quality-assurance" element={<QualityAssurancePanel />} />
-                <Route path="/operations" element={<OperationsPanel />} />
-                <Route path="/analytics" element={<AnalyticsPanel />} />
-                <Route path="/integrations" element={<IntegrationsPanel />} />
-                <Route path="/settings" element={<SettingsPanel />} />
-              </Routes>
+    <AuthProvider>
+      <Provider store={store}>
+        <Router>
+          <div className="flex min-h-screen bg-gray-100">
+            <Sidebar />
+            <div className="flex-1 pl-64">
+              <div className="p-8">
+                <Routes>
+                  <Route path="/" element={<DashboardPanel />} />
+                  <Route path="/company" element={<CompanyProfilePanel />} />
+                  <Route path="/leads" element={<LeadManagementPanel />} />
+                  <Route path="/deals" element={<DealManagementPanel />} />
+                  <Route path="/contacts" element={<ContactManagementPanel />} />
+                  <Route path="/rep-matching" element={<RepMatchingPanel />} />
+                  <Route path="/scheduler" element={<SchedulerPanel />} />
+                  <Route path="/calls" element={<CallsPanel />} />
+                  <Route path="/emails" element={<EmailsPanel />} />
+                  <Route path="/chat" element={<ChatPanel />} />
+                  <Route path="/gigs" element={<GigsPanel />} />
+                  <Route path="/quality-assurance" element={<QualityAssurancePanel />} />
+                  <Route path="/operations" element={<OperationsPanel />} />
+                  <Route path="/analytics" element={<AnalyticsPanel />} />
+                  <Route path="/integrations" element={<IntegrationsPanel />} />
+                  <Route path="/settings" element={<SettingsPanel />} />
+                </Routes>
+              </div>
             </div>
           </div>
-        </div>
-        <ToastContainer />
-      </Router>
-    </Provider>
+          <ToastContainer />
+        </Router>
+      </Provider>
+    </AuthProvider>
   );
 }
 

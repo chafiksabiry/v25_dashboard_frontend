@@ -14,6 +14,8 @@ import {
   MapPin,
   Phone,
   Mail,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 function DealManagementPanel() {
@@ -37,7 +39,6 @@ function DealManagementPanel() {
   }
 
   const [deals, setDeals] = useState<Deal[]>([]);
-
 
   const fetchDeals = async () => {
     let accessToken = localStorage.getItem("zoho_access_token");
@@ -81,15 +82,15 @@ function DealManagementPanel() {
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Users className="w-6 h-6 text-blue-600" />
+            <div className="p-3 bg-indigo-100 rounded-lg">
+              <Users className="w-6 h-6 text-indigo-600" />
             </div>
-            <h2 className="text-xl font-semibold" onClick={fetchDeals}>
+            <h2 className="text-xl font-semibold text-gray-800" onClick={fetchDeals}>
               Deal Management
             </h2>
           </div>
           <div className="flex gap-2">
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+            <button className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg">
               <Upload className="w-5 h-5" />
               Import Deals
             </button>
@@ -99,104 +100,116 @@ function DealManagementPanel() {
         {/* Statistiques */}
         <div className="grid grid-cols-4 gap-4 mb-6">
           <StatCard
-            icon={<Users className="w-5 h-5 text-blue-600" />}
+            icon={<Users className="w-5 h-5 text-indigo-600" />}
             title="Total Deals"
             value={deals.length}
             trend="12% increase"
-            trendColor="text-green-600"
+            trendColor="text-emerald-600"
+            bgColor="bg-indigo-50"
           />
           <StatCard
-            icon={<DollarSign className="w-5 h-5 text-green-600" />}
+            icon={<DollarSign className="w-5 h-5 text-emerald-600" />}
             title="Total Value"
-            value={`$${deals
-              .reduce((total, deal) => total + (deal.value || 0), 0)
-              .toLocaleString()}`}
+            value={`$${deals.reduce((total, deal) => total + (deal.value || 0), 0).toLocaleString()}`}
             trend="8% increase"
-            trendColor="text-green-600"
+            trendColor="text-emerald-600"
+            bgColor="bg-emerald-50"
           />
           <StatCard
-            icon={<Brain className="w-5 h-5 text-purple-600" />}
+            icon={<Brain className="w-5 h-5 text-fuchsia-600" />}
             title="AI Score"
             value="85%"
             trend="5% increase"
-            trendColor="text-green-600"
+            trendColor="text-emerald-600"
+            bgColor="bg-fuchsia-50"
           />
           <StatCard
-            icon={<Clock className="w-5 h-5 text-yellow-600" />}
+            icon={<Clock className="w-5 h-5 text-amber-600" />}
             title="Avg Response"
             value="2.4h"
             trend="3% decrease"
             trendColor="text-red-600"
+            bgColor="bg-amber-50"
           />
         </div>
 
         {/* Tableau des deals */}
-        <div className="overflow-x-auto max-h-screen border border-gray-200 rounded-lg shadow-lg">
-          <table className="w-full text-sm text-gray-700">
-            <thead className="sticky top-0 bg-gray-100">
-              <tr className="text-left border-b">
-                <th className="py-3 px-4 font-medium text-gray-600">
-                  Deal Details
-                </th>
-                <th className="py-3 px-4 font-medium text-gray-600 text-center">
-                  Stage
-                </th>
-                <th className="py-3 px-4 font-medium text-gray-600 text-center">
-                  Value
-                </th>
-                <th className="py-3 px-4 font-medium text-gray-600 text-center">
-                  AI Insights
-                </th>
-                <th className="py-3 px-4 font-medium text-gray-600 text-center">
-                  Last Contact
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {deals.map((deal) => (
-                <tr
-                  key={deal.id}
-                  className="hover:bg-gray-50 transition duration-300"
-                >
-                  <td className="py-4 px-4">
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        {deal.Deal_Name || "N/A"}
-                      </div>
-                      <div className="text-sm text-gray-500 flex items-center gap-1">
-                        <MapPin className="w-4 h-4 text-gray-500" />
-                        {deal.Location || "N/A"}
-                      </div>
-                      <div className="text-sm text-gray-500 flex items-center gap-1">
-                        <Phone className="w-4 h-4 text-gray-500" />
-                        {deal.Telephony || "123-456-7890"}
-                      </div>
-                      <div className="text-sm text-gray-500 flex items-center gap-1">
-                        <Mail className="w-4 h-4 text-gray-500" />
-                        {deal.Email_1 || "abc@gmail.com"}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-center text-gray-600">
-                    {/* <span className="px-3 py-1 text-xs font-medium"> */}
-                      {deal.Stage || "N/A"}
-                    {/* </span> */}
-                  </td>
-                  <td className="py-3 px-4 text-center font-medium text-gray-800">
-                    ${deal.value?.toLocaleString()}
-                  </td>
-                  <td className="py-3 px-4 text-center text-gray-600">
-                    {deal.metadata?.ai_analysis?.score || "N/A"}
-                  </td>
-                  <td className="py-3 px-4 text-center text-gray-600">
-                    {deal.updated_at
-                      ? new Date(deal.updated_at).toLocaleDateString()
-                      : "N/A"}
-                  </td>
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-gray-700">
+              <thead className="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50">
+                <tr className="border-b border-gray-200">
+                  <th className="py-4 px-6 font-semibold text-gray-900">
+                    Deal Details
+                  </th>
+                  <th className="py-4 px-6 font-semibold text-gray-900 text-center">
+                    Stage
+                  </th>
+                  <th className="py-4 px-6 font-semibold text-gray-900 text-center">
+                    Value
+                  </th>
+                  <th className="py-4 px-6 font-semibold text-gray-900 text-center">
+                    AI Insights
+                  </th>
+                  <th className="py-4 px-6 font-semibold text-gray-900 text-center">
+                    Last Contact
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {deals.map((deal) => (
+                  <tr
+                    key={deal.id}
+                    className="hover:bg-gradient-to-r hover:from-purple-50/30 hover:to-blue-50/30 transition-all duration-300"
+                  >
+                    <td className="py-4 px-6">
+                      <div className="space-y-2">
+                        <div className="font-medium text-gray-900 text-base hover:text-indigo-600 cursor-pointer transition-colors duration-200">
+                          {deal.Deal_Name || "N/A"}
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <div className="text-sm text-gray-500 flex items-center gap-2 hover:text-indigo-500 transition-colors duration-200">
+                            <MapPin className="w-4 h-4 text-indigo-400" />
+                            {deal.Location || "N/A"}
+                          </div>
+                          <div className="text-sm text-gray-500 flex items-center gap-2 hover:text-indigo-500 transition-colors duration-200">
+                            <Phone className="w-4 h-4 text-indigo-400" />
+                            {deal.Telephony || "123-456-7890"}
+                          </div>
+                          <div className="text-sm text-gray-500 flex items-center gap-2 hover:text-indigo-500 transition-colors duration-200">
+                            <Mail className="w-4 h-4 text-indigo-400" />
+                            {deal.Email_1 || "abc@gmail.com"}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 text-center">
+                      <span className="px-4 py-1.5 text-sm font-medium rounded-full bg-gradient-to-r from-indigo-50 to-blue-50 text-indigo-700 border border-indigo-100 shadow-sm">
+                        {deal.Stage || "N/A"}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-center">
+                      <span className="font-semibold text-emerald-700">
+                        ${deal.value?.toLocaleString()}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-center">
+                      <span className="px-4 py-1.5 text-sm font-medium rounded-full bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-700 border border-emerald-100 shadow-sm">
+                        {deal.metadata?.ai_analysis?.score || "N/A"}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-center">
+                      <span className="text-gray-600">
+                        {deal.updated_at
+                          ? new Date(deal.updated_at).toLocaleDateString()
+                          : "N/A"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -209,6 +222,7 @@ interface StatCardProps {
   value: string | number;
   trend: string;
   trendColor: string;
+  bgColor: string;
 }
 
 const StatCard: React.FC<StatCardProps> = ({
@@ -217,13 +231,14 @@ const StatCard: React.FC<StatCardProps> = ({
   value,
   trend,
   trendColor,
+  bgColor,
 }) => (
-  <div className="bg-gray-50 p-4 rounded-lg">
+  <div className={`${bgColor} p-4 rounded-lg border border-gray-200 hover:shadow-md transition-shadow duration-200`}>
     <div className="flex items-center gap-2 mb-2">
       {icon}
-      <span className="font-medium">{title}</span>
+      <span className="font-medium text-gray-700">{title}</span>
     </div>
-    <div className="text-2xl font-bold">{value}</div>
+    <div className="text-2xl font-bold text-gray-900">{value}</div>
     <div className={`text-sm flex items-center gap-1 ${trendColor}`}>
       {trend.includes("increase") ? (
         <ArrowUpRight className="w-4 h-4" />

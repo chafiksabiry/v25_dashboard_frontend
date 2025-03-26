@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Plug,
   Search,
@@ -20,8 +20,22 @@ import {
   ArrowDownRight,
   Building2,
   Clock,
-  Network
+  Network,
+  Key
 } from 'lucide-react';
+import { 
+  checkZohoTokenValidity, 
+  disconnectZoho,
+  configureZoho
+} from '../services/zohoService';
+
+interface UserConfig {
+  clientId: string;
+  clientSecret: string;
+  refreshToken: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 interface ConfigField {
   key: string;
@@ -31,6 +45,7 @@ interface ConfigField {
   options?: { value: string; label: string }[];
   required?: boolean;
   validation?: (value: string) => string | undefined;
+  isUserToken?: boolean;
 }
 
 interface Integration {
@@ -40,21 +55,231 @@ interface Integration {
   category: string;
   status: 'connected' | 'error' | 'pending';
   icon_url: string;
+  requiresUserToken?: boolean;
+  userConfig?: UserConfig;
   config?: {
     fields: ConfigField[];
   };
 }
 
-export function IntegrationsPanel() {
-  const [activeFilter, setActiveFilter] = useState<string>('all');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
-  const [configValues, setConfigValues] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState<string | null>(null);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [error, setError] = useState<string | null>(null);
+interface ZohoConfig {
+  clientId: string;
+  clientSecret: string;
+  refreshToken: string;
+}
 
+interface ZohoResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+}
+
+interface ZohoDBConfig extends ZohoConfig {
+  id?: number;
+  organizationId: string;
+  portalId: string;
+  environment: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Créer un service global pour gérer le token Zoho
+const ZohoTokenService = {
+  getToken: (): string | null => {
+    return localStorage.getItem("zoho_access_token");
+  },
+  
+  setToken: (token: string): void => {
+    localStorage.setItem("zoho_access_token", token);
+  },
+  
+  removeToken: (): void => {
+    localStorage.removeItem("zoho_access_token");
+  },
+  
+  isTokenValid: async (): Promise<boolean> => {
+    const token = ZohoTokenService.getToken();
+    if (!token) return false;
+    
+    return await checkZohoTokenValidity();
+  }
+};
+
+// Add database integration functions
+const saveZohoConfigToDB = async (config: ZohoDBConfig): Promise<ZohoResponse> => {
+  try {
+    const token = ZohoTokenService.getToken();
+    if (!token) {
+      return {
+        success: false,
+        message: 'Zoho token not found. Please connect to Zoho first.'
+      };
+    }
+
+    const response = await fetch('http://localhost:5005/api/zoho/db/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(config),
+    });
+
+    const data = await response.json();
+    return {
+      success: response.ok,
+      message: data.message || 'Zoho configuration saved to database successfully',
+      data: data
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to save Zoho configuration to database'
+    };
+  }
+};
+
+const getZohoConfigFromDB = async (): Promise<ZohoDBConfig | null> => {
+  try {
+    const token = ZohoTokenService.getToken();
+    if (!token) {
+      console.warn('Zoho token not found. Please connect to Zoho first.');
+      return null;
+    }
+
+    const response = await fetch('http://localhost:5005/api/zoho/db/config', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch Zoho configuration');
+    }
+    
+    const data = await response.json();
+    return data.config;
+  } catch (error) {
+    console.error('Error fetching Zoho config:', error);
+    return null;
+  }
+};
+
+const deleteZohoConfigFromDB = async (): Promise<ZohoResponse> => {
+  try {
+    const token = ZohoTokenService.getToken();
+    // Pour la suppression, on permet de continuer même sans token
+    // car on veut pouvoir nettoyer même si le token est invalide
+
+    const response = await fetch('http://localhost:5005/api/zoho/db/config', {
+      method: 'DELETE',
+      headers: token ? {
+        'Authorization': `Bearer ${token}`
+      } : {}
+    });
+
+    const data = await response.json();
+    return {
+      success: response.ok,
+      message: data.message || 'Zoho configuration deleted successfully',
+      data: data
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to delete Zoho configuration'
+    };
+  }
+};
+
+// Ajouter une fonction pour récupérer des données Zoho (contacts, leads, etc.)
+const getZohoData = async (endpoint: string): Promise<ZohoResponse> => {
+  try {
+    const token = ZohoTokenService.getToken();
+    if (!token) {
+      return {
+        success: false,
+        message: 'Zoho token not found. Please connect to Zoho first.'
+      };
+    }
+
+    const response = await fetch(`http://localhost:5005/api/zoho/data/${endpoint}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+    return {
+      success: response.ok,
+      message: response.ok ? 'Data retrieved successfully' : 'Failed to retrieve data',
+      data: data
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : `Failed to retrieve Zoho ${endpoint}`
+    };
+  }
+};
+
+export function IntegrationsPanel() {
   const integrations: Integration[] = [
+    {
+      id: 'user-token',
+      name: 'User Authentication',
+      description: 'Configure your authentication credentials for all integrations',
+      category: 'authentication',
+      status: 'pending',
+      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=usertoken',
+      requiresUserToken: true,
+      config: {
+        fields: [
+          {
+            key: 'client_id',
+            label: 'Client ID',
+            type: 'text',
+            required: true,
+            isUserToken: true,
+            placeholder: 'Enter your client ID',
+            validation: (value) => {
+              if (value.length < 5) {
+                return 'Client ID must be at least 5 characters long';
+              }
+              return undefined;
+            }
+          },
+          {
+            key: 'client_secret',
+            label: 'Client Secret',
+            type: 'password',
+            required: true,
+            isUserToken: true,
+            placeholder: 'Enter your client secret',
+            validation: (value) => {
+              if (value.length < 8) {
+                return 'Client secret must be at least 8 characters long';
+              }
+              return undefined;
+            }
+          },
+          {
+            key: 'refresh_token',
+            label: 'Refresh Token',
+            type: 'password',
+            required: true,
+            isUserToken: true,
+            placeholder: 'Enter your refresh token',
+            validation: (value) => {
+              if (value.length < 8) {
+                return 'Refresh token must be at least 8 characters long';
+              }
+              return undefined;
+            }
+          }
+        ]
+      }
+    },
     {
       id: 'twilio',
       name: 'Twilio',
@@ -267,19 +492,34 @@ export function IntegrationsPanel() {
             key: 'client_id',
             label: 'Client ID',
             type: 'text',
-            required: true
+            required: true,
+            placeholder: 'Enter your Zoho client ID'
           },
           {
             key: 'client_secret',
             label: 'Client Secret',
             type: 'password',
-            required: true
+            required: true,
+            placeholder: 'Enter your Zoho client secret',
+            validation: (value: string) => {
+              if (!value) return 'Client Secret is required';
+              if (value.startsWith('[')) {
+                try {
+                  const parsed = JSON.parse(value);
+                  if (!parsed[0]?.value) return 'Invalid Client Secret format';
+                } catch (e) {
+                  return 'Invalid Client Secret format';
+                }
+              }
+              return undefined;
+            }
           },
           {
             key: 'refresh_token',
             label: 'Refresh Token',
             type: 'password',
-            required: true
+            required: true,
+            placeholder: 'Enter your Zoho refresh token'
           }
         ]
       }
@@ -424,6 +664,123 @@ export function IntegrationsPanel() {
     }
   ];
 
+  const [activeFilter, setActiveFilter] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
+  const [configValues, setConfigValues] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
+  const [userToken, setUserToken] = useState<UserConfig | null>(() => {
+    // Initialize from localStorage
+    const savedConfig = localStorage.getItem('user_config');
+    return savedConfig ? JSON.parse(savedConfig) : null;
+  });
+  const [zohoDBConfig, setZohoDBConfig] = useState<ZohoDBConfig | null>(null);
+
+  const [integrationStates, setIntegrationStates] = useState<Record<string, Integration>>(() => {
+    const states: Record<string, Integration> = {};
+    const zohoToken = ZohoTokenService.getToken();
+    
+    integrations.forEach(integration => {
+      states[integration.id] = {
+        ...integration,
+        status: integration.id === 'zoho-crm' && zohoToken ? 'connected' : 'pending'
+      };
+    });
+    return states;
+  });
+
+  // Update localStorage when token changes
+  useEffect(() => {
+    if (userToken) {
+      localStorage.setItem('user_config', JSON.stringify(userToken));
+    } else {
+      localStorage.removeItem('user_config');
+    }
+  }, [userToken]);
+
+  // Load Zoho configuration from database on component mount
+  useEffect(() => {
+    const loadZohoConfig = async () => {
+      const config = await getZohoConfigFromDB();
+      if (config) {
+        setZohoDBConfig(config);
+        // Update integration status
+        setIntegrationStates(prev => ({
+          ...prev,
+          'zoho-crm': {
+            ...prev['zoho-crm'],
+            status: 'connected' as const
+          }
+        }));
+      }
+    };
+    loadZohoConfig();
+  }, []);
+
+  // Vérifier la validité du token au chargement
+  useEffect(() => {
+    const verifyToken = async () => {
+      const isValid = await ZohoTokenService.isTokenValid();
+      
+      // Mettre à jour le statut en fonction de la validité
+      setIntegrationStates(prev => ({
+        ...prev,
+        'zoho-crm': {
+          ...prev['zoho-crm'],
+          status: isValid ? 'connected' : 'error' as const
+        }
+      }));
+      
+      // Si le token n'est pas valide, afficher un message d'erreur
+      if (!isValid) {
+        setError('Zoho token has expired or is invalid. Please reconnect to Zoho.');
+        ZohoTokenService.removeToken();
+      }
+    };
+    
+    // Vérifier uniquement s'il y a un token
+    if (ZohoTokenService.getToken()) {
+      verifyToken();
+    }
+  }, []);
+
+  // Améliorer useEffect pour gérer le retour de l'authentification Zoho
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    
+    if (token) {
+      ZohoTokenService.setToken(token);
+      
+      // Nettoyer l'URL (remplacer l'historique sans le paramètre token)
+      window.history.replaceState({}, document.title, "/integrations");
+      
+      // Mettre à jour le statut de l'intégration
+      setIntegrationStates(prev => ({
+        ...prev,
+        'zoho-crm': {
+          ...prev['zoho-crm'],
+          status: 'connected' as const
+        }
+      }));
+      
+      setIsZohoTokenValid(true);
+      setError(null); // Effacer les erreurs précédentes
+      
+      // Afficher un message de succès
+      console.log("Zoho successfully connected!");
+      
+      // Charger la configuration depuis la base de données après connexion
+      getZohoConfigFromDB().then(config => {
+        if (config) {
+          setZohoDBConfig(config);
+        }
+      });
+    }
+  }, []);
+
   const categories = [
     { id: 'all', label: 'All' },
     { id: 'crm', label: 'CRM' },
@@ -497,9 +854,44 @@ export function IntegrationsPanel() {
     try {
       setLoading(integration.id);
       setError(null);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      if (integration.id === 'zoho-crm') {
+        // Au lieu de rediriger directement, on affiche d'abord le popup de configuration
+        setSelectedIntegration(integration);
+        setConfigValues({
+          client_id: '',
+          client_secret: '',
+          refresh_token: ''
+        });
+        
+        // Si on a déjà une configuration, on la charge
+        const existingConfig = await getZohoConfigFromDB();
+        if (existingConfig) {
+          setConfigValues({
+            client_id: existingConfig.clientId,
+            client_secret: existingConfig.clientSecret,
+            refresh_token: existingConfig.refreshToken
+          });
+        }
+        return;
+      }
+
+      setIntegrationStates(prev => ({
+        ...prev,
+        [integration.id]: {
+          ...prev[integration.id],
+          status: 'connected' as const
+        }
+      }));
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to connect integration');
+      setIntegrationStates(prev => ({
+        ...prev,
+        [integration.id]: {
+          ...prev[integration.id],
+          status: 'error' as const
+        }
+      }));
     } finally {
       setLoading(null);
     }
@@ -509,28 +901,95 @@ export function IntegrationsPanel() {
     try {
       setLoading(integration.id);
       setError(null);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      if (integration.id === 'zoho-crm') {
+        const token = ZohoTokenService.getToken();
+        const response = await fetch('http://localhost:5005/api/zoho/disconnect', {
+          method: 'POST',
+          headers: token ? {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          } : {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          // Supprimer le token local
+          ZohoTokenService.removeToken();
+          setZohoDBConfig(null);
+          setIsZohoTokenValid(false);
+          
+          setIntegrationStates(prev => ({
+            ...prev,
+            'zoho-crm': {
+              ...prev['zoho-crm'],
+              status: 'pending' as const
+            }
+          }));
+
+          console.log(`Successfully disconnected ${integration.name}`);
+        } else {
+          throw new Error(data.message || 'Failed to disconnect from Zoho');
+        }
+      }
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to disconnect integration');
+      console.error('Disconnect error:', error);
+      const errorMessage = error.response?.data?.message || 
+                          error.message || 
+                          'Failed to disconnect integration';
+      setError(errorMessage);
+      
+      // Mise à jour du statut en cas d'erreur
+      setIntegrationStates(prev => ({
+        ...prev,
+        [integration.id]: {
+          ...prev[integration.id],
+          status: 'error' as const
+        }
+      }));
     } finally {
       setLoading(null);
     }
   };
 
-  const handleConfigure = (integration: Integration) => {
-    setSelectedIntegration(integration);
-    setErrors({});
-    setError(null);
-    
-    const existingConfig = {
-      api_key: '********',
-      region: 'us'
-    };
-    setConfigValues(existingConfig);
+  const handleConfigure = async (integration: Integration) => {
+    if (integration.id === 'zoho-crm') {
+      setSelectedIntegration(integration);
+      setConfigValues({
+        client_id: '',
+        client_secret: '',
+        refresh_token: ''
+      });
+      
+      // Si on a déjà une configuration, on la charge
+      const existingConfig = await getZohoConfigFromDB();
+      if (existingConfig) {
+        setConfigValues({
+          client_id: existingConfig.clientId,
+          client_secret: existingConfig.clientSecret,
+          refresh_token: existingConfig.refreshToken
+        });
+      }
+    }
   };
 
   const handleFieldChange = (key: string, value: string) => {
-    setConfigValues(prev => ({ ...prev, [key]: value }));
+    let cleanValue = value;
+
+    // Si c'est le client_secret et qu'il est au format JSON
+    if (key === 'client_secret' && value.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(value);
+        cleanValue = parsed[0]?.value || value;
+      } catch (e) {
+        cleanValue = value;
+      }
+    }
+    
+    setConfigValues(prev => ({ ...prev, [key]: cleanValue }));
     
     if (errors[key]) {
       setErrors(prev => {
@@ -551,29 +1010,124 @@ export function IntegrationsPanel() {
     try {
       setLoading(selectedIntegration.id);
       setError(null);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setSelectedIntegration(null);
-      setConfigValues({});
-      setErrors({});
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to save configuration');
+
+      if (selectedIntegration.id === 'zoho-crm') {
+        try {
+          // Nettoyer et valider les valeurs
+          let clientSecret = configValues.client_secret;
+          
+          // Si le client_secret est un JSON string, essayer de l'extraire
+          if (clientSecret.startsWith('[')) {
+            try {
+              const parsed = JSON.parse(clientSecret);
+              clientSecret = parsed[0]?.value || '';
+            } catch (e) {
+              console.error('Error parsing client secret:', e);
+            }
+          }
+
+          // Vérifier que toutes les valeurs sont valides
+          if (!configValues.refresh_token || !configValues.client_id || !clientSecret) {
+            throw new Error('Tous les champs sont requis');
+          }
+
+          // Préparation des données dans le format attendu par le backend
+          const configData = {
+            refreshToken: configValues.refresh_token.trim(),
+            clientId: configValues.client_id.trim(),
+            clientSecret: clientSecret.trim()
+          };
+
+          console.log('Sending configuration to server:', {
+            refreshToken: configData.refreshToken,
+            clientId: configData.clientId,
+            clientSecret: '***hidden***'
+          });
+
+          // Appel à l'API pour configurer Zoho
+          const response = await fetch('http://localhost:5005/api/zoho/configure', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify(configData)
+          });
+
+          // Vérifier d'abord si la réponse est JSON
+          const contentType = response.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Réponse invalide du serveur');
+          }
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.message || `Erreur ${response.status}: ${data.error || 'Erreur inconnue'}`);
+          }
+
+          if (data.success) {
+            // Stocker le token d'accès
+            if (data.accessToken) {
+              ZohoTokenService.setToken(data.accessToken);
+            }
+
+            // Mise à jour du statut de l'intégration
+            setIntegrationStates(prev => ({
+              ...prev,
+              'zoho-crm': {
+                ...prev['zoho-crm'],
+                status: 'connected' as const
+              }
+            }));
+
+            setIsZohoTokenValid(true);
+            setSelectedIntegration(null);
+            setConfigValues({});
+            setErrors({});
+
+            console.log('Zoho CRM configured successfully');
+          } else {
+            throw new Error(data.message || 'La configuration a échoué');
+          }
+        } catch (error) {
+          console.error('Configuration error:', error);
+          const errorMessage = error instanceof Error ? error.message : 'Échec de la configuration de Zoho CRM';
+          setError(errorMessage);
+          
+          setIntegrationStates(prev => ({
+            ...prev,
+            'zoho-crm': {
+              ...prev['zoho-crm'],
+              status: 'error' as const
+            }
+          }));
+        }
+      }
     } finally {
       setLoading(null);
     }
   };
 
-  const filteredIntegrations = integrations.filter(integration => {
+  // Update stats calculation to use integrationStates
+  const stats = {
+    total: Object.keys(integrationStates).length,
+    connected: Object.values(integrationStates).filter(i => i.status === 'connected').length,
+    active: Object.values(integrationStates).filter(i => i.status === 'connected').length,
+    error: Object.values(integrationStates).filter(i => i.status === 'error').length
+  };
+
+  // Update filteredIntegrations to use integrationStates
+  const filteredIntegrations = Object.values(integrationStates).filter(integration => {
     if (activeFilter !== 'all' && integration.category !== activeFilter) return false;
     if (searchTerm && !integration.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
   });
 
-  const stats = {
-    total: integrations.length,
-    connected: integrations.filter(i => i.status === 'connected').length,
-    active: integrations.filter(i => i.status === 'connected').length,
-    error: integrations.filter(i => i.status === 'error').length
-  };
+  // Ajouter un état pour la validité du token
+  const [isZohoTokenValid, setIsZohoTokenValid] = useState<boolean>(() => {
+    return ZohoTokenService.getToken() !== null;
+  });
 
   return (
     <div className="space-y-6">
@@ -696,21 +1250,30 @@ export function IntegrationsPanel() {
                 <span className="capitalize">{integration.category}</span>
               </div>
               <div className="flex gap-2">
-                {integration.status === 'connected' ? (
-                  <>
-                    <button
-                      onClick={() => handleConfigure(integration)}
-                      className="flex-1 px-3 py-1.5 border border-cyan-600 text-cyan-600 rounded-lg hover:bg-cyan-50"
-                    >
-                      Configure
-                    </button>
+                {integration.id === 'zoho-crm' ? (
+                  isZohoTokenValid ? (
                     <button
                       onClick={() => handleDisconnect(integration)}
-                      className="px-3 py-1.5 border border-red-600 text-red-600 rounded-lg hover:bg-red-50"
+                      className="flex-1 px-3 py-1.5 border border-red-600 text-red-600 rounded-lg hover:bg-red-50"
                     >
                       Disconnect
                     </button>
-                  </>
+                  ) : (
+                    <button
+                      onClick={() => handleConnect(integration)}
+                      disabled={loading === integration.id}
+                      className="flex-1 px-3 py-1.5 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 disabled:bg-cyan-300"
+                    >
+                      {loading === integration.id ? 'Connecting...' : 'Connect'}
+                    </button>
+                  )
+                ) : integration.status === 'connected' ? (
+                  <button
+                    onClick={() => handleDisconnect(integration)}
+                    className="flex-1 px-3 py-1.5 border border-red-600 text-red-600 rounded-lg hover:bg-red-50"
+                  >
+                    Disconnect
+                  </button>
                 ) : (
                   <button
                     onClick={() => handleConnect(integration)}

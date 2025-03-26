@@ -84,47 +84,79 @@ export function LeadUploader({ onComplete, onClose }: LeadUploaderProps) {
     }
   }, []);
 
+  const refreshAccessToken = async () => {
+    try {
+      const refreshToken = localStorage.getItem("zoho_refresh_token");
+      if (!refreshToken) {
+        throw new Error("Aucun refresh token disponible.");
+      }
+
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/zoho/refresh-token`,
+        {
+          refresh_token: refreshToken,
+        }
+      );
+
+      if (response.data.access_token) {
+        localStorage.setItem("zoho_access_token", response.data.access_token);
+        return response.data.access_token;
+      } else {
+        throw new Error("Impossible de rafraîchir le token.");
+      }
+    } catch (error) {
+      console.error("Erreur lors du rafraîchissement du token:", error);
+      return null;
+    }
+  };
+
   const fetchLeads = async () => {
     setError("");
 
     let accessToken = localStorage.getItem("zoho_access_token");
     if (!accessToken) {
-        window.location.href = `${import.meta.env.VITE_API_URL}/zoho/auth`;
-        return;
+      window.location.href = `${import.meta.env.VITE_API_URL}/zoho/auth`;
+      return;
     }
 
     try {
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/zoho/leads`, {
-            headers: {
-                Authorization: `Zoho-oauthtoken ${accessToken}`,
-            },
-        });
-
-        console.log("Zoho API Response:", response.data);
-
-        Swal.fire({
-            title: "Succès",
-            text: "Leads importés et enregistrés avec succès !",
-            icon: "success",
-            confirmButtonText: "OK",
-        });
-    } catch (error) {
-        console.error("Erreur lors de la récupération des leads:", error);
-        if (axios.isAxiosError(error) && error.response?.status === 401) {
-            const loginURL = error.response?.data?.loginURL;
-            if (loginURL) {
-                window.location.href = loginURL;
-            }
-        } else {
-            setError(
-                "Impossible de récupérer les leads. Vérifiez votre connexion."
-            );
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/zoho/leads`,
+        {
+          headers: {
+            Authorization: `Zoho-oauthtoken ${accessToken}`,
+          },
         }
+      );
+
+      console.log("Zoho API Response:", response.data);
+
+      Swal.fire({
+        title: "Succès",
+        text: "Leads importés et enregistrés avec succès !",
+        icon: "success",
+        confirmButtonText: "OK",
+      });
+    } catch (error) {
+      console.error("Erreur lors de la récupération des leads:", error);
+
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        // Token expiré, essayons de le rafraîchir
+        const newAccessToken = await refreshAccessToken();
+        if (newAccessToken) {
+          fetchLeads(); // Réessayer avec le nouveau token
+        } else {
+          window.location.href = `${import.meta.env.VITE_API_URL}/zoho/auth`;
+        }
+      } else {
+        setError(
+          "Impossible de récupérer les leads. Vérifiez votre connexion."
+        );
+      }
     }
-};
+  };
 
-
-const checkZohoConnection = async () => {
+  const checkZohoConnection = async () => {
     const accessToken = localStorage.getItem("zoho_access_token");
 
     if (!accessToken) {

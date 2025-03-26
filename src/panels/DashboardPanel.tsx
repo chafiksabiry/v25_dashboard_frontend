@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CreditCard,
   CircleDollarSign,
@@ -182,6 +182,13 @@ function AICoachingSection() {
 }
 
 function LeadManagementSection() {
+  const [deals, setDeals] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const dealsPerPage = 3;
+  const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState(false);
+  const [authAttempted, setAuthAttempted] = useState(false);
+  
   const handleAddLead = () => {
     console.log('Adding new lead');
   };
@@ -198,6 +205,136 @@ function LeadManagementSection() {
     console.log('Starting chat', id);
   };
 
+  const handleZohoAuth = () => {
+    // Marquer que nous avons tenté l'authentification pour éviter les boucles
+    localStorage.setItem("zoho_auth_attempted", "true");
+    
+    // Rediriger vers l'authentification Zoho avec un paramètre de temps pour éviter le cache
+    const timestamp = new Date().getTime();
+    window.location.href = `${import.meta.env.VITE_API_URL}/zoho/auth?t=${timestamp}`;
+  };
+
+  const fetchDeals = async () => {
+    setIsLoading(true);
+    let accessToken = localStorage.getItem("zoho_access_token");
+    
+    // Si nous n'avons pas de token mais que nous avons déjà tenté l'authentification,
+    // nous affichons simplement l'erreur sans rediriger
+    if (!accessToken) {
+      if (localStorage.getItem("zoho_auth_attempted")) {
+        setAuthAttempted(true);
+      }
+      setAuthError(true);
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/zoho/deals`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (response.status === 401) {
+        // Token expiré ou invalide
+        setAuthError(true);
+        localStorage.removeItem("zoho_access_token");
+        setIsLoading(false);
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la récupération des deals");
+      }
+
+      const result = await response.json();
+      const fetchedDeals = result.data.data || [];
+      console.log("Deals récupérés :", fetchedDeals);
+      
+      setDeals(fetchedDeals);
+      setAuthError(false);
+      // Réinitialiser le marqueur d'authentification puisque nous avons réussi
+      localStorage.removeItem("zoho_auth_attempted");
+    } catch (error) {
+      console.error("Erreur :", error);
+      setAuthError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Vérifier si nous revenons d'une authentification Zoho
+    const urlParams = new URLSearchParams(window.location.search);
+    const zohoAuthCode = urlParams.get('code');
+    
+    if (zohoAuthCode) {
+      // Si nous avons un code d'autorisation, nous devons l'échanger contre un token
+      // Cela devrait être fait par votre backend, mais nous pouvons le simuler ici
+      console.log("Code d'autorisation Zoho reçu:", zohoAuthCode);
+      
+      // Nettoyer l'URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+      
+      // Échanger le code contre un token (ceci devrait être fait par votre backend)
+      exchangeCodeForToken(zohoAuthCode);
+    } else {
+      fetchDeals();
+    }
+  }, []);
+  
+  const exchangeCodeForToken = async (code) => {
+    setIsLoading(true);
+    try {
+      // Cette requête devrait être faite par votre backend pour des raisons de sécurité
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/zoho/auth/token`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ code }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Erreur lors de l'échange du code d'autorisation");
+      }
+      
+      const data = await response.json();
+      localStorage.setItem("zoho_access_token", data.access_token);
+      localStorage.removeItem("zoho_auth_attempted");
+      
+      // Maintenant que nous avons un token, récupérer les deals
+      fetchDeals();
+    } catch (error) {
+      console.error("Erreur lors de l'échange du code:", error);
+      setAuthError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Calculer les indices pour la pagination
+  const indexOfLastDeal = currentPage * dealsPerPage;
+  const indexOfFirstDeal = indexOfLastDeal - dealsPerPage;
+  const currentDeals = deals.slice(indexOfFirstDeal, indexOfLastDeal);
+  const totalPages = Math.ceil(deals.length / dealsPerPage);
+
+  // Fonctions pour la pagination
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm p-6">
       <div className="flex items-center justify-between mb-6">
@@ -207,63 +344,153 @@ function LeadManagementSection() {
           </div>
           <h2 className="text-xl font-semibold">Lead Management</h2>
         </div>
-        <button onClick={handleAddLead} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-          Add Lead
-        </button>
+        <div className="flex gap-2">
+          {authError && (
+            <button 
+              onClick={handleZohoAuth} 
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              disabled={authAttempted}
+            >
+              {authAttempted ? "Autorisation en attente..." : "Connecter à Zoho"}
+            </button>
+          )}
+          <button 
+            onClick={handleAddLead} 
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            disabled={authError}
+          >
+            Add Lead
+          </button>
+        </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="text-left border-b">
-              <th className="pb-3">Name</th>
-              <th className="pb-3">Status</th>
-              <th className="pb-3">Value</th>
-              <th className="pb-3">Last Contact</th>
-              <th className="pb-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {[1, 2, 3].map((i) => (
-              <tr key={i} className="hover:bg-gray-50">
-                <td className="py-3">
-                  <div className="flex items-center gap-2">
-                    <img
-                      src={`https://i.pravatar.cc/32?img=${i + 10}`}
-                      alt="Contact"
-                      className="w-8 h-8 rounded-full"
-                    />
-                    <div>
-                      <div className="font-medium">John Smith</div>
-                      <div className="text-sm text-gray-500">+1 234 567 890</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="py-3">
-                  <span className="px-2 py-1 bg-green-100 text-green-600 rounded-full text-sm">
-                    Active
-                  </span>
-                </td>
-                <td className="py-3">$5,000</td>
-                <td className="py-3">2 hours ago</td>
-                <td className="py-3">
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => handleCall('1')} className="p-2 hover:bg-gray-100 rounded-lg">
-                      <Phone className="w-5 h-5" />
-                    </button>
-                    <button onClick={() => handleEmail('1')} className="p-2 hover:bg-gray-100 rounded-lg">
-                      <Mail className="w-5 h-5" />
-                    </button>
-                    <button onClick={() => handleChat('1')} className="p-2 hover:bg-gray-100 rounded-lg">
-                      <MessageSquare className="w-5 h-5" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {isLoading ? (
+        <div className="flex justify-center items-center py-10">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+        </div>
+      ) : authError ? (
+        <div className="text-center py-10">
+          {authAttempted ? (
+            <div>
+              <p className="text-amber-600 mb-2">Problème d'autorisation Zoho</p>
+              <p className="text-gray-600 mb-4">
+                Vous avez été redirigé vers la page d'autorisation Zoho mais l'autorisation n'a pas été complétée.
+                Assurez-vous de cliquer sur "Accepter" sur la page d'autorisation Zoho.
+              </p>
+              <p className="text-gray-600 mb-4">
+                Si le problème persiste, essayez de vider le cache de votre navigateur ou d'utiliser une fenêtre de navigation privée.
+              </p>
+              <button 
+                onClick={handleZohoAuth} 
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Réessayer la connexion
+              </button>
+            </div>
+          ) : (
+            <div>
+          <p className="text-gray-600 mb-4">Vous devez vous connecter à Zoho pour voir vos leads</p>
+          <button 
+            onClick={handleZohoAuth} 
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Se connecter à Zoho
+          </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left border-b">
+                  <th className="pb-3">Name</th>
+                  <th className="pb-3">Status</th>
+                  <th className="pb-3">Value</th>
+                  <th className="pb-3">Last Contact</th>
+                  <th className="pb-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {currentDeals.length > 0 ? (
+                  currentDeals.map((deal, index) => (
+                    <tr key={deal.id || index} className="hover:bg-gray-50">
+                      <td className="py-3">
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={`https://i.pravatar.cc/32?img=${indexOfFirstDeal + index + 10}`}
+                            alt="Contact"
+                            className="w-8 h-8 rounded-full"
+                          />
+                          <div>
+                            <div className="font-medium">{deal.Deal_Name || 'Unnamed Deal'}</div>
+                            <div className="text-sm text-gray-500">{deal.Phone || 'No phone'}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3">
+                        <span className="px-2 py-1 bg-green-100 text-green-600 rounded-full text-sm">
+                          {deal.Stage || 'Unknown'}
+                        </span>
+                      </td>
+                      <td className="py-3">${deal.Amount || '0'}</td>
+                      <td className="py-3">{deal.Last_Activity_Time || 'Never'}</td>
+                      <td className="py-3">
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => handleCall(deal.id)} className="p-2 hover:bg-gray-100 rounded-lg">
+                            <Phone className="w-5 h-5" />
+                          </button>
+                          <button onClick={() => handleEmail(deal.id)} className="p-2 hover:bg-gray-100 rounded-lg">
+                            <Mail className="w-5 h-5" />
+                          </button>
+                          <button onClick={() => handleChat(deal.id)} className="p-2 hover:bg-gray-100 rounded-lg">
+                            <MessageSquare className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="py-4 text-center text-gray-500">
+                      No leads available
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Pagination */}
+          {deals.length > 0 && (
+            <div className="flex justify-between items-center mt-4">
+              <div className="text-sm text-gray-500">
+                Showing {indexOfFirstDeal + 1} to {Math.min(indexOfLastDeal, deals.length)} of {deals.length} leads
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  onClick={goToPreviousPage} 
+                  disabled={currentPage === 1}
+                  className={`px-3 py-1 rounded-md ${currentPage === 1 ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
+                >
+                  Previous
+                </button>
+                <span className="px-3 py-1 bg-blue-600 text-white rounded-md">
+                  {currentPage}
+                </span>
+                <button 
+                  onClick={goToNextPage} 
+                  disabled={currentPage === totalPages}
+                  className={`px-3 py-1 rounded-md ${currentPage === totalPages ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
