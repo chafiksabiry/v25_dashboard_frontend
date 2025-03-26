@@ -22,7 +22,7 @@ ENV TWILIO_ACCOUNT_SID=AC8a453959a6cb01cbbd1c819b00c5782f
 ENV VITE_BACKEND_URL_INTEGRATIONS=https://api-integration.harx.ai/api
 ENV TWILIO_AUTH_TOKEN=7ade91a170bff98bc625543287ee62c8
 ENV VITE_QIANKUN=true
-ENV VITE_API_URL_CALL=https://api-calls.harx.ai/
+ENV VITE_API_URL_CALL=https://api-calls.harx.ai
 ENV VITE_QALQUL_API_KEY=k0HDn140xJM6WGoAMmX2U.17084ed7cc245f6d9f707538ebd90d60
 ENV QALQUL_API=https://digital-works.qalqul.io/discovery/v1/calls
 ENV QALQUL_KEY=k0HDn140xJM6WGoAMmX2U.17084ed7cc245f6d9f707538ebd90d60
@@ -31,7 +31,9 @@ ENV VITE_QALQUL_PASSWORD=ewyaHtvzDPRdXrZL
 ENV VITE_BACKEND_KNOWLEDGEBASE_BACKEND=https://api-knowledge-base.harx.ai
 
 # WebSocket URL for Speech-to-Text
-ENV VITE_WS_URL=ws://38.242.208.242:5006
+#ENV VITE_WS_URL=ws://38.242.208.242:5006
+ENV VITE_WS_URL=wss://api-calls.harx.ai/speech-to-text
+
 RUN npm run build
 
 RUN npm install -g serve

@@ -691,7 +691,7 @@ if(isSdkInitialized){
                   };
 
                   // Initialize WebSocket connection for streaming audio to backend
-                  const wsUrl = `${import.meta.env.VITE_API_URL_CALL.replace('http', 'ws')}/speech-to-text`;
+                  const wsUrl = import.meta.env.VITE_WS_URL || `${import.meta.env.VITE_API_URL_CALL.replace('http', 'ws')}/speech-to-text`;
                   console.log('Connecting to WebSocket URL:', wsUrl);
                   const newWs = new WebSocket(wsUrl);
                   setWs(newWs);
