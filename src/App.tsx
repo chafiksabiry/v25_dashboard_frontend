@@ -20,6 +20,11 @@ import OperationsPanel from './panels/OperationsPanel';
 import AnalyticsPanel from './panels/AnalyticsPanel';
 import IntegrationsPanel from './panels/IntegrationsPanel';
 import SettingsPanel from './panels/SettingsPanel';
+import KnowledgeBase from './panels/KnowledgeBase';
+import KnowledgeInsights from './panels/KnowledgeInsights';
+import { setUserId } from "./store/slices/userSlice"; // Import Redux action
+import { useDispatch } from "react-redux";
+import { useEffect } from "react";
 
 function App() {
   return (

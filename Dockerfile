@@ -1,9 +1,17 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
 COPY package*.json ./
+
+RUN apk add --no-cache git
+
 RUN npm install
+
+# Copier et installer le SDK local
+#COPY ./qalqul/sdk-call /app/sdk
+
+#RUN cd /app/sdk && npm install .
 
 COPY . .
 
@@ -20,6 +28,7 @@ ENV QALQUL_API=https://digital-works.qalqul.io/discovery/v1/calls
 ENV QALQUL_KEY=k0HDn140xJM6WGoAMmX2U.17084ed7cc245f6d9f707538ebd90d60
 ENV VITE_QALQUL_USERNAME=Agent.1
 ENV VITE_QALQUL_PASSWORD=ewyaHtvzDPRdXrZL
+ENV VITE_BACKEND_KNOWLEDGEBASE_BACKEND=https://api-knowledge-base.harx.ai
 
 # WebSocket URL for Speech-to-Text
 ENV VITE_WS_URL=ws://38.242.208.242:5006

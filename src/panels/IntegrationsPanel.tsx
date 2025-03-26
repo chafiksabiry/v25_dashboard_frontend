@@ -68,7 +68,7 @@ export function IntegrationsPanel() {
     // Communication
     { id: 'twilio', name: 'Twilio', description: 'Cloud communications platform for voice, SMS, and video', category: 'communication', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=twilio', config: { fields: [ { key: 'account_sid', label: 'Account SID', type: 'text', required: true }, { key: 'auth_token', label: 'Auth Token', type: 'password', required: true }, { key: 'phone_number', label: 'Phone Number', type: 'text', required: true, placeholder: '+1234567890' } ] } },
     { id: 'ringcentral', name: 'RingCentral', description: 'Cloud-based communication and collaboration platform', category: 'communication', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=ringcentral', config: { fields: [ { key: 'client_id', label: 'Client ID', type: 'text', required: true }, { key: 'client_secret', label: 'Client Secret', type: 'password', required: true } ] } },
-    { id: 'microsoft-teams', name: 'Microsoft Teams', description: 'Collaborative communication platform', category: 'communication', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=microsoftteams', config: { fields: [ { key: 'client_id', label: 'Client ID', type: 'text', required: true }, { key: 'client_secret', label: 'Client Secret', type: 'password', required: true } ] } },
+    { id: 'teams', name: 'Microsoft Teams', description: 'Collaborative communication platform', category: 'communication', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=microsoftteams', config: { fields: [ { key: 'client_id', label: 'Client ID', type: 'text', required: true }, { key: 'client_secret', label: 'Client Secret', type: 'password', required: true } ] } },
     { id: 'zoom', name: 'Zoom', description: 'Video conferencing and webinar platform', category: 'communication', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=zoom', config: { fields: [ { key: 'api_key', label: 'API Key', type: 'text', required: true }, { key: 'api_secret', label: 'API Secret', type: 'password', required: true } ] } },
   
     // Chat
@@ -78,9 +78,9 @@ export function IntegrationsPanel() {
   
     // Email
     { id: 'gmail', name: 'Gmail', description: 'Email service by Google', category: 'email', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=gmail', config: { fields: [ { key: 'client_id', label: 'Client ID', type: 'text', required: true }, { key: 'client_secret', label: 'Client Secret', type: 'password', required: true } ] } },
-    { id: 'microsoft-outlook', name: 'Microsoft Outlook', description: 'Email and personal information manager', category: 'email', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=microsoftoutlook', config: { fields: [ { key: 'client_id', label: 'Client ID', type: 'text', required: true }, { key: 'tenant_id', label: 'Tenant ID', type: 'text', required: true }, { key: 'client_secret', label: 'Client Secret', type: 'password', required: true } ] } },
+    { id: 'outlook', name: 'Microsoft Outlook', description: 'Email and personal information manager', category: 'email', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=microsoftoutlook', config: { fields: [ { key: 'client_id', label: 'Client ID', type: 'text', required: true }, { key: 'tenant_id', label: 'Tenant ID', type: 'text', required: true }, { key: 'client_secret', label: 'Client Secret', type: 'password', required: true } ] } },
     { id: 'zoho-mail', name: 'Zoho Mail', description: 'Email hosting and collaboration suite', category: 'email', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=zohomail', config: { fields: [ { key: 'email', label: 'Email Address', type: 'text', required: true }, { key: 'api_key', label: 'API Key', type: 'password', required: true } ] } },
-    { id: 'aws-ses', name: 'AWS SES', description: 'Amazon Simple Email Service', category: 'email', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=awsses', config: { fields: [ { key: 'access_key', label: 'Access Key ID', type: 'text', required: true }, { key: 'secret_key', label: 'Secret Access Key', type: 'password', required: true }, { key: 'region', label: 'AWS Region', type: 'text', required: true } ] } },
+    { id: 'awsSes', name: 'AWS SES', description: 'Amazon Simple Email Service', category: 'email', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=awsses', config: { fields: [ { key: 'access_key', label: 'Access Key ID', type: 'text', required: true }, { key: 'secret_key', label: 'Secret Access Key', type: 'password', required: true }, { key: 'region', label: 'AWS Region', type: 'text', required: true } ] } },
     { id: 'sendgrid', name: 'SendGrid', description: 'Email delivery service for transactional and marketing emails', category: 'email', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=sendgrid', config: { fields: [ { key: 'api_key', label: 'API Key', type: 'password', required: true } ] } },
     { id: 'mailchimp', name: 'Mailchimp', description: 'Marketing automation and email marketing platform', category: 'email', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=mailchimp', config: { fields: [ { key: 'api_key', label: 'API Key', type: 'password', required: true }, { key: 'server_prefix', label: 'Server Prefix', type: 'text', required: true } ] } },
   
@@ -90,18 +90,18 @@ export function IntegrationsPanel() {
     { id: 'servicenow', name: 'ServiceNow', description: 'Cloud computing platform for IT service management', category: 'ticketing', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=servicenow', config: { fields: [ { key: 'instance_url', label: 'Instance URL', type: 'text', required: true }, { key: 'username', label: 'Username', type: 'text', required: true }, { key: 'password', label: 'Password', type: 'password', required: true } ] } },
   
     // Authentication
-    { id: 'microsoft-azure-ad', name: 'Microsoft Azure AD', description: 'Enterprise identity service', category: 'authentication', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=microsoftazuread', config: { fields: [ { key: 'tenant_id', label: 'Tenant ID', type: 'text', required: true }, { key: 'client_id', label: 'Client ID', type: 'text', required: true }, { key: 'client_secret', label: 'Client Secret', type: 'password', required: true } ] } },
+    { id: 'azureAd', name: 'Microsoft Azure AD', description: 'Enterprise identity service', category: 'authentication', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=microsoftazuread', config: { fields: [ { key: 'tenant_id', label: 'Tenant ID', type: 'text', required: true }, { key: 'client_id', label: 'Client ID', type: 'text', required: true }, { key: 'client_secret', label: 'Client Secret', type: 'password', required: true } ] } },
   
     // Phone
-    { id: 'aws-connect', name: 'AWS Connect', description: 'Cloud contact center service', category: 'phone', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=awsconnect', config: { fields: [ { key: 'access_key', label: 'Access Key ID', type: 'text', required: true }, { key: 'secret_key', label: 'Secret Access Key', type: 'password', required: true }, { key: 'instance_id', label: 'Instance ID', type: 'text', required: true } ] } },
+    { id: 'awsConnect', name: 'AWS Connect', description: 'Cloud contact center service', category: 'phone', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=awsconnect', config: { fields: [ { key: 'access_key', label: 'Access Key ID', type: 'text', required: true }, { key: 'secret_key', label: 'Secret Access Key', type: 'password', required: true }, { key: 'instance_id', label: 'Instance ID', type: 'text', required: true } ] } },
   
     // Default (Network)
-    { id: 'google-analytics', name: 'Google Analytics', description: 'Web analytics service by Google', category: 'analytics', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=googleanalytics', config: { fields: [ { key: 'tracking_id', label: 'Tracking ID', type: 'text', required: true } ] } },
+    { id: 'googleAnalytics', name: 'Google Analytics', description: 'Web analytics service by Google', category: 'analytics', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=googleanalytics', config: { fields: [ { key: 'tracking_id', label: 'Tracking ID', type: 'text', required: true } ] } },
     { id: 'jira', name: 'Jira', description: 'Project and issue tracking platform', category: 'project-management', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=jira', config: { fields: [ { key: 'domain', label: 'Jira Domain', type: 'text', required: true }, { key: 'api_token', label: 'API Token', type: 'password', required: true } ] } },
     { id: 'intercom', name: 'Intercom', description: 'Customer messaging platform for live chat and support', category: 'support', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=intercom', config: { fields: [ { key: 'api_key', label: 'API Key', type: 'password', required: true }, { key: 'app_id', label: 'App ID', type: 'text', required: true } ] } },
-    { id: 'livechat', name: 'LiveChat', description: 'Live chat software for customer service', category: 'support', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=livechat', config: { fields: [ { key: 'license_id', label: 'License ID', type: 'text', required: true }, { key: 'api_key', label: 'API Key', type: 'password', required: true } ] } },
+    { id: 'liveChat', name: 'LiveChat', description: 'Live chat software for customer service', category: 'support', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=livechat', config: { fields: [ { key: 'license_id', label: 'License ID', type: 'text', required: true }, { key: 'api_key', label: 'API Key', type: 'password', required: true } ] } },
     { id: 'ovh', name: 'OVH', description: 'Cloud hosting and web services provider', category: 'cloud', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=ovh', config: { fields: [ { key: 'api_key', label: 'API Key', type: 'password', required: true }, { key: 'application_secret', label: 'Application Secret', type: 'password', required: true } ] } },
-    { id: 'aws-sns', name: 'AWS SNS', description: 'Amazon Simple Notification Service', category: 'cloud', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=awssns', config: { fields: [ { key: 'access_key', label: 'Access Key ID', type: 'text', required: true }, { key: 'secret_key', label: 'Secret Access Key', type: 'password', required: true }, { key: 'region', label: 'AWS Region', type: 'text', required: true } ] } },
+    { id: 'awsSns', name: 'AWS SNS', description: 'Amazon Simple Notification Service', category: 'cloud', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=awssns', config: { fields: [ { key: 'access_key', label: 'Access Key ID', type: 'text', required: true }, { key: 'secret_key', label: 'Secret Access Key', type: 'password', required: true }, { key: 'region', label: 'AWS Region', type: 'text', required: true } ] } },
     { id: 'facebook', name: 'Facebook', description: 'Social media platform', category: 'social', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=facebook', config: { fields: [ { key: 'app_id', label: 'App ID', type: 'text', required: true }, { key: 'app_secret', label: 'App Secret', type: 'password', required: true } ] } },
     { id: 'twitter', name: 'Twitter', description: 'Social media platform', category: 'social', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=twitter', config: { fields: [ { key: 'api_key', label: 'API Key', type: 'password', required: true }, { key: 'api_secret', label: 'API Secret', type: 'password', required: true } ] } },
     { id: 'instagram', name: 'Instagram', description: 'Social media platform', category: 'social', status: 'pending', icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=instagram', config: { fields: [ { key: 'app_id', label: 'App ID', type: 'text', required: true }, { key: 'app_secret', label: 'App Secret', type: 'password', required: true } ] } }
@@ -152,7 +152,7 @@ export function IntegrationsPanel() {
               //{ id: "zoho-crm", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/zoho-crm/status?userId=${userId}` },
               { id: "twilio", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/twilio/twilio-status?userId=${userId}` },
               { id: "ringcentral", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/ringcentral/status?userId=${userId}` },
-              { id: "microsoft-teams", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/teams/status?userId=${userId}` },
+              { id: "teams", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/teams/status?userId=${userId}` },
               { id: "zoom", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/zoom/status?userId=${userId}` },
               { id: "telegram", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/telegram/status?userId=${userId}` },
               { id: "slack", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/slack/status?userId=${userId}` },
@@ -160,13 +160,13 @@ export function IntegrationsPanel() {
               { id: "gmail", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/gmail/status?userId=${userId}` },
               { id: "microsoft-outlook", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/outlook/status?userId=${userId}` },
               //{ id: "zoho-mail", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/zoho-mail/status?userId=${userId}` },
-              { id: "aws-ses", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/awsses/status?userId=${userId}` },
+              { id: "aws-ses", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/awsSes/status?userId=${userId}` },
               { id: "sendgrid", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/sendgrid/status?userId=${userId}` },
               { id: "mailchimp", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/mailchimp/status?userId=${userId}` },
               { id: "freshdesk", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/freshdesk/status?userId=${userId}` },
               { id: "zendesk", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/zendesk/status?userId=${userId}` },
               { id: "servicenow", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/servicenow/status?userId=${userId}` },
-              { id: "microsoft-azure-ad", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/microsoft-azure-ad/status?userId=${userId}` },
+              { id: "microsoft-azure-ad", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/azureAd/status?userId=${userId}` },
               { id: "aws-connect", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/awsConnect/status?userId=${userId}` },
               { id: "google-analytics", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/googleAnalytics/status?userId=${userId}` },
               { id: "jira", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/jira/status?userId=${userId}` },
@@ -282,51 +282,242 @@ export function IntegrationsPanel() {
   
       // ✅ Switch-case to determine the correct endpoint and request body
       switch (selectedIntegration.id) {
-        case "twilio":
-          endpoint = selectedIntegration.status === "disconnected" ? "reconnect-twilio" : "setup";
-          requestBody = {
-            userId: "67b4e7f7eff824909f992c81", // Use dynamic userId if necessary
+    case "twilio":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect-twilio" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123", // Use dynamic userId if necessary
             accountSid: configValues.account_sid,
             authToken: configValues.auth_token,
             phoneNumber: configValues.phone_number
-          };
-          break;
-  
-        case "gmail":
-          endpoint = selectedIntegration.status === "disconnected" ? "reconnect-gmail" : "setup-gmail";
-          requestBody = {
-            userId: "67b4e7f7eff824909f992c81",
+        };
+        break;
+
+    case "gmail":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect-gmail" : "setup-gmail";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
             clientId: configValues.client_id,
             clientSecret: configValues.client_secret
-          };
-          break;
-  
-          case "whatsapp":
-            endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
-            requestBody = {
-              userId: "67b4e7f7eff824909f992c81",
-              phoneNumber: configValues.phone_number,  // ✅ Match backend field name
-              accessToken: configValues.api_token,  // ✅ Match backend field name
-              phoneNumberId: configValues.phoneNumberId,
-              businessId : configValues.businessId
+        };
+        break;
 
-            };
-            break;
-          
-  
-        case "telegram":
-          endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
-          requestBody = {
-            userId: "67b4e7f7eff824909f992c81",
+    case "whatsapp":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            phoneNumber: configValues.phone_number,  // ✅ Match backend field name
+            accessToken: configValues.api_token,  // ✅ Match backend field name
+            phoneNumberId: configValues.phoneNumberId,
+            businessId: configValues.businessId
+        };
+        break;
+
+    case "telegram":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
             apiToken: configValues.api_token,
             chatId: configValues.chat_id
-          };
-          break;
-  
-        default:
-          throw new Error("Invalid integration selected");
-      }
-  
+        };
+        break;
+
+    case "slack":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            workspace: configValues.workspace,
+            apiToken: configValues.api_token
+        };
+        break;
+
+    case "teams":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            clientId: configValues.client_id,
+            clientSecret: configValues.client_secret
+        };
+        break;
+
+    case "ringcentral":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            clientId: configValues.client_id,
+            clientSecret: configValues.client_secret
+        };
+        break;
+
+    case "zoom":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            apiKey: configValues.api_key,
+            apiSecret: configValues.api_secret
+        };
+        break;
+
+    case "aws-ses":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            accessKey: configValues.access_key,
+            secretKey: configValues.secret_key,
+            region: configValues.region
+        };
+        break;
+
+    case "sendgrid":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            apiKey: configValues.api_key
+        };
+        break;
+
+    case "mailchimp":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            apiKey: configValues.api_key,
+            serverPrefix: configValues.server_prefix
+        };
+        break;
+
+    case "freshdesk":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            domain: configValues.domain,
+            apiKey: configValues.api_key
+        };
+        break;
+
+    case "zendesk":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            subdomain: configValues.subdomain,
+            email: configValues.email,
+            apiToken: configValues.api_token
+        };
+        break;
+
+    case "servicenow":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            instanceUrl: configValues.instance_url,
+            username: configValues.username,
+            password: configValues.password
+        };
+        break;
+
+    case "microsoft-azure-ad":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            tenantId: configValues.tenant_id,
+            clientId: configValues.client_id,
+            clientSecret: configValues.client_secret
+        };
+        break;
+
+    case "aws-connect":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            accessKey: configValues.access_key,
+            secretKey: configValues.secret_key,
+            instanceId: configValues.instance_id
+        };
+        break;
+
+    case "google-analytics":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            trackingId: configValues.tracking_id
+        };
+        break;
+
+    case "jira":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            domain: configValues.domain,
+            apiToken: configValues.api_token
+        };
+        break;
+
+    case "intercom":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            apiKey: configValues.api_key,
+            appId: configValues.app_id
+        };
+        break;
+
+    case "livechat":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            licenseId: configValues.license_id,
+            apiKey: configValues.api_key
+        };
+        break;
+
+    case "ovh":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            apiKey: configValues.api_key,
+            applicationSecret: configValues.application_secret
+        };
+        break;
+
+    case "aws-sns":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            accessKey: configValues.access_key,
+            secretKey: configValues.secret_key,
+            region: configValues.region
+        };
+        break;
+
+    case "facebook":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            appId: configValues.app_id,
+            appSecret: configValues.app_secret
+        };
+        break;
+
+    case "twitter":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            apiKey: configValues.api_key,
+            apiSecret: configValues.api_secret
+        };
+        break;
+
+    case "instagram":
+        endpoint = selectedIntegration.status === "disconnected" ? "reconnect" : "setup";
+        requestBody = {
+            userId: "65d2b8f4e45a3c5a12e8f123",
+            appId: configValues.app_id,
+            appSecret: configValues.app_secret
+        };
+        break;
+
+    default:
+        throw new Error("Invalid integration selected");
+}
+
       // Make the API request
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/${selectedIntegration.id}/${endpoint}`, {
         method: "POST",

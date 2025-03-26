@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "declaration": false,
+    "allowJs": true,
+    "sourceMap": false,
+    "strict": true,
+    "module": "ES2015",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "target": "ES2015",
+    "noImplicitAny": false,
+    "moduleResolution": "node",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "baseUrl": "./lib/*",
+    "outDir": "./dist",
+  },
+  "exclude": [
+    "dist",
+    "out",
+    "**/node_modules/**/*.(ts|js)",
+  ]
+}
