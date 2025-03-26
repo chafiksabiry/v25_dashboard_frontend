@@ -52,7 +52,7 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
   let qalqulSDK: QalqulSDK | undefined;
   let calls: any[] = [];
   let isSdkInitialized: boolean = false;
-  let start_timer_var = 0;
+  let start_timer_var = 0;  
   let callTimer = "00:00:00";
   let uuId: string | null = null;
   let settings1 = {
@@ -73,17 +73,17 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
     },
     headerData: {
       ...(phoneNumber.startsWith('+212') || phoneNumber.startsWith('00212') ? {
-        callerId: 8678,
-        outCallerId: "0522774125", 
-        CampaignID: 3,
+      callerId: 8678,
+      outCallerId: "0522774125",
+      CampaignID: 3,
         agent: 7,
         sipNumber: 8595,
         QueueName: 'DigitalWorksQueueMA',
         queueId: 11,
-        CountryCode: 212,
-        outRouteId: 72,
-        outGatewayId: 94,
-        outGatewayName: 'Ma_GW',
+      CountryCode: 212,
+      outRouteId: 72,
+      outGatewayId: 94,
+      outGatewayName: 'Ma_GW',
       } : phoneNumber.startsWith('+33') || phoneNumber.startsWith('0033') ? {
         callerId: 8678,
         outCallerId: "33162151114",
@@ -110,7 +110,7 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
       transfer: false,
       WrapupStatus: false,
       profileId: '16045',
-    }
+  }
   };
   let callManage: NodeJS.Timeout | undefined;
   let intervalTimer;
@@ -134,7 +134,7 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
       console.log("terminated call -> popup to register info in DB");
       //function to update the rest of call details in DB
       if (uuId) {
-        await updateCallDetailsInDB(uuId);
+      await updateCallDetailsInDB(uuId);
       }
     }
   };
@@ -602,7 +602,7 @@ if(isSdkInitialized){
               noiseSuppression: true
             }
           } as any);
-          
+
           setConnection(conn);
           setCallStatus("initiating");
 
@@ -784,7 +784,7 @@ if(isSdkInitialized){
                                 reconnectWebSocket();
                               }
                             }
-                          } catch (error) {
+              } catch (error) {
                             console.error('❌ Error processing audio data:', error);
                           }
                         }
@@ -891,7 +891,7 @@ if(isSdkInitialized){
                     console.log("❌ Call disconnected");
                     await cleanup();
                     setCallStatus("ended");
-                    onEnd();
+            onEnd();
                   });
 
                   // Return cleanup function for component unmount

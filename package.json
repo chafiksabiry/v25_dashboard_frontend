@@ -12,14 +12,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@babel/plugin-transform-react-jsx": "^7.25.9",
-    "@google-cloud/speech": "^7.0.0",
-    "@google-cloud/vertexai": "^1.9.3",
     "@qalqul/sdk-call": "git+https://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@github.com/qalqul/qalqul-sdk-call.git",
     "@reduxjs/toolkit": "^2.2.1",
     "@supabase/supabase-js": "^2.39.7",
     "@twilio/voice-sdk": "^2.12.3",
-    "assemblyai": "^4.9.0",
     "axios": "^1.6.7",
     "cheerio": "^1.0.0",
     "date-fns": "^3.3.1",
@@ -27,20 +23,17 @@
     "lodash": "^4.17.21",
     "lucide-react": "^0.344.0",
     "multer": "^1.4.5-lts.1",
-    "openai": "^4.87.3",
     "qiankun": "^2.10.16",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-redux": "^9.1.0",
     "react-router-dom": "^7.1.5",
-    "react-toastify": "^10.0.6",
-    "seve": "^0.10.0",
-    "socket.io-client": "^4.8.1",
+    "react-toastify": "^10.0.4",
+    "socket.io-client": "^4.7.4",
     "sweetalert2": "^11.17.2",
     "uuid": "^11.1.0",
     "vite-plugin-qiankun": "^1.0.15",
     "vite-react-typescript-starter": "file:",
-    "ws": "^8.18.1",
     "zod": "^3.22.4"
   },
   "devDependencies": {
@@ -60,8 +53,5 @@
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.3.0",
     "vite": "^5.4.2"
-  },
-  "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "4.6.1"
   }
 }
