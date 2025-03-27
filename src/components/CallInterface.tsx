@@ -297,6 +297,7 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
   const [lastProcessedTranscript, setLastProcessedTranscript] = useState<string>('');
   const [transcriptBuffer, setTranscriptBuffer] = useState<string>('');
   const transcriptTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const messageContainerRef = useRef<HTMLDivElement>(null);
   const [messageQueue, setMessageQueue] = useState<AIAssistantMessage[]>([]);
   const [isProcessingQueue, setIsProcessingQueue] = useState(false);
   const [lastMessageTime, setLastMessageTime] = useState<Date | null>(null);
@@ -1057,6 +1058,16 @@ if(isSdkInitialized){
     }
   };
 
+  useEffect(() => {
+    // Auto scroll to bottom when new messages arrive
+    if (messageContainerRef.current) {
+      messageContainerRef.current.scrollTo({
+        top: messageContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  }, [aiMessages]); // Run effect when messages change
+
   const renderAIAssistant = () => {
     if (isAssistantMinimized) {
       return (
@@ -1137,7 +1148,7 @@ if(isSdkInitialized){
             </button>
           </div>
         </div>
-        <div className="p-4 h-96 overflow-y-auto bg-gray-50">
+        <div ref={messageContainerRef} className="p-4 h-96 overflow-y-auto bg-gray-50 scroll-smooth">
           {aiMessages.length > 0 ? (
             Object.entries(groupedMessages).map(([date, messages]) => (
               <div key={date} className="mb-6">
