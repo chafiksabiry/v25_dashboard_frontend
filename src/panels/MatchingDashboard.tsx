@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Rep, Gig, Match, MatchingWeights } from '../types';
 import { formatScore } from '../utils/matchingAlgorithm';
 import { getReps, getGigs, findMatchesForGig, findGigsForRep, generateOptimalMatches } from '../api';
-import { BarChart, Activity, Users, Briefcase, Zap, Settings, Award, Clock } from 'lucide-react';
+import { BarChart, Activity, Users, Briefcase, Zap, Settings, Award, Clock , CheckCircle2, Star, Filter, Table} from 'lucide-react';
 import MatchDetails from './MatchDetails';
 
 const defaultMatchingWeights: MatchingWeights = {
@@ -179,7 +179,48 @@ const MatchingDashboard: React.FC = () => {
   };
 
   return (
+    
     <div className="min-h-screen bg-gray-50">
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        
+
+        <div className="grid grid-cols-4 gap-4 mb-6">
+          <div className="bg-green-50 p-4 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+              <span className="font-medium">Available</span>
+            </div>
+            <div className="text-2xl font-bold">12</div>
+            <div className="text-sm text-green-600">Online now</div>
+          </div>
+          <div className="bg-yellow-50 p-4 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <Star className="w-5 h-5 text-yellow-600" />
+              <span className="font-medium">Top Performers</span>
+            </div>
+            <div className="text-2xl font-bold">5</div>
+            <div className="text-sm text-yellow-600">This month</div>
+          </div>
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <Filter className="w-5 h-5 text-blue-600" />
+              <span className="font-medium">Skills Match</span>
+            </div>
+            <div className="text-2xl font-bold">89%</div>
+            <div className="text-sm text-blue-600">Average rate</div>
+          </div>
+          <div className="bg-purple-50 p-4 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <Table className="w-5 h-5 text-purple-600" />
+              <span className="font-medium">Total Matches</span>
+            </div>
+            <div className="text-2xl font-bold">234</div>
+            <div className="text-sm text-purple-600">This week</div>
+          </div>
+        </div>
+
+   
+      </div>
       {/* Header */}
       <header className="bg-indigo-700 text-white p-6 shadow-md">
         <div className="container mx-auto flex justify-between items-center">
@@ -263,7 +304,7 @@ const MatchingDashboard: React.FC = () => {
                 <span>Match Reps to Gig</span>
               </div>
             </button>
-            <button 
+            {/*<button 
               className={`flex-1 py-4 px-6 text-center font-medium ${activeTab === 'reps' ? 'bg-indigo-50 text-indigo-700 border-b-2 border-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
               onClick={() => setActiveTab('reps')}
             >
@@ -271,7 +312,7 @@ const MatchingDashboard: React.FC = () => {
                 <Users size={18} />
                 <span>Find Gigs for Rep</span>
               </div>
-            </button>
+            </button>*/}
             <button 
               className={`flex-1 py-4 px-6 text-center font-medium ${activeTab === 'optimal' ? 'bg-indigo-50 text-indigo-700 border-b-2 border-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
               onClick={() => setActiveTab('optimal')}
