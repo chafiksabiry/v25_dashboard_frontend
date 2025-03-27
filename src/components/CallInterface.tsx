@@ -308,6 +308,9 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
   const SPEECH_THRESHOLD = 0.015; // Lower threshold to detect more subtle speech
   const SILENCE_TIMEOUT = 1000; // Reduced to 1 second for faster response
   const TRANSCRIPT_PROCESS_DELAY = 500; // Add small delay to accumulate transcripts
+  const [lastProcessedText, setLastProcessedText] = useState<string>('');
+  const [currentSpeechSegment, setCurrentSpeechSegment] = useState<string>('');
+  const [isProcessingTranscript, setIsProcessingTranscript] = useState(false);
 
   const isSimilarMessage = (newContent: string, existingContent: string): boolean => {
     const normalize = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -407,7 +410,6 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
           setAiMessages(prev => [...prev, newMessage]);
           console.log('✅ Added new AI message:', newMessage);
           
-          // Flash the AI assistant panel if minimized
           if (isAssistantMinimized) {
             setIsAssistantMinimized(false);
           }
@@ -849,33 +851,51 @@ if(isSdkInitialized){
                       }
 
                       if (transcriptToProcess?.trim()) {
-                        console.log('✨ New transcript:', transcriptToProcess);
+                        // Remove any previous occurrences of the transcript from the new text
+                        const cleanedTranscript = transcriptToProcess.replace(lastProcessedText, '').trim();
+                        
+                        console.log('✨ New transcript segment:', cleanedTranscript);
                         
                         // Clear any existing timeout
                         if (transcriptTimeoutRef.current) {
                           clearTimeout(transcriptTimeoutRef.current);
                         }
 
-                        // Add to buffer
-                        setTranscriptBuffer(prev => {
-                          const newBuffer = prev ? `${prev} ${transcriptToProcess}` : transcriptToProcess;
+                        // If this is a final result, process it immediately
+                        if (data.isFinal) {
+                          console.log('🏁 Final transcript received');
                           
-                          // Process immediately if it's a final result
-                          if (data.isFinal) {
-                            handleTranscription(newBuffer);
-                            return '';
+                          // Combine current segment with the final piece
+                          const fullSegment = `${currentSpeechSegment} ${cleanedTranscript}`.trim();
+                          
+                          if (fullSegment && !isProcessingTranscript) {
+                            setIsProcessingTranscript(true);
+                            handleTranscription(fullSegment).finally(() => {
+                              setIsProcessingTranscript(false);
+                              setLastProcessedText(fullSegment);
+                              setCurrentSpeechSegment('');
+                            });
                           }
-                          
-                          // Set timeout to process buffer after delay
-                          transcriptTimeoutRef.current = setTimeout(() => {
-                            if (newBuffer.trim()) {
-                              handleTranscription(newBuffer);
-                              setTranscriptBuffer('');
-                            }
-                          }, TRANSCRIPT_PROCESS_DELAY);
-                          
-                          return newBuffer;
-                        });
+                        } else {
+                          // For interim results, update the current segment
+                          setCurrentSpeechSegment(prev => {
+                            const newSegment = `${prev} ${cleanedTranscript}`.trim();
+                            
+                            // Set a timeout to process the segment if no updates received
+                            transcriptTimeoutRef.current = setTimeout(() => {
+                              if (newSegment && !isProcessingTranscript) {
+                                setIsProcessingTranscript(true);
+                                handleTranscription(newSegment).finally(() => {
+                                  setIsProcessingTranscript(false);
+                                  setLastProcessedText(newSegment);
+                                  setCurrentSpeechSegment('');
+                                });
+                              }
+                            }, TRANSCRIPT_PROCESS_DELAY);
+                            
+                            return newSegment;
+                          });
+                        }
                       }
                     } catch (error) {
                       console.error('❌ Error processing WebSocket message:', error);
