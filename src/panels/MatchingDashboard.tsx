@@ -2,8 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { Rep, Gig, Match, MatchingWeights } from '../types';
 import { formatScore } from '../utils/matchingAlgorithm';
 import { getReps, getGigs, findMatchesForGig, findGigsForRep, generateOptimalMatches } from '../api';
-import { BarChart, Activity, Users, Briefcase, Zap, Settings, Award, Clock , CheckCircle2, Star, Filter, Table} from 'lucide-react';
-import MatchDetails from './MatchDetails';
+import { 
+  Activity, 
+  Users, 
+  Briefcase, 
+  Zap, 
+  Settings, 
+  Clock,
+  CheckCircle2,
+  Star,
+  Filter,
+  Table } from 'lucide-react';
 
 const defaultMatchingWeights: MatchingWeights = {
   experience: 0.15,
@@ -40,13 +49,25 @@ const MatchingDashboard: React.FC = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [repsData, gigsData] = await Promise.all([getReps(), getGigs()]);
-        setReps(repsData.data || []);
-        setGigs(gigsData.data || []);
-        setError(null);
-      } catch (err) {
-        setError('Failed to fetch data. Please try again later.');
-        console.error('Error fetching data:', err);
+        const [repsData, gigsData] = await Promise.allSettled([
+          getReps(),
+          getGigs()
+        ]);
+        
+        // Handle cases where one request might fail but the other succeeds
+        if (repsData.status === 'fulfilled') {
+          setReps(repsData.value.data || []);
+        } else {
+          console.error('Failed to fetch reps:', repsData.reason);
+        }
+        
+        if (gigsData.status === 'fulfilled') {
+          setGigs(gigsData.value);
+        } else {
+          console.error('Failed to fetch gigs:', gigsData.reason);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
@@ -98,13 +119,13 @@ const MatchingDashboard: React.FC = () => {
           });
           console.log('API Response:', response);
           
-          if (!response.data || response.data.length === 0) {
+          if (!response.matches || response.matches.length === 0) {
             const errorMessage = `Aucun match trouvé.`;
             console.log('Setting error:', errorMessage);
             setError(errorMessage);
           } else {
-            console.log('Setting matches:', response.data);
-            setMatches(response.data);
+            console.log('Setting matches:', response.matches);
+            setMatches(response.matches);
           }
         } else if (activeTab === 'reps' && selectedRep) {
           console.log('Processing rep matching...');
@@ -120,25 +141,16 @@ const MatchingDashboard: React.FC = () => {
           };
           console.log('Transformed Weights:', transformedWeights);
           console.log('Calling API with repId:', selectedRep._id);
-          const response = await findGigsForRep(selectedRep._id!, {
-            experience: weights.experience,
-            skills: weights.skills,
-            industry: weights.industry,
-            language: weights.language,
-            availability: weights.availability,
-            timezone: weights.timezone,
-            performance: weights.performance,
-            region: weights.region
-          });
+          const response = await findGigsForRep(selectedRep._id!, weights);
           console.log('API Response:', response);
           
-          if (!response.data || response.data.length === 0) {
+          if (!response.matches || response.matches.length === 0) {
             const errorMessage = `Aucun match trouvé.`;
             console.log('Setting error:', errorMessage);
             setError(errorMessage);
           } else {
-            console.log('Setting matches:', response.data);
-            setMatches(response.data);
+            console.log('Setting matches:', response.matches);
+            setMatches(response.matches);
           }
         } else if (activeTab === 'optimal') {
           const matchesData = await generateOptimalMatches(weights);
@@ -179,10 +191,19 @@ const MatchingDashboard: React.FC = () => {
   };
 
   return (
-    
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white rounded-xl shadow-sm p-6">
-        
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-orange-100 rounded-lg">
+              <Users className="w-6 h-6 text-orange-600" />
+            </div>
+            <h2 className="text-xl font-semibold">Representative Matching</h2>
+          </div>
+          <button className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+            Add Representative
+          </button>
+        </div>
 
         <div className="grid grid-cols-4 gap-4 mb-6">
           <div className="bg-green-50 p-4 rounded-lg">
@@ -358,36 +379,42 @@ const MatchingDashboard: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {paginatedReps.map(rep => (
                 <div 
-                  key={rep.id}
-                  className={`border rounded-lg p-4 cursor-pointer transition ${selectedRep?.id === rep.id ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300'}`}
+                  key={rep._id}
+                  className={`border rounded-lg p-4 cursor-pointer transition ${selectedRep?._id === rep._id ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300'}`}
                   onClick={() => setSelectedRep(rep)}
                 >
                   <div className="flex justify-between items-start">
-                    <h3 className="font-medium text-gray-800">{rep.Deal_Name}</h3>
-                    <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">{rep.Stage}</span>
+                    <h3 className="font-medium text-gray-800">{rep.personalInfo.name}</h3>
+                    <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">
+                      {rep.status}
+                    </span>
                   </div>
                   <div className="mt-2 flex items-center justify-between">
                     <div className="text-sm text-gray-600">
-                      {rep.Contact_Name?.name}
+                      {rep.professionalSummary.currentRole}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {new Date(rep.Modified_Time).toLocaleDateString()}
+                      {new Date(rep.lastUpdated).toLocaleDateString()}
                     </div>
                   </div>
                   <div className="mt-3 text-xs text-gray-600">
                     <div className="flex items-center space-x-2 mb-1">
-                      <span className="font-medium">Owner:</span>
-                      <span>{rep.Owner?.name}</span>
+                      <span className="font-medium">Experience:</span>
+                      <span>{rep.professionalSummary.yearsOfExperience} years</span>
                     </div>
-                    {rep.Phone && (
+                    {rep.personalInfo.phone && (
                       <div className="flex items-center space-x-2 mb-1">
                         <span className="font-medium">Phone:</span>
-                        <span>{rep.Phone}</span>
+                        <span>{rep.personalInfo.phone}</span>
                       </div>
                     )}
                     <div className="flex items-center space-x-2">
-                      <span className="font-medium">Pipeline:</span>
-                      <span>{rep.Pipeline}</span>
+                      <span className="font-medium">Region:</span>
+                      <span>{rep.region}</span>
+                    </div>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <span className="font-medium">Rating:</span>
+                      <span>{rep.rating} / 5</span>
                     </div>
                   </div>
                 </div>
@@ -462,7 +489,7 @@ const MatchingDashboard: React.FC = () => {
 
                     promise
                       .then(response => {
-                        setMatches(response.data || []);
+                        setMatches(response.matches || []);
                       })
                       .finally(() => {
                         setLoading(false);
@@ -511,7 +538,7 @@ const MatchingDashboard: React.FC = () => {
                 {activeTab === 'gigs' 
                   ? `Top Matching Reps for "${selectedGig?.title}"`
                   : activeTab === 'reps'
-                  ? `Best Gigs for ${selectedRep?.Deal_Name}`
+                  ? `Best Gigs for ${selectedRep?.personalInfo.name}`
                   : 'Optimal Rep-Gig Pairings'}
               </h2>
               <p className="text-gray-600 mt-1">
@@ -543,8 +570,10 @@ const MatchingDashboard: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           {activeTab === 'gigs' || activeTab === 'optimal' ? (
                             <div>
-                              <div className="text-sm font-medium text-gray-900">{rep?.Deal_Name}</div>
-                              <div className="text-sm text-gray-500">{rep?.Stage} • {rep?.Stage}</div>
+                              <div className="text-sm font-medium text-gray-900">{rep?.personalInfo.name}</div>
+                              <div className="text-sm text-gray-500">
+                                {rep?.professionalSummary.currentRole} • {rep?.region}
+                              </div>
                             </div>
                           ) : (
                             <div>
@@ -610,20 +639,6 @@ const MatchingDashboard: React.FC = () => {
         )}
       </main>
 
-      {/* Footer */}
-      {/*<footer className="bg-gray-800 text-gray-400 p-6 mt-12">
-        <div className="container mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <Zap size={20} className="text-yellow-400" />
-              <span className="text-white font-medium">HARX Smart Matching System</span>
-            </div>
-            <div className="text-sm">
-              © 2025 HARX. All rights reserved.
-            </div>
-          </div>
-        </div>
-      </footer>*/}
     </div>
   );
 };
