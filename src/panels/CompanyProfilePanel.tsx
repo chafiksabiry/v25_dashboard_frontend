@@ -33,6 +33,8 @@ import {
   Instagram,
   ArrowRight,
 } from "lucide-react";
+import Cookies from 'js-cookie';
+
 
 function CompanyProfilePanel() {
   const [company, setCompany] = useState<Record<string, any>>({});
@@ -46,7 +48,9 @@ function CompanyProfilePanel() {
   const [logoUrl, setLogoUrl] = useState("");
   const [showUniquenessPanel, setShowUniquenessPanel] = useState(false);
 
-  const companyId = "67b4e7f7eff824909f992c81";
+  
+  const companyId = Cookies.get('companyId');
+  console.log('Stored userId from cookie:', companyId);
 
   // Helper functions for the new UI
   const hasContactInfo = company.contact && (
