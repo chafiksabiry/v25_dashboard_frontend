@@ -15,7 +15,8 @@ function EmailsPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const userId = "65d2b8f4e45a3c5a12e8f123"; // Replace with dynamic user ID if needed
+  const userId = Cookies.get('userId');
+  console.log('Stored userId from cookie:', userId);
 
   useEffect(() => {
     const fetchGmailStatus = async () => {
