@@ -189,75 +189,98 @@ const MatchingDashboard: React.FC = () => {
   const resetWeights = () => {
     setWeights(defaultMatchingWeights);
   };
+  // Calculate metrics for the cards
+  const availableRepsCount = reps.filter(rep => rep.status === 'available').length;
+  const topPerformersCount = reps.filter(rep => rep.rating >= 4.5).length;
+  
+  // Calculate average match score if we have matches
+  const averageMatchScore = matches.length > 0 
+    ? (matches.reduce((acc, m) => acc + m.score, 0) / matches.length * 100)
+    : 0;
+
+  // Calculate total matches this week (mock data - in a real app you'd get this from your API)
+  const totalMatchesThisWeek = matches.length * 3; // Just an example multiplier
+ 
+   // Update the cards section with these metrics:
+   const cards = (
+     <div className="grid grid-cols-4 gap-4 mb-6">
+       <div className="bg-green-50 p-4 rounded-lg">
+         <div className="flex items-center gap-2 mb-2">
+           <CheckCircle2 className="w-5 h-5 text-green-600" />
+           <span className="font-medium">Available</span>
+         </div>
+         <div className="text-2xl font-bold">{availableRepsCount}</div>
+         <div className="text-sm text-green-600">
+           {reps.length > 0 ? `${Math.round((availableRepsCount / reps.length) * 100)}% of reps` : 'Loading...'}
+         </div>
+       </div>
+       <div className="bg-yellow-50 p-4 rounded-lg">
+         <div className="flex items-center gap-2 mb-2">
+           <Star className="w-5 h-5 text-yellow-600" />
+           <span className="font-medium">Top Performers</span>
+         </div>
+         <div className="text-2xl font-bold">{topPerformersCount}</div>
+         <div className="text-sm text-yellow-600">
+           {reps.length > 0 ? `${Math.round((topPerformersCount / reps.length) * 100)}% of reps` : 'Loading...'}
+         </div>
+       </div>
+       <div className="bg-blue-50 p-4 rounded-lg">
+         <div className="flex items-center gap-2 mb-2">
+           <Filter className="w-5 h-5 text-blue-600" />
+           <span className="font-medium">Avg Match Score</span>
+         </div>
+         <div className="text-2xl font-bold">{matches.length > 0 ? `${averageMatchScore.toFixed(1)}%` : 'N/A'}</div>
+         <div className="text-sm text-blue-600">
+           {matches.length > 0 ? `Across ${matches.length} matches` : 'No matches yet'}
+         </div>
+       </div>
+       <div className="bg-purple-50 p-4 rounded-lg">
+         <div className="flex items-center gap-2 mb-2">
+           <Table className="w-5 h-5 text-purple-600" />
+           <span className="font-medium">Total Matches</span>
+         </div>
+         <div className="text-2xl font-bold">{totalMatchesThisWeek}</div>
+         <div className="text-sm text-purple-600">
+           This week • {matches.length} current
+         </div>
+       </div>
+     </div>
+   );
+ 
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-orange-100 rounded-lg">
-              <Users className="w-6 h-6 text-orange-600" />
+            <div className="p-3 bg-indigo-100 rounded-lg">
+              <Users className="w-6 h-6 text-indigo-500" />
             </div>
-            <h2 className="text-xl font-semibold">Representative Matching</h2>
+            <h2 className="text-xl  font-semibold">HARX Smart Matching System</h2>
           </div>
-          <button className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
-            Add Representative
+          <button 
+            onClick={() => setShowWeights(!showWeights)}
+            className="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-md transition"
+          >
+            <Settings size={18} />
+            <span>Adjust Weights</span>
           </button>
         </div>
 
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <div className="bg-green-50 p-4 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-              <span className="font-medium">Available</span>
-            </div>
-            <div className="text-2xl font-bold">12</div>
-            <div className="text-sm text-green-600">Online now</div>
-          </div>
-          <div className="bg-yellow-50 p-4 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <Star className="w-5 h-5 text-yellow-600" />
-              <span className="font-medium">Top Performers</span>
-            </div>
-            <div className="text-2xl font-bold">5</div>
-            <div className="text-sm text-yellow-600">This month</div>
-          </div>
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <Filter className="w-5 h-5 text-blue-600" />
-              <span className="font-medium">Skills Match</span>
-            </div>
-            <div className="text-2xl font-bold">89%</div>
-            <div className="text-sm text-blue-600">Average rate</div>
-          </div>
-          <div className="bg-purple-50 p-4 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <Table className="w-5 h-5 text-purple-600" />
-              <span className="font-medium">Total Matches</span>
-            </div>
-            <div className="text-2xl font-bold">234</div>
-            <div className="text-sm text-purple-600">This week</div>
-          </div>
-        </div>
+        {cards}
 
    
       </div>
-      {/* Header */}
+      {/* Header 
       <header className="bg-indigo-700 text-white p-6 shadow-md">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <Zap size={28} className="text-yellow-300" />
             <h1 className="text-2xl font-bold">HARX Smart Matching System</h1>
           </div>
-          <button 
-            onClick={() => setShowWeights(!showWeights)}
-            className="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-md transition"
-          >
-            <Settings size={18} />
-            <span>Adjust Weights</span>
-          </button>
+         
         </div>
-      </header>
+      </header>*/}
 
       {/* Main Content */}
       <main className="container mx-auto p-6">

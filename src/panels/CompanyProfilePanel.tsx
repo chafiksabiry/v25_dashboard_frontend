@@ -415,21 +415,9 @@ function CompanyProfilePanel() {
             >
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/90 via-indigo-800/85 to-blue-900/80" />
 
-            <div className="absolute inset-0 opacity-20"
-                style={{
-                  background:
-                    "linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.3) 25%, transparent 30%)",
-                  animation: "shine 8s infinite linear",
-                }}
-              />
+            
 
-            <div className="absolute inset-0 opacity-10"
-                style={{
-                  background:
-                    "linear-gradient(90deg, transparent 45%, rgba(255,255,255,0.4) 50%, transparent 55%)",
-                  animation: "shine 6s infinite linear",
-                }}
-              />
+            
 
               <style>
                 {`

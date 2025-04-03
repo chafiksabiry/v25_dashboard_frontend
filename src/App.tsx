@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
 import { store } from './store';
@@ -38,8 +38,9 @@ function App() {
             <div className="flex-1 pl-64">
               <div className="p-8">
                 <Routes>
-                  <Route path="/" element={<DashboardPanel />} />
                   <Route path="/dashboardcompany" element={<DashboardPanel />} />
+                  <Route path="/" element={<Navigate to="/dashboardcompany" replace />} />
+                  {/*<Route path="/dashboardcompany" element={<Navigate to="/dashboardcompany" replace />} />*/}
                   <Route path="/company" element={<CompanyProfilePanel />} />
                   <Route path="/leads" element={<LeadManagementPanel />} />
                   <Route path="/rep-matching" element={<RepMatchingPanel />} />

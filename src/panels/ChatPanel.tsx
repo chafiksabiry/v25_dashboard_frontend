@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { MessageSquare, Send, Loader2 } from 'lucide-react';
+import Cookies from 'js-cookie';
 
 function ChatPanel() {
   const [messages, setMessages] = useState([]);
@@ -11,8 +12,8 @@ function ChatPanel() {
   const [activeChat, setActiveChat] = useState(null);
   const [isWhatsAppConnected, setIsWhatsAppConnected] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
-  const userId = "65d2b8f4e45a3c5a12e8f123";
-
+  const userId = Cookies.get('userId');
+  console.log('Stored userId from cookie:', userId);
   const messagesEndRef = useRef(null);
   const [isUserScrolling, setIsUserScrolling] = useState(false);
   const chatContainerRef = useRef(null);
