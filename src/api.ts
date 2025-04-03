@@ -1,31 +1,25 @@
-const API_BASE_URL = 'http://38.242.208.242:5011/api';
+const API_BASE_URL = import.meta.env.MATCHING_API_URL || 'http://38.242.208.242:5011/api';
 
 // Fonction pour récupérer tous les reps
 export const getReps = async () => {
   console.log('getReps called');
   try {
-    // Récupérer le token depuis votre stockage (localStorage, sessionStorage, etc.)
-    const token = "1000.4e1963773c659a07e4cffceb278a1073.fa11c6710e0f7a7516a58185fd38289e"; // ou tout autre moyen de stockage que vous utilisez
-
-    const response = await fetch(`http://38.242.208.242:5005/api/zoho/leads/pipeline`, {
+    const response = await fetch(`${API_BASE_URL}/reps`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });
 
     if (!response.ok) {
-      // Si la réponse n'est pas 2xx, lancer une erreur
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Erreur lors de la récupération des données');
+      throw new Error(errorData.message || 'Erreur lors de la récupération des reps');
     }
 
     const data = await response.json();
-    console.log('Parsed getReps response:', data.data.data);
+    console.log('Parsed getReps response:', data);
     
-    // Si vous voulez accéder directement aux deals
-    return data.data.data || []; // Zoho renvoie généralement les données dans data.data
+    return data; // Retourne directement les données de l'API
   } catch (error) {
     console.error('Error in getReps:', error);
     throw error;
