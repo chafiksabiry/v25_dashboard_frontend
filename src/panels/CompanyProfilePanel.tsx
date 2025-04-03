@@ -33,6 +33,8 @@ import {
   Instagram,
   ArrowRight,
 } from "lucide-react";
+import Cookies from 'js-cookie';
+
 
 function CompanyProfilePanel() {
   const [company, setCompany] = useState<Record<string, any>>({});
@@ -46,7 +48,9 @@ function CompanyProfilePanel() {
   const [logoUrl, setLogoUrl] = useState("");
   const [showUniquenessPanel, setShowUniquenessPanel] = useState(false);
 
-  const companyId = "67b4e7f7eff824909f992c81";
+  
+  const companyId = Cookies.get('companyId');
+  console.log('Stored userId from cookie:', companyId);
 
   // Helper functions for the new UI
   const hasContactInfo = company.contact && (
@@ -411,21 +415,9 @@ function CompanyProfilePanel() {
             >
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/90 via-indigo-800/85 to-blue-900/80" />
 
-            <div className="absolute inset-0 opacity-20"
-                style={{
-                  background:
-                    "linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.3) 25%, transparent 30%)",
-                  animation: "shine 8s infinite linear",
-                }}
-              />
+            
 
-            <div className="absolute inset-0 opacity-10"
-                style={{
-                  background:
-                    "linear-gradient(90deg, transparent 45%, rgba(255,255,255,0.4) 50%, transparent 55%)",
-                  animation: "shine 6s infinite linear",
-                }}
-              />
+            
 
               <style>
                 {`
