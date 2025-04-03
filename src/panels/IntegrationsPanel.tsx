@@ -2,6 +2,7 @@ import React, { useState, useEffect  } from 'react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
+import Cookies from 'js-cookie';
 import {
   Plug,
   Search,
@@ -138,7 +139,8 @@ export function IntegrationsPanel() {
         return <Network className="w-5 h-5" />;
     }
   };
-  const userId = "67b4e7f7eff824909f992c81"; // Use dynamic user ID if needed
+  const userId = Cookies.get('userId');
+  console.log('Stored userId from cookie:', userId);
 
   // ✅ Fetch the integration status when the component mounts
   useEffect(() => {

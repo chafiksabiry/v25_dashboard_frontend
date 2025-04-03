@@ -6,7 +6,7 @@ COPY package*.json ./
 
 RUN apk add --no-cache git
 
-RUN npm install
+RUN npm install --force
 
 # Copier et installer le SDK local
 #COPY ./qalqul/sdk-call /app/sdk
@@ -29,7 +29,7 @@ ENV QALQUL_KEY=k0HDn140xJM6WGoAMmX2U.17084ed7cc245f6d9f707538ebd90d60
 ENV VITE_QALQUL_USERNAME=Agent.1
 ENV VITE_QALQUL_PASSWORD=ewyaHtvzDPRdXrZL
 ENV VITE_BACKEND_KNOWLEDGEBASE_BACKEND=https://api-knowledge-base.harx.ai
-
+ENV VITE_MATCHING_API_URL=http://38.242.208.242:5011/api
 # WebSocket URL for Speech-to-Text
 #ENV VITE_WS_URL=ws://38.242.208.242:5006
 ENV VITE_WS_URL=wss://api-calls.harx.ai/speech-to-text

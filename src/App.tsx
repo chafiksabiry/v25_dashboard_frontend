@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
 import { store } from './store';
@@ -22,6 +22,8 @@ import IntegrationsPanel from './panels/IntegrationsPanel';
 import SettingsPanel from './panels/SettingsPanel';
 import KnowledgeBase from './panels/KnowledgeBase';
 import KnowledgeInsights from './panels/KnowledgeInsights';
+import MatchingDashboard from './panels/MatchingDashboard';
+
 import { setUserId } from "./store/slices/userSlice"; // Import Redux action
 import { useDispatch } from "react-redux";
 import { useEffect } from "react";
@@ -36,7 +38,9 @@ function App() {
             <div className="flex-1 pl-64">
               <div className="p-8">
                 <Routes>
-                  <Route path="/" element={<DashboardPanel />} />
+                  <Route path="/app7" element={<DashboardPanel />} />
+                  <Route path="/" element={<Navigate to="/app7" replace />} />
+                  {/*<Route path="/dashboardcompany" element={<Navigate to="/dashboardcompany" replace />} />*/}
                   <Route path="/company" element={<CompanyProfilePanel />} />
                   <Route path="/leads" element={<LeadManagementPanel />} />
                   <Route path="/rep-matching" element={<RepMatchingPanel />} />
@@ -51,6 +55,10 @@ function App() {
                   <Route path="/analytics" element={<AnalyticsPanel />} />
                   <Route path="/integrations" element={<IntegrationsPanel />} />
                   <Route path="/settings" element={<SettingsPanel />} />
+                  <Route path="/knowledge-base" element={<KnowledgeBase />} />
+                <Route path="/kb-insight" element={<KnowledgeInsights />} />
+                <Route path="/matching" element={<MatchingDashboard />} />
+
                 </Routes>
               </div>
             </div>
