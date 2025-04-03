@@ -294,6 +294,7 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
 
   const [aiMessages, setAiMessages] = useState<AIAssistantMessage[]>([]);
   const [isAssistantMinimized, setIsAssistantMinimized] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'suggestion' | 'alert' | 'info' | 'action'>('all');
   const [lastProcessedTranscript, setLastProcessedTranscript] = useState<string>('');
   const [transcriptBuffer, setTranscriptBuffer] = useState<string>('');
   const transcriptTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -1114,8 +1115,20 @@ if(isSdkInitialized){
       }
     };
 
+    const categories: { id: typeof selectedCategory; label: string; icon: string }[] = [
+      { id: 'all', label: 'All', icon: '📝' },
+      { id: 'suggestion', label: 'Suggestions', icon: '💡' },
+      { id: 'alert', label: 'Alerts', icon: '⚠️' },
+      { id: 'action', label: 'Actions', icon: '✅' },
+      { id: 'info', label: 'Info', icon: 'ℹ️' },
+    ];
+
+    const filteredMessages = aiMessages.filter(
+      message => selectedCategory === 'all' || message.category === selectedCategory
+    );
+
     // Group messages by date
-    const groupedMessages = aiMessages.reduce((groups, message) => {
+    const groupedMessages = filteredMessages.reduce((groups, message) => {
       const date = message.timestamp.toLocaleDateString();
       if (!groups[date]) {
         groups[date] = [];
@@ -1124,19 +1137,11 @@ if(isSdkInitialized){
       return groups;
     }, {} as Record<string, AIAssistantMessage[]>);
 
-    console.log('🔢 AI messages count in render:', aiMessages.length);
-    console.log('🗂️ Grouped messages:', groupedMessages);
-
     return (
       <div className="fixed bottom-4 right-4 w-96 bg-white rounded-lg shadow-xl">
         <div className="p-4 border-b flex justify-between items-center bg-blue-600 text-white rounded-t-lg">
           <h3 className="font-semibold">AI Assistant</h3>
           <div className="flex items-center gap-2">
-            <div className="flex gap-1 text-xs bg-blue-500 px-2 py-1 rounded">
-              <span title="Suggestions">💡 {aiMessages.filter(m => m.category === 'suggestion').length}</span>
-              <span title="Alerts">⚠️ {aiMessages.filter(m => m.category === 'alert').length}</span>
-              <span title="Actions">✅ {aiMessages.filter(m => m.category === 'action').length}</span>
-            </div>
             <button 
               onClick={() => setIsAssistantMinimized(true)}
               className="text-white hover:bg-blue-700 rounded-lg p-1"
@@ -1148,8 +1153,43 @@ if(isSdkInitialized){
             </button>
           </div>
         </div>
-        <div ref={messageContainerRef} className="p-4 h-96 overflow-y-auto bg-gray-50 scroll-smooth">
-          {aiMessages.length > 0 ? (
+
+        {/* Category Menu */}
+        <div className="p-2 bg-gray-50 border-b flex gap-1 overflow-x-auto">
+          {categories.map(category => {
+            const count = category.id === 'all' 
+              ? aiMessages.length 
+              : aiMessages.filter(m => m.category === category.id).length;
+            
+            return (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.id)}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${
+                  selectedCategory === category.id
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <span>{category.icon}</span>
+                <span>{category.label}</span>
+                {count > 0 && (
+                  <span className={`ml-1 px-1.5 py-0.5 rounded-full text-xs ${
+                    selectedCategory === category.id
+                      ? 'bg-white text-blue-600'
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Messages Container */}
+        <div ref={messageContainerRef} className="p-4 h-80 overflow-y-auto bg-gray-50 scroll-smooth">
+          {filteredMessages.length > 0 ? (
             Object.entries(groupedMessages).map(([date, messages]) => (
               <div key={date} className="mb-6">
                 <div className="text-xs text-gray-500 mb-2 sticky top-0 bg-gray-50 py-1">
@@ -1183,8 +1223,17 @@ if(isSdkInitialized){
             ))
           ) : (
             <div className="text-gray-500 text-center p-4">
-              <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              AI assistant is listening and will provide suggestions during the call...
+              {selectedCategory === 'all' ? (
+                <>
+                  <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  AI assistant is listening and will provide suggestions during the call...
+                </>
+              ) : (
+                <>
+                  <span className="text-2xl mb-2 block">{getCategoryIcon(selectedCategory)}</span>
+                  No {selectedCategory} messages yet
+                </>
+              )}
             </div>
           )}
         </div>
