@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { callsApi, Call } from "../services/api/calls";
-import Cookies from 'js-cookie';
 import {
   Phone,
   PhoneIncoming,
@@ -21,6 +20,7 @@ import {
 import { CallInterface } from '../components/CallInterface';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
+import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 
 interface ActiveCall {
@@ -38,18 +38,18 @@ function CallsPanel() {
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedProvider, setSelectedProvider] = useState<'twilio' | 'qalqul'>('twilio');
   const navigate = useNavigate();
-  const userId = Cookies.get('userId');
+  const { currentUser, loading: authLoading } = useAuth();
 
   const handleCall = (phoneNumber: string) => {
     const phoneRegex = /^(\+|00)([1-9]{1})\d{1,14}$/;
     if (phoneRegex.test(phoneNumber)) {
-      if (!userId) {
+      if (!currentUser) {
         setError('You must be logged in to make calls');
         return;
       }
       setActiveCall({
         number: phoneNumber,
-        agentId: userId
+        agentId: currentUser.id
       });
       setShowPhoneInput(false);
       setError('');
@@ -60,13 +60,14 @@ function CallsPanel() {
 
   const fetchCalls = async () => {
     try {
-      if (!userId) return;
+      if (!currentUser?.id) return;
       
       const response = await axios.get(`${import.meta.env.VITE_API_URL_CALL}/api/calls`, {
-        params: { userId: userId }
+        params: { userId: currentUser.id }
       });
       console.log("response.data.data",response.data.data);
-      setCalls(response.data.data);
+       setCalls(response.data.data);
+      //console.log("allCalls", allCalls);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching calls:', error);
@@ -76,17 +77,27 @@ function CallsPanel() {
   };
 
   useEffect(() => {
-    fetchCalls();
-  }, [userId]);
+    if (!authLoading) {
+      fetchCalls();
+    }
+  }, [currentUser?.id, authLoading]);
 
-  if (!userId) {
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
     return (
       <div className="flex items-center justify-center h-full">
         <p className="text-gray-500">Please log in to access calls.</p>
       </div>
     );
   }
-
+  //console.log("allCallss", allCalls);
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm p-6">

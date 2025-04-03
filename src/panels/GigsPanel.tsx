@@ -146,7 +146,7 @@ function GigsPanel() {
             <h2 className="text-xl font-semibold">Gig Management</h2>
           </div>
           <button
-            onClick={() => (window.location.href = "/gigsai")}
+            onClick={() => (window.location.href = "/app6")}
             className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
