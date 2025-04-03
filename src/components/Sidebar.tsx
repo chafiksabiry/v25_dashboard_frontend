@@ -22,7 +22,7 @@ export function Sidebar() {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const menuItems = [
-    { icon: <LayoutDashboard size={20} />, label: "Overview", path: "/dashboardcompany" },
+    { icon: <LayoutDashboard size={20} />, label: "Overview", path: "/app7" },
     { icon: <Building2 size={20} />, label: "Company", path: "/company" },
     { icon: <UserPlus size={20} />, label: "Leads", path: "/leads" },
     { icon: <Users size={20} />, label: "Rep Matching", path: "/matching" },
