@@ -294,9 +294,11 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
 
   const [aiMessages, setAiMessages] = useState<AIAssistantMessage[]>([]);
   const [isAssistantMinimized, setIsAssistantMinimized] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'suggestion' | 'alert' | 'info' | 'action'>('all');
   const [lastProcessedTranscript, setLastProcessedTranscript] = useState<string>('');
   const [transcriptBuffer, setTranscriptBuffer] = useState<string>('');
   const transcriptTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const messageContainerRef = useRef<HTMLDivElement>(null);
   const [messageQueue, setMessageQueue] = useState<AIAssistantMessage[]>([]);
   const [isProcessingQueue, setIsProcessingQueue] = useState(false);
   const [lastMessageTime, setLastMessageTime] = useState<Date | null>(null);
@@ -305,8 +307,12 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
   const SIMILARITY_THRESHOLD = 0.7; // Threshold for considering messages similar
   const [lastSpeechTimestamp, setLastSpeechTimestamp] = useState<number>(0);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
-  const SPEECH_THRESHOLD = 0.02;
-  const SPEECH_TIMEOUT = 1000; // 1 second of silence to consider speech ended
+  const SPEECH_THRESHOLD = 0.015; // Lower threshold to detect more subtle speech
+  const SILENCE_TIMEOUT = 1000; // Reduced to 1 second for faster response
+  const TRANSCRIPT_PROCESS_DELAY = 500; // Add small delay to accumulate transcripts
+  const [lastProcessedText, setLastProcessedText] = useState<string>('');
+  const [currentSpeechSegment, setCurrentSpeechSegment] = useState<string>('');
+  const [isProcessingTranscript, setIsProcessingTranscript] = useState(false);
 
   const isSimilarMessage = (newContent: string, existingContent: string): boolean => {
     const normalize = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -365,15 +371,19 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
   };
 
   const handleTranscription = async (transcription: string) => {
-    if (!transcription?.trim()) return;
+    if (!transcription?.trim()) {
+      console.log('❌ Empty transcription, skipping processing');
+      return;
+    }
 
     try {
       console.log('🎯 Sending transcription to AI assistant:', transcription);
       const apiUrl = `${import.meta.env.VITE_API_URL_CALL}/api/calls/ai-assist`;
+      
       const payload = {
         transcription,
-        callSid,
-        isAgent: false, // Indicate this is customer speech
+        callSid: callSid || 'unknown',
+        isAgent: false,
         context: aiMessages.slice(-5).map(msg => ({
           role: msg.role,
           content: msg.content,
@@ -390,59 +400,25 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
         const { content, category, priority } = processMarkdownResponse(response.data.suggestion);
         
         if (content.trim()) {
-          console.log('💬 Processing AI message:', { content, category, priority });
+          const newMessage: AIAssistantMessage = {
+            role: 'assistant',
+            content,
+            timestamp: new Date(),
+            category,
+            priority,
+            isProcessed: false
+          };
+
+          setAiMessages(prev => [...prev, newMessage]);
+          console.log('✅ Added new AI message:', newMessage);
           
-          // Prioritize urgent messages
-          const isPriority = priority === 'high' || 
-                           (category === 'action' && priority === 'medium');
-
-          // Check for duplicates but with shorter time window for priority messages
-          const recentWindow = isPriority ? 10000 : 30000; // 10 sec for priority, 30 sec for others
-          const recentMessages = [...aiMessages, ...messageQueue].filter(msg => 
-            Date.now() - msg.timestamp.getTime() < recentWindow
-          );
-          
-          const isDuplicate = recentMessages.some(msg => 
-            isSimilarMessage(content, msg.content)
-          );
-
-          if (!isDuplicate) {
-            const newMessage: AIAssistantMessage = {
-              role: 'assistant',
-              content,
-              timestamp: new Date(),
-              category,
-              priority,
-              isProcessed: false
-            };
-
-            // Priority messages go directly to display
-            if (isPriority) {
-              setAiMessages(prev => [...prev, newMessage]);
-              // Flash the AI assistant panel if minimized
-              if (isAssistantMinimized) {
-                setIsAssistantMinimized(false);
-                setTimeout(() => setIsAssistantMinimized(true), 5000);
-              }
-            } else {
-              // Non-priority messages go to queue
-              setMessageQueue(prev => [...prev, newMessage]);
-              if (!isProcessingQueue && lastMessageTime === null) {
-                processMessageQueue();
-              }
-            }
-            
-            console.log(`📋 Added ${isPriority ? 'priority' : 'regular'} message:`, newMessage);
-          } else {
-            console.log('🔄 Skipping duplicate message:', content);
+          if (isAssistantMinimized) {
+            setIsAssistantMinimized(false);
           }
         }
       }
     } catch (error) {
-      console.error("🚨 Error processing transcription:", error);
-      if (error instanceof Error) {
-        console.error("Error details:", error.message);
-      }
+      console.error('🚨 Error processing transcription:', error);
     }
   };
 
@@ -530,19 +506,21 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
     const now = Date.now();
     const isActive = rms > SPEECH_THRESHOLD;
     
-    // Update speech state
     if (isActive) {
       setLastSpeechTimestamp(now);
       if (!isSpeaking) {
         setIsSpeaking(true);
         console.log('🗣️ Speech started');
       }
-    } else if (isSpeaking && (now - lastSpeechTimestamp > SPEECH_TIMEOUT)) {
+    } else if (isSpeaking && (now - lastSpeechTimestamp > SILENCE_TIMEOUT)) {
       setIsSpeaking(false);
-      console.log('🤫 Speech ended');
+      console.log('🤫 Speech ended - Processing transcript buffer');
+      if (transcriptBuffer && transcriptBuffer.trim().length > 0) {
+        handleTranscription(transcriptBuffer);
+        setTranscriptBuffer('');
+      }
     }
     
-    // Only log if there's significant audio
     if (rms > 0.01) {
       console.log('🎤 Audio levels:', {
         rms: rms.toFixed(3),
@@ -554,7 +532,7 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
     }
     
     return { rms, peak, isActive };
-  }, [isSpeaking, lastSpeechTimestamp]);
+  }, [isSpeaking, lastSpeechTimestamp, transcriptBuffer]);
 
   useEffect(() => {
     const initiateCall = async () => {
@@ -853,7 +831,7 @@ if(isSdkInitialized){
                     }
                   };
 
-                  // Improved WebSocket message handling
+                  // Mise à jour du gestionnaire de messages WebSocket
                   newWs.onmessage = (event) => {
                     if (!isCallActive) return;
                     
@@ -868,21 +846,61 @@ if(isSdkInitialized){
 
                       let transcriptToProcess = '';
 
-                      // Handle different response formats
                       if (data.transcript) {
                         transcriptToProcess = data.transcript;
                       } else if (data.results?.[0]?.alternatives?.[0]?.transcript) {
                         transcriptToProcess = data.results[0].alternatives[0].transcript;
                       }
 
-                      if (transcriptToProcess?.trim() && transcriptToProcess !== lastProcessedTranscript) {
-                        console.log('✨ New transcript:', transcriptToProcess);
-                        handleTranscription(transcriptToProcess);
-                        setLastProcessedTranscript(transcriptToProcess);
+                      if (transcriptToProcess?.trim()) {
+                        // Remove any previous occurrences of the transcript from the new text
+                        const cleanedTranscript = transcriptToProcess.replace(lastProcessedText, '').trim();
+                        
+                        console.log('✨ New transcript segment:', cleanedTranscript);
+                        
+                        // Clear any existing timeout
+                        if (transcriptTimeoutRef.current) {
+                          clearTimeout(transcriptTimeoutRef.current);
+                        }
+
+                        // If this is a final result, process it immediately
+                        if (data.isFinal) {
+                          console.log('🏁 Final transcript received');
+                          
+                          // Combine current segment with the final piece
+                          const fullSegment = `${currentSpeechSegment} ${cleanedTranscript}`.trim();
+                          
+                          if (fullSegment && !isProcessingTranscript) {
+                            setIsProcessingTranscript(true);
+                            handleTranscription(fullSegment).finally(() => {
+                              setIsProcessingTranscript(false);
+                              setLastProcessedText(fullSegment);
+                              setCurrentSpeechSegment('');
+                            });
+                          }
+                        } else {
+                          // For interim results, update the current segment
+                          setCurrentSpeechSegment(prev => {
+                            const newSegment = `${prev} ${cleanedTranscript}`.trim();
+                            
+                            // Set a timeout to process the segment if no updates received
+                            transcriptTimeoutRef.current = setTimeout(() => {
+                              if (newSegment && !isProcessingTranscript) {
+                                setIsProcessingTranscript(true);
+                                handleTranscription(newSegment).finally(() => {
+                                  setIsProcessingTranscript(false);
+                                  setLastProcessedText(newSegment);
+                                  setCurrentSpeechSegment('');
+                                });
+                              }
+                            }, TRANSCRIPT_PROCESS_DELAY);
+                            
+                            return newSegment;
+                          });
+                        }
                       }
                     } catch (error) {
                       console.error('❌ Error processing WebSocket message:', error);
-                      console.error('Raw message:', event.data);
                     }
                   };
 
@@ -1041,19 +1059,29 @@ if(isSdkInitialized){
     }
   };
 
+  useEffect(() => {
+    // Auto scroll to bottom when new messages arrive
+    if (messageContainerRef.current) {
+      messageContainerRef.current.scrollTo({
+        top: messageContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  }, [aiMessages]); // Run effect when messages change
+
   const renderAIAssistant = () => {
     if (isAssistantMinimized) {
       return (
         <button
           onClick={() => setIsAssistantMinimized(false)}
           className={`fixed bottom-4 right-4 p-4 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors ${
-            messageQueue.length + aiMessages.length > 0 ? 'animate-bounce' : ''
+            aiMessages.length > 0 ? 'animate-bounce' : ''
           }`}
         >
           <MessageSquare className="w-6 h-6" />
-          {messageQueue.length + aiMessages.length > 0 && (
+          {aiMessages.length > 0 && (
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              {messageQueue.length + aiMessages.length}
+              {aiMessages.length}
             </span>
           )}
         </button>
@@ -1087,9 +1115,20 @@ if(isSdkInitialized){
       }
     };
 
-    // Group messages by date, including both displayed and queued messages
-    const allMessages = [...aiMessages];
-    const groupedMessages = allMessages.reduce((groups, message) => {
+    const categories: { id: typeof selectedCategory; label: string; icon: string }[] = [
+      { id: 'all', label: 'All', icon: '📝' },
+      { id: 'suggestion', label: 'Suggestions', icon: '💡' },
+      { id: 'alert', label: 'Alerts', icon: '⚠️' },
+      { id: 'action', label: 'Actions', icon: '✅' },
+      { id: 'info', label: 'Info', icon: 'ℹ️' },
+    ];
+
+    const filteredMessages = aiMessages.filter(
+      message => selectedCategory === 'all' || message.category === selectedCategory
+    );
+
+    // Group messages by date
+    const groupedMessages = filteredMessages.reduce((groups, message) => {
       const date = message.timestamp.toLocaleDateString();
       if (!groups[date]) {
         groups[date] = [];
@@ -1103,11 +1142,6 @@ if(isSdkInitialized){
         <div className="p-4 border-b flex justify-between items-center bg-blue-600 text-white rounded-t-lg">
           <h3 className="font-semibold">AI Assistant</h3>
           <div className="flex items-center gap-2">
-            <div className="flex gap-1 text-xs bg-blue-500 px-2 py-1 rounded">
-              <span title="Suggestions">💡 {allMessages.filter(m => m.category === 'suggestion').length}</span>
-              <span title="Alerts">⚠️ {allMessages.filter(m => m.category === 'alert').length}</span>
-              <span title="Actions">✅ {allMessages.filter(m => m.category === 'action').length}</span>
-            </div>
             <button 
               onClick={() => setIsAssistantMinimized(true)}
               className="text-white hover:bg-blue-700 rounded-lg p-1"
@@ -1119,8 +1153,43 @@ if(isSdkInitialized){
             </button>
           </div>
         </div>
-        <div className="p-4 h-96 overflow-y-auto bg-gray-50">
-          {allMessages.length > 0 ? (
+
+        {/* Category Menu */}
+        <div className="p-2 bg-gray-50 border-b flex gap-1 overflow-x-auto">
+          {categories.map(category => {
+            const count = category.id === 'all' 
+              ? aiMessages.length 
+              : aiMessages.filter(m => m.category === category.id).length;
+            
+            return (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.id)}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${
+                  selectedCategory === category.id
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <span>{category.icon}</span>
+                <span>{category.label}</span>
+                {count > 0 && (
+                  <span className={`ml-1 px-1.5 py-0.5 rounded-full text-xs ${
+                    selectedCategory === category.id
+                      ? 'bg-white text-blue-600'
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Messages Container */}
+        <div ref={messageContainerRef} className="p-4 h-80 overflow-y-auto bg-gray-50 scroll-smooth">
+          {filteredMessages.length > 0 ? (
             Object.entries(groupedMessages).map(([date, messages]) => (
               <div key={date} className="mb-6">
                 <div className="text-xs text-gray-500 mb-2 sticky top-0 bg-gray-50 py-1">
@@ -1154,8 +1223,17 @@ if(isSdkInitialized){
             ))
           ) : (
             <div className="text-gray-500 text-center p-4">
-              <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              AI assistant is listening and will provide suggestions during the call...
+              {selectedCategory === 'all' ? (
+                <>
+                  <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  AI assistant is listening and will provide suggestions during the call...
+                </>
+              ) : (
+                <>
+                  <span className="text-2xl mb-2 block">{getCategoryIcon(selectedCategory)}</span>
+                  No {selectedCategory} messages yet
+                </>
+              )}
             </div>
           )}
         </div>
