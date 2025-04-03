@@ -38,8 +38,8 @@ function App() {
             <div className="flex-1 pl-64">
               <div className="p-8">
                 <Routes>
-                  <Route path="/dashboardcompany" element={<DashboardPanel />} />
-                  <Route path="/" element={<Navigate to="/dashboardcompany" replace />} />
+                  <Route path="/app7" element={<DashboardPanel />} />
+                  <Route path="/" element={<Navigate to="/app7" replace />} />
                   {/*<Route path="/dashboardcompany" element={<Navigate to="/dashboardcompany" replace />} />*/}
                   <Route path="/company" element={<CompanyProfilePanel />} />
                   <Route path="/leads" element={<LeadManagementPanel />} />
