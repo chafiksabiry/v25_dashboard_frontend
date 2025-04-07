@@ -23,6 +23,7 @@ import SettingsPanel from './panels/SettingsPanel';
 import KnowledgeBase from './panels/KnowledgeBase';
 import KnowledgeInsights from './panels/KnowledgeInsights';
 import MatchingDashboard from './panels/MatchingDashboard';
+import GigDetail from './pages/GigDetail';
 
 import { setUserId } from "./store/slices/userSlice"; // Import Redux action
 import { useDispatch } from "react-redux";
@@ -58,7 +59,7 @@ function App() {
                   <Route path="/knowledge-base" element={<KnowledgeBase />} />
                 <Route path="/kb-insight" element={<KnowledgeInsights />} />
                 <Route path="/matching" element={<MatchingDashboard />} />
-
+                <Route path="/gigs/:id" element={<GigDetail />} />
                 </Routes>
               </div>
             </div>
