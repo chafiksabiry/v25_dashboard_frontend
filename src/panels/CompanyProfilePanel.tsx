@@ -73,9 +73,10 @@ function CompanyProfilePanel() {
   );
 
   const getGoogleMapsUrl = () => {
+    const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
     if (company.contact?.address) {
       const encodedAddress = encodeURIComponent(company.contact.address);
-      return `https://www.google.com/maps/embed/v1/place?key=YOUR_API_KEY&q=${encodedAddress}`;
+      return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodedAddress}`;
     }
     if (hasLocation) {
       return `https://www.google.com/maps/embed/v1/view?key=YOUR_API_KEY&center=${company.location.lat},${company.location.lng}&zoom=15`;
