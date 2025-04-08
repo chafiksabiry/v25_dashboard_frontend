@@ -4,6 +4,7 @@
   "main": "./lib/sipml.js",
   "license": "MIT",
   "dependencies": {
+    "@qalqul/sipml": "file:",
     "@types/sipml": "^0.0.27"
   }
 }

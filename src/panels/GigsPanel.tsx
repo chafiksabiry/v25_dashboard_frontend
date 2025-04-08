@@ -33,47 +33,6 @@ interface Gig {
   endDate: string;
 }
 
-const mockGigs: Gig[] = [
-  {
-    id: "1",
-    title: "Customer Service Representative",
-    client: "TechCorp Inc",
-    location: "New York, NY",
-    category: "onsite",
-    rate: 25,
-    duration: "3 months",
-    status: "available",
-    skills: ["Phone Support", "Email Support", "CRM"],
-    startDate: "2024-02-15",
-    endDate: "2024-05-15",
-  },
-  {
-    id: "2",
-    title: "Technical Support Specialist",
-    client: "Global Solutions Ltd",
-    location: "San Francisco, CA",
-    category: "hybrid",
-    rate: 35,
-    duration: "6 months",
-    status: "assigned",
-    skills: ["Hardware", "Software", "Networking"],
-    startDate: "2024-02-01",
-    endDate: "2024-08-01",
-  },
-  {
-    id: "3",
-    title: "Call Center Team Lead",
-    client: "Support Masters",
-    location: "Chicago, IL",
-    category: "onsite",
-    rate: 40,
-    duration: "12 months",
-    status: "available",
-    skills: ["Team Management", "Quality Assurance", "Training"],
-    startDate: "2024-03-01",
-    endDate: "2025-03-01",
-  },
-];
 
 function GigsPanel() {
   const [activeFilter, setActiveFilter] = useState<string>("all");
