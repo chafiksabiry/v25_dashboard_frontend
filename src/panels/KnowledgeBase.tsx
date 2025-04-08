@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { KnowledgeItem, CallRecord } from '../types';
 import { jwtDecode } from 'jwt-decode';
 import apiClient from '../api/client';
+import Cookies from 'js-cookie';
 
 const KnowledgeBase: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -115,7 +116,7 @@ const KnowledgeBase: React.FC = () => {
   
   // Function to get companyId from JWT
   const getCompanyIdFromToken = () => {
-    const token = localStorage.getItem('jwtToken');
+    const token = localStorage.getItem('token');
     if (!token) {
       console.log('No JWT token found in localStorage');
       return null;
@@ -134,7 +135,8 @@ const KnowledgeBase: React.FC = () => {
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
-        const companyId = '67d18e2b319c11009f4f2a98';
+        const companyId = Cookies.get('companyId');
+        console.log('Stored userId from cookie:', companyId);
         if (!companyId) {
           throw new Error('Company ID not found');
         }
@@ -168,7 +170,7 @@ const KnowledgeBase: React.FC = () => {
   useEffect(() => {
     const fetchCallRecords = async () => {
       try {
-        const companyId = getCompanyIdFromToken();
+        const companyId = Cookies.get('companyId');
         if (!companyId) {
           throw new Error('Company ID not found');
         }
@@ -219,7 +221,7 @@ const KnowledgeBase: React.FC = () => {
         throw new Error('No file selected');
       }
 
-      const companyId = getCompanyIdFromToken();
+      const companyId = Cookies.get('companyId');
       if (!companyId) {
         throw new Error('Company ID not found');
       }
@@ -394,7 +396,7 @@ const KnowledgeBase: React.FC = () => {
         throw new Error('No file selected');
       }
 
-      const companyId = getCompanyIdFromToken();
+      const companyId = Cookies.get('companyId');
       if (!companyId) {
         throw new Error('Company ID not found');
       }

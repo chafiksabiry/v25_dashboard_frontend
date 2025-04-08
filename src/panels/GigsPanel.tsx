@@ -48,33 +48,6 @@ interface Gig {
   updatedAt: string;
 }
 
-const mockGigs: Gig[] = [
-  {
-    _id: "1",
-    companyId: "1",
-    companyName: "Tech Innovations",
-    title: "Software Developer",
-    description: "We are looking for a skilled software developer to build cutting-edge applications.",
-    industry: "Technology",
-    requiredSkills: ["Lead Generation", "Sales Closing"],
-    preferredLanguages: ["English", "Spanish"],
-    requiredExperience: 5,
-    expectedConversionRate: 0.75,
-    compensation: {
-      base: 60000,
-      commission: 0.05
-    },
-    duration: {
-      startDate: "2025-04-01T00:00:00.000Z",
-      endDate: "2025-12-31T23:59:59.000Z"
-    },
-    timezone: "GMT-4",
-    targetRegion: "North America",
-    status: "open",
-    createdAt: "2025-03-20T05:54:18.993Z",
-    updatedAt: "2025-03-20T05:54:18.993Z"
-  }
-];
 
 function GigsPanel() {
   const [activeFilter, setActiveFilter] = useState<string>("all");
