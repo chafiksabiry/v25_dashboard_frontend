@@ -411,7 +411,6 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
 
           setAiMessages(prev => [...prev, newMessage]);
           console.log('✅ Added new AI message:', newMessage);
-          
           if (isAssistantMinimized) {
             setIsAssistantMinimized(false);
           }
@@ -982,6 +981,18 @@ if(isSdkInitialized){
       });
       
       console.log('callInDB:', callInDB);
+    const resultStock=  await axios.post(`${import.meta.env.VITE_API_URL_AI_MESSAGES}/messages/batch`, 
+        aiMessages.map(msg => ({
+          callId: callInDB.data._id,
+          role: msg.role,
+          content: msg.content,
+          category: msg.category,
+          priority: msg.priority,
+          timestamp: msg.timestamp,
+          isProcessed: msg.isProcessed,
+        }))
+      );
+      console.log('resultStock:', resultStock);
       if (onCallSaved) {
         onCallSaved();
       }
