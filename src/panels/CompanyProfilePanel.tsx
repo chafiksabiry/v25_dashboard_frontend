@@ -49,7 +49,7 @@ function CompanyProfilePanel() {
   const [showUniquenessPanel, setShowUniquenessPanel] = useState(false);
 
   
-  const companyId = Cookies.get('companyId');
+  const companyId = Cookies.get('userId');
   console.log('Stored userId from cookie:', companyId);
 
   // Helper functions for the new UI
