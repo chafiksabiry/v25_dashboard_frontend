@@ -104,6 +104,17 @@ const GlobalAIAssistant: React.FC = () => {
     }
   }, [globalState.messages]);
   
+  const handleClose = () => {
+    // Vider les messages lors de la fermeture
+    globalState.setMessages([]);
+    globalState.setVisible(false);
+  };
+
+  const handleMinimize = () => {
+    // Conserver les messages lors de la minimisation
+    globalState.setMinimized(true);
+  };
+  
   if (!globalState.isVisible) {
     return null;
   }
@@ -175,7 +186,7 @@ const GlobalAIAssistant: React.FC = () => {
         <h3 className="font-semibold">AI Assistant</h3>
         <div className="flex items-center gap-2">
           <button 
-            onClick={() => globalState.setMinimized(true)}
+            onClick={handleMinimize}
             className="text-white hover:bg-blue-700 rounded-lg p-1"
           >
             <span className="sr-only">Minimize</span>
@@ -185,7 +196,7 @@ const GlobalAIAssistant: React.FC = () => {
           </button>
           {globalState.callEnded && (
             <button 
-              onClick={() => globalState.setVisible(false)}
+              onClick={handleClose}
               className="text-white hover:bg-blue-700 rounded-lg p-1"
               title="Close AI Assistant"
             >
@@ -235,8 +246,8 @@ const GlobalAIAssistant: React.FC = () => {
       <div ref={messageContainerRef} className="p-4 h-80 overflow-y-auto bg-gray-50 scroll-smooth">
         {filteredMessages.length > 0 ? (
           Object.entries(groupedMessages).map(([date, messages]) => (
-            <div key={date} className="mb-6">
-              <div className="text-xs text-gray-500 mb-2 sticky top-0 bg-gray-50 py-1">
+            <div key={date} className="mb-6 relative">
+              <div className="sticky top-0 bg-gray-50 py-2 z-10 border-b mb-3 text-xs text-gray-500">
                 {date}
               </div>
               {messages.map((message, index) => (
@@ -291,33 +302,8 @@ const GlobalAIAssistant: React.FC = () => {
   );
 };
 
-// Fonction pour créer un élément DOM et monter notre composant
-const initializeGlobalAIAssistant = () => {
-  if (typeof document !== 'undefined') {
-    // Vérifier si l'élément existe déjà
-    let rootElement = document.getElementById('global-ai-assistant-root');
-    
-    // Créer l'élément s'il n'existe pas
-    if (!rootElement) {
-      rootElement = document.createElement('div');
-      rootElement.id = 'global-ai-assistant-root';
-      document.body.appendChild(rootElement);
-      
-      // Monter le composant dans le DOM
-      ReactDOM.render(<GlobalAIAssistant />, rootElement);
-    }
-  }
-};
-
-// Exécuter l'initialisation lorsque le module est importé
-if (typeof window !== 'undefined') {
-  // Attendre que le DOM soit complètement chargé
-  if (document.readyState === 'complete') {
-    initializeGlobalAIAssistant();
-  } else {
-    window.addEventListener('load', initializeGlobalAIAssistant);
-  }
-}
+// Exporter le composant GlobalAIAssistant directement
+export { GlobalAIAssistant };
 
 // Exporter les fonctions d'API
 export const AIAssistantAPI = {
@@ -328,12 +314,15 @@ export const AIAssistantAPI = {
     globalState.setMessages(messages);
   },
   hidePanel: () => {
+    // Vider les messages lors de la fermeture
+    globalState.setMessages([]);
     globalState.setVisible(false);
   },
   showPanel: () => {
     globalState.setVisible(true);
   },
   minimizePanel: () => {
+    // Ne pas vider les messages lors de la minimisation
     globalState.setMinimized(true);
   },
   maximizePanel: () => {
@@ -341,7 +330,8 @@ export const AIAssistantAPI = {
   },
   setCallEnded: (ended: boolean) => {
     globalState.setCallEnded(ended);
+  },
+  clearMessages: () => {
+    globalState.setMessages([]);
   }
 };
-
-export default GlobalAIAssistant;

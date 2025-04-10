@@ -9,7 +9,7 @@ import { QalqulSDK } from "@qalqul/sdk-call/dist/model/QalqulSDK";
 import io from "socket.io-client";
 import { callsApi } from "../services/api/calls";
 import { AIAssistantAPI } from './GlobalAIAssistant';
-import './GlobalAIAssistant'; // Importer pour s'assurer que le composant est monté
+//import './GlobalAIAssistant'; // Importer pour s'assurer que le composant est monté
 import { useNavigate } from 'react-router-dom';
 
 type CallStatus = 'idle' | 'initiating' | 'active' | 'ended';
@@ -311,8 +311,8 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
   const [lastSpeechTimestamp, setLastSpeechTimestamp] = useState<number>(0);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
   const SPEECH_THRESHOLD = 0.015;
-  const SILENCE_TIMEOUT = 1000;
-  const TRANSCRIPT_PROCESS_DELAY = 500;
+  const SILENCE_TIMEOUT = 2000;
+  const TRANSCRIPT_PROCESS_DELAY = 2000;
   const [lastProcessedText, setLastProcessedText] = useState<string>('');
   const [currentSpeechSegment, setCurrentSpeechSegment] = useState<string>('');
   const [isProcessingTranscript, setIsProcessingTranscript] = useState(false);
@@ -495,7 +495,36 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
     }
   }, [transcriptBuffer, lastProcessedTranscript, handleTranscription]);
 
-  // Update the audio analysis to detect speech patterns
+  // Nouvelle fonction pour vérifier si on a eu assez de silence
+  const hasEnoughSilence = () => {
+    const now = Date.now();
+    return now - lastSpeechTimestamp > SILENCE_TIMEOUT;
+  };
+
+  // Nouvelle fonction pour traiter la transcription
+  const processTranscriptionSegment = async (segment: string, isFinal: boolean) => {
+    if (!segment?.trim()) return;
+
+    // Ne traiter que si:
+    // 1. C'est un segment final OU
+    // 2. On a eu assez de silence ET ce n'est pas déjà en cours de traitement
+    if ((isFinal || hasEnoughSilence()) && !isProcessingTranscript) {
+      console.log(`🎯 Processing transcript segment (${isFinal ? 'final' : 'silence'}):`);
+      setIsProcessingTranscript(true);
+      try {
+        await handleTranscription(segment);
+        setLastProcessedText(segment);
+        setCurrentSpeechSegment('');
+      } finally {
+        setIsProcessingTranscript(false);
+      }
+    } else if (!isFinal) {
+      // Si ce n'est pas final et pas assez de silence, juste mettre à jour le segment courant
+      setCurrentSpeechSegment(segment);
+    }
+  };
+
+  // Mise à jour de la fonction d'analyse audio
   const analyzeAudio = useCallback((dataArray: Float32Array) => {
     let rms = 0;
     let peak = 0;
@@ -515,27 +544,71 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
         setIsSpeaking(true);
         console.log('🗣️ Speech started');
       }
-    } else if (isSpeaking && (now - lastSpeechTimestamp > SILENCE_TIMEOUT)) {
+    } else if (isSpeaking && hasEnoughSilence()) {
       setIsSpeaking(false);
       console.log('🤫 Speech ended - Processing transcript buffer');
-      if (transcriptBuffer && transcriptBuffer.trim().length > 0) {
-        handleTranscription(transcriptBuffer);
-        setTranscriptBuffer('');
+      if (currentSpeechSegment && currentSpeechSegment.trim().length > 0) {
+        processTranscriptionSegment(currentSpeechSegment, false);
       }
     }
     
-    if (rms > 0.01) {
-      console.log('🎤 Audio levels:', {
-        rms: rms.toFixed(3),
-        peak: peak.toFixed(3),
-        bufferSize: dataArray.length,
-        isActive,
-        isSpeaking
-      });
-    }
-    
     return { rms, peak, isActive };
-  }, [isSpeaking, lastSpeechTimestamp, transcriptBuffer]);
+  }, [isSpeaking, lastSpeechTimestamp, currentSpeechSegment]);
+
+  // Mise à jour du gestionnaire de messages WebSocket
+  const handleWebSocketMessage = (event: MessageEvent) => {
+    try {
+      const data = JSON.parse(event.data);
+      console.log('📥 Speech recognition result:', data);
+      
+      if (data.error) {
+        console.error('❌ Speech recognition error:', data.error);
+        return;
+      }
+
+      let transcriptToProcess = '';
+
+      if (data.transcript) {
+        transcriptToProcess = data.transcript;
+      } else if (data.results?.[0]?.alternatives?.[0]?.transcript) {
+        transcriptToProcess = data.results[0].alternatives[0].transcript;
+      }
+
+      if (transcriptToProcess?.trim()) {
+        // Nettoyer la transcription des répétitions précédentes
+        const cleanedTranscript = transcriptToProcess.replace(lastProcessedText, '').trim();
+        
+        if (cleanedTranscript) {
+          console.log('✨ New transcript segment:', cleanedTranscript);
+          
+          // Effacer tout timeout existant
+          if (transcriptTimeoutRef.current) {
+            clearTimeout(transcriptTimeoutRef.current);
+          }
+
+          // Si c'est un résultat final, le traiter immédiatement
+          if (data.isFinal) {
+            console.log('🏁 Final transcript received');
+            const fullSegment = `${currentSpeechSegment} ${cleanedTranscript}`.trim();
+            processTranscriptionSegment(fullSegment, true);
+          } else {
+            // Pour les résultats intermédiaires, mettre à jour le segment courant
+            const newSegment = `${currentSpeechSegment} ${cleanedTranscript}`.trim();
+            setCurrentSpeechSegment(newSegment);
+            
+            // Définir un timeout pour le traitement, mais seulement si on a assez de silence
+            transcriptTimeoutRef.current = setTimeout(() => {
+              if (hasEnoughSilence()) {
+                processTranscriptionSegment(newSegment, false);
+              }
+            }, TRANSCRIPT_PROCESS_DELAY);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error processing WebSocket message:', error);
+    }
+  };
 
   useEffect(() => {
     const initiateCall = async () => {
@@ -835,77 +908,7 @@ if(isSdkInitialized){
                   };
 
                   // Mise à jour du gestionnaire de messages WebSocket
-                  newWs.onmessage = (event) => {
-                    if (!isCallActive) return;
-                    
-                    try {
-                      const data = JSON.parse(event.data);
-                      console.log('📥 Speech recognition result:', data);
-                      
-                      if (data.error) {
-                        console.error('❌ Speech recognition error:', data.error);
-                        return;
-                      }
-
-                      let transcriptToProcess = '';
-
-                      if (data.transcript) {
-                        transcriptToProcess = data.transcript;
-                      } else if (data.results?.[0]?.alternatives?.[0]?.transcript) {
-                        transcriptToProcess = data.results[0].alternatives[0].transcript;
-                      }
-
-                      if (transcriptToProcess?.trim()) {
-                        // Remove any previous occurrences of the transcript from the new text
-                        const cleanedTranscript = transcriptToProcess.replace(lastProcessedText, '').trim();
-                        
-                        console.log('✨ New transcript segment:', cleanedTranscript);
-                        
-                        // Clear any existing timeout
-                        if (transcriptTimeoutRef.current) {
-                          clearTimeout(transcriptTimeoutRef.current);
-                        }
-
-                        // If this is a final result, process it immediately
-                        if (data.isFinal) {
-                          console.log('🏁 Final transcript received');
-                          
-                          // Combine current segment with the final piece
-                          const fullSegment = `${currentSpeechSegment} ${cleanedTranscript}`.trim();
-                          
-                          if (fullSegment && !isProcessingTranscript) {
-                            setIsProcessingTranscript(true);
-                            handleTranscription(fullSegment).finally(() => {
-                              setIsProcessingTranscript(false);
-                              setLastProcessedText(fullSegment);
-                              setCurrentSpeechSegment('');
-                            });
-                          }
-                        } else {
-                          // For interim results, update the current segment
-                          setCurrentSpeechSegment(prev => {
-                            const newSegment = `${prev} ${cleanedTranscript}`.trim();
-                            
-                            // Set a timeout to process the segment if no updates received
-                            transcriptTimeoutRef.current = setTimeout(() => {
-                              if (newSegment && !isProcessingTranscript) {
-                                setIsProcessingTranscript(true);
-                                handleTranscription(newSegment).finally(() => {
-                                  setIsProcessingTranscript(false);
-                                  setLastProcessedText(newSegment);
-                                  setCurrentSpeechSegment('');
-                                });
-                              }
-                            }, TRANSCRIPT_PROCESS_DELAY);
-                            
-                            return newSegment;
-                          });
-                        }
-                      }
-                    } catch (error) {
-                      console.error('❌ Error processing WebSocket message:', error);
-                    }
-                  };
+                  newWs.onmessage = handleWebSocketMessage;
 
                   // Set up cleanup for call end
                   conn.on("disconnect", async () => {
@@ -1042,7 +1045,6 @@ if(isSdkInitialized){
     try {
       // Marquer l'appel comme terminé dans le composant global
       AIAssistantAPI.setCallEnded(true);
-      // Ne pas fermer le panel, l'utilisateur devra le faire manuellement
       
       // Arrêter la capture vidéo
       if (localStream) {
@@ -1073,8 +1075,9 @@ if(isSdkInitialized){
       } else {
         console.warn("CallSid not available, cannot fetch details.");
       }
-      // Rediriger vers la page d'accueil
-      navigate('/');
+      
+      // Appeler onEnd pour fermer l'interface d'appel
+      onEnd();
     } catch (error) {
       console.error('Error ending call:', error);
     }
@@ -1126,8 +1129,6 @@ if(isSdkInitialized){
       <div className="text-sm text-gray-500">
         {callStatus === 'active' ? 'Call in progress...' : 'Connecting...'}
       </div>
-
-      {/* Le panel AI est maintenant géré par le composant GlobalAIAssistant */}
     </div>
   );
 }
