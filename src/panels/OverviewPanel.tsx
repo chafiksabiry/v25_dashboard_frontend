@@ -11,7 +11,7 @@ const OverviewPanel = () => {
         onClick={handleClick}
         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-2xl shadow-lg transition duration-300 ease-in-out"
       >
-        Orchestrator
+        Start Gig
       </button>
     </div>
   );
