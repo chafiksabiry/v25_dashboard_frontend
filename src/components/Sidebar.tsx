@@ -30,14 +30,14 @@ export function Sidebar() {
     { icon: <Building2 size={20} />, label: "Company", path: "/company" },
     { icon: <UserPlus size={20} />, label: "Leads", path: "/leads" },
     { icon: <Users size={20} />, label: "Rep Matching", path: "/matching" },
-    { icon: <Calendar size={20} />, label: 'Scheduler', path: '/scheduler' },
+    //{ icon: <Calendar size={20} />, label: 'Scheduler', path: '/scheduler' },
     { icon: <Phone size={20} />, label: "Calls", path: "/calls" },
     { icon: <Mail size={20} />, label: "Emails", path: "/emails" },
     { icon: <MessageSquare size={20} />, label: "Live Chat", path: "/chat" },
     { icon: <Briefcase size={20} />, label: "Gigs", path: "/gigs" },
-    { icon: <ClipboardCheck size={20} />, label: 'Quality Assurance', path: '/quality-assurance' },
-    { icon: <ScrollText size={20} />, label: 'Operations', path: '/operations' },
-    { icon: <TrendingUp size={20} />, label: 'Analytics', path: '/analytics' },
+    //{ icon: <ClipboardCheck size={20} />, label: 'Quality Assurance', path: '/quality-assurance' },
+    //{ icon: <ScrollText size={20} />, label: 'Operations', path: '/operations' },
+    //{ icon: <TrendingUp size={20} />, label: 'Analytics', path: '/analytics' },
 
     { icon: <Plug size={20} />, label: "Integrations", path: "/integrations" },
   ];

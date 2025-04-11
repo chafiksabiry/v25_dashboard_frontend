@@ -52,10 +52,6 @@ function CompanyProfilePanel() {
   const companyId = Cookies.get('userId');
   console.log('Stored userId from cookie:', companyId);
 
-  if (companyId == null){
-    window.location.href = "/app1"
-  }
-
   // Helper functions for the new UI
   const hasContactInfo = company.contact && (
     company.contact.email || 
