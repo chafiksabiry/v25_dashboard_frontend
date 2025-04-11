@@ -10,9 +10,16 @@ import { store } from './store';
 import App from './App';
 import './index.css';
 import 'react-toastify/dist/ReactToastify.css';
+import Cookies from 'js-cookie';
 
 let root = null;
 
+const companyId = Cookies.get('userId');
+  console.log('Stored userId from cookie:', companyId);
+
+  if (companyId == null){
+    window.location.href = "/app1"
+  }
 function render(props) {
   const { container } = props;
   const rootElement = container
