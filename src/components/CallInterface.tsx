@@ -2,12 +2,15 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Phone, Mic, MicOff, Volume2, VolumeX, MessageSquare } from 'lucide-react';
 import { Device, Call } from '@twilio/voice-sdk';
 import axios from 'axios';
+import ReactDOM from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Calls } from "@qalqul/sdk-call";
 import { QalqulSDK } from "@qalqul/sdk-call/dist/model/QalqulSDK";
 import io from "socket.io-client";
 import { callsApi } from "../services/api/calls";
-//import { QalqulSDKInstance } from '../types/qalqul';
+import { AIAssistantAPI } from './GlobalAIAssistant';
+//import './GlobalAIAssistant'; // Importer pour s'assurer que le composant est monté
+import { useNavigate } from 'react-router-dom';
 
 type CallStatus = 'idle' | 'initiating' | 'active' | 'ended';
 
@@ -26,6 +29,8 @@ interface CallInterfaceProps {
   onEnd: () => void;
   onCallSaved?: () => void;
   provider?: 'twilio' | 'qalqul';
+  keepAIPanelAfterCall?: boolean;
+  callId: string;
 }
 
 declare global {
@@ -35,7 +40,7 @@ declare global {
   }
 }
 
-export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provider = 'twilio' }: CallInterfaceProps) {
+export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provider = 'twilio', keepAIPanelAfterCall = true, callId }: CallInterfaceProps) {
   const [duration, setDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
@@ -292,41 +297,39 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
     }
   };
 
+  // États pour stocker les messages AI localement
   const [aiMessages, setAiMessages] = useState<AIAssistantMessage[]>([]);
-  const [isAssistantMinimized, setIsAssistantMinimized] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'suggestion' | 'alert' | 'info' | 'action'>('all');
   const [lastProcessedTranscript, setLastProcessedTranscript] = useState<string>('');
   const [transcriptBuffer, setTranscriptBuffer] = useState<string>('');
   const transcriptTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const messageContainerRef = useRef<HTMLDivElement>(null);
   const [messageQueue, setMessageQueue] = useState<AIAssistantMessage[]>([]);
   const [isProcessingQueue, setIsProcessingQueue] = useState(false);
   const [lastMessageTime, setLastMessageTime] = useState<Date | null>(null);
-  const MESSAGE_THROTTLE_MS = 12000; // Increased to 12 seconds between messages
-  const BATCH_SIZE = 1; // Reduced to 1 message at a time
-  const SIMILARITY_THRESHOLD = 0.7; // Threshold for considering messages similar
+  const MESSAGE_THROTTLE_MS = 12000;
+  const BATCH_SIZE = 1;
+  const SIMILARITY_THRESHOLD = 0.7;
   const [lastSpeechTimestamp, setLastSpeechTimestamp] = useState<number>(0);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
-  const SPEECH_THRESHOLD = 0.015; // Lower threshold to detect more subtle speech
-  const SILENCE_TIMEOUT = 1000; // Reduced to 1 second for faster response
-  const TRANSCRIPT_PROCESS_DELAY = 500; // Add small delay to accumulate transcripts
+  const SPEECH_THRESHOLD = 0.015;
+  const SILENCE_TIMEOUT = 2000;
+  const TRANSCRIPT_PROCESS_DELAY = 2000;
   const [lastProcessedText, setLastProcessedText] = useState<string>('');
   const [currentSpeechSegment, setCurrentSpeechSegment] = useState<string>('');
   const [isProcessingTranscript, setIsProcessingTranscript] = useState(false);
 
-  const isSimilarMessage = (newContent: string, existingContent: string): boolean => {
-    const normalize = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const newNormalized = normalize(newContent);
-    const existingNormalized = normalize(existingContent);
+  const navigate = useNavigate();
+  const socketRef = useRef<any>(null);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+
+  // Initialement, s'assurer que le panel AI est visible
+  useEffect(() => {
+    // Ensure AI panel is visible at start
+    AIAssistantAPI.showPanel();
+    AIAssistantAPI.setCallEnded(false);
     
-    // Simple similarity check based on common words
-    const newWords = new Set(newNormalized.split(''));
-    const existingWords = new Set(existingNormalized.split(''));
-    const intersection = new Set([...newWords].filter(x => existingWords.has(x)));
-    const union = new Set([...newWords, ...existingWords]);
-    
-    return intersection.size / union.size > SIMILARITY_THRESHOLD;
-  };
+    // Clear previous messages at the start of a new call
+    AIAssistantAPI.setMessages([]);
+  }, []);
 
   const processMarkdownResponse = (markdown: string): { content: string, category: 'suggestion' | 'alert' | 'info' | 'action', priority: 'high' | 'medium' | 'low' } => {
     // Extract the main content without markdown headers and formatting
@@ -410,11 +413,11 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
           };
 
           setAiMessages(prev => [...prev, newMessage]);
-          console.log('✅ Added new AI message:', newMessage);
           
-          if (isAssistantMinimized) {
-            setIsAssistantMinimized(false);
-          }
+          // Ajouter le message au composant global
+          AIAssistantAPI.addMessage(newMessage);
+          
+          console.log('✅ Added new AI message:', newMessage);
         }
       }
     } catch (error) {
@@ -492,7 +495,36 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
     }
   }, [transcriptBuffer, lastProcessedTranscript, handleTranscription]);
 
-  // Update the audio analysis to detect speech patterns
+  // Nouvelle fonction pour vérifier si on a eu assez de silence
+  const hasEnoughSilence = () => {
+    const now = Date.now();
+    return now - lastSpeechTimestamp > SILENCE_TIMEOUT;
+  };
+
+  // Nouvelle fonction pour traiter la transcription
+  const processTranscriptionSegment = async (segment: string, isFinal: boolean) => {
+    if (!segment?.trim()) return;
+
+    // Ne traiter que si:
+    // 1. C'est un segment final OU
+    // 2. On a eu assez de silence ET ce n'est pas déjà en cours de traitement
+    if ((isFinal || hasEnoughSilence()) && !isProcessingTranscript) {
+      console.log(`🎯 Processing transcript segment (${isFinal ? 'final' : 'silence'}):`);
+      setIsProcessingTranscript(true);
+      try {
+        await handleTranscription(segment);
+        setLastProcessedText(segment);
+        setCurrentSpeechSegment('');
+      } finally {
+        setIsProcessingTranscript(false);
+      }
+    } else if (!isFinal) {
+      // Si ce n'est pas final et pas assez de silence, juste mettre à jour le segment courant
+      setCurrentSpeechSegment(segment);
+    }
+  };
+
+  // Mise à jour de la fonction d'analyse audio
   const analyzeAudio = useCallback((dataArray: Float32Array) => {
     let rms = 0;
     let peak = 0;
@@ -512,27 +544,71 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
         setIsSpeaking(true);
         console.log('🗣️ Speech started');
       }
-    } else if (isSpeaking && (now - lastSpeechTimestamp > SILENCE_TIMEOUT)) {
+    } else if (isSpeaking && hasEnoughSilence()) {
       setIsSpeaking(false);
       console.log('🤫 Speech ended - Processing transcript buffer');
-      if (transcriptBuffer && transcriptBuffer.trim().length > 0) {
-        handleTranscription(transcriptBuffer);
-        setTranscriptBuffer('');
+      if (currentSpeechSegment && currentSpeechSegment.trim().length > 0) {
+        processTranscriptionSegment(currentSpeechSegment, false);
       }
     }
     
-    if (rms > 0.01) {
-      console.log('🎤 Audio levels:', {
-        rms: rms.toFixed(3),
-        peak: peak.toFixed(3),
-        bufferSize: dataArray.length,
-        isActive,
-        isSpeaking
-      });
-    }
-    
     return { rms, peak, isActive };
-  }, [isSpeaking, lastSpeechTimestamp, transcriptBuffer]);
+  }, [isSpeaking, lastSpeechTimestamp, currentSpeechSegment]);
+
+  // Mise à jour du gestionnaire de messages WebSocket
+  const handleWebSocketMessage = (event: MessageEvent) => {
+    try {
+      const data = JSON.parse(event.data);
+      console.log('📥 Speech recognition result:', data);
+      
+      if (data.error) {
+        console.error('❌ Speech recognition error:', data.error);
+        return;
+      }
+
+      let transcriptToProcess = '';
+
+      if (data.transcript) {
+        transcriptToProcess = data.transcript;
+      } else if (data.results?.[0]?.alternatives?.[0]?.transcript) {
+        transcriptToProcess = data.results[0].alternatives[0].transcript;
+      }
+
+      if (transcriptToProcess?.trim()) {
+        // Nettoyer la transcription des répétitions précédentes
+        const cleanedTranscript = transcriptToProcess.replace(lastProcessedText, '').trim();
+        
+        if (cleanedTranscript) {
+          console.log('✨ New transcript segment:', cleanedTranscript);
+          
+          // Effacer tout timeout existant
+          if (transcriptTimeoutRef.current) {
+            clearTimeout(transcriptTimeoutRef.current);
+          }
+
+          // Si c'est un résultat final, le traiter immédiatement
+          if (data.isFinal) {
+            console.log('🏁 Final transcript received');
+            const fullSegment = `${currentSpeechSegment} ${cleanedTranscript}`.trim();
+            processTranscriptionSegment(fullSegment, true);
+          } else {
+            // Pour les résultats intermédiaires, mettre à jour le segment courant
+            const newSegment = `${currentSpeechSegment} ${cleanedTranscript}`.trim();
+            setCurrentSpeechSegment(newSegment);
+            
+            // Définir un timeout pour le traitement, mais seulement si on a assez de silence
+            transcriptTimeoutRef.current = setTimeout(() => {
+              if (hasEnoughSilence()) {
+                processTranscriptionSegment(newSegment, false);
+              }
+            }, TRANSCRIPT_PROCESS_DELAY);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error processing WebSocket message:', error);
+    }
+  };
 
   useEffect(() => {
     const initiateCall = async () => {
@@ -832,77 +908,7 @@ if(isSdkInitialized){
                   };
 
                   // Mise à jour du gestionnaire de messages WebSocket
-                  newWs.onmessage = (event) => {
-                    if (!isCallActive) return;
-                    
-                    try {
-                      const data = JSON.parse(event.data);
-                      console.log('📥 Speech recognition result:', data);
-                      
-                      if (data.error) {
-                        console.error('❌ Speech recognition error:', data.error);
-                        return;
-                      }
-
-                      let transcriptToProcess = '';
-
-                      if (data.transcript) {
-                        transcriptToProcess = data.transcript;
-                      } else if (data.results?.[0]?.alternatives?.[0]?.transcript) {
-                        transcriptToProcess = data.results[0].alternatives[0].transcript;
-                      }
-
-                      if (transcriptToProcess?.trim()) {
-                        // Remove any previous occurrences of the transcript from the new text
-                        const cleanedTranscript = transcriptToProcess.replace(lastProcessedText, '').trim();
-                        
-                        console.log('✨ New transcript segment:', cleanedTranscript);
-                        
-                        // Clear any existing timeout
-                        if (transcriptTimeoutRef.current) {
-                          clearTimeout(transcriptTimeoutRef.current);
-                        }
-
-                        // If this is a final result, process it immediately
-                        if (data.isFinal) {
-                          console.log('🏁 Final transcript received');
-                          
-                          // Combine current segment with the final piece
-                          const fullSegment = `${currentSpeechSegment} ${cleanedTranscript}`.trim();
-                          
-                          if (fullSegment && !isProcessingTranscript) {
-                            setIsProcessingTranscript(true);
-                            handleTranscription(fullSegment).finally(() => {
-                              setIsProcessingTranscript(false);
-                              setLastProcessedText(fullSegment);
-                              setCurrentSpeechSegment('');
-                            });
-                          }
-                        } else {
-                          // For interim results, update the current segment
-                          setCurrentSpeechSegment(prev => {
-                            const newSegment = `${prev} ${cleanedTranscript}`.trim();
-                            
-                            // Set a timeout to process the segment if no updates received
-                            transcriptTimeoutRef.current = setTimeout(() => {
-                              if (newSegment && !isProcessingTranscript) {
-                                setIsProcessingTranscript(true);
-                                handleTranscription(newSegment).finally(() => {
-                                  setIsProcessingTranscript(false);
-                                  setLastProcessedText(newSegment);
-                                  setCurrentSpeechSegment('');
-                                });
-                              }
-                            }, TRANSCRIPT_PROCESS_DELAY);
-                            
-                            return newSegment;
-                          });
-                        }
-                      }
-                    } catch (error) {
-                      console.error('❌ Error processing WebSocket message:', error);
-                    }
-                  };
+                  newWs.onmessage = handleWebSocketMessage;
 
                   // Set up cleanup for call end
                   conn.on("disconnect", async () => {
@@ -982,6 +988,18 @@ if(isSdkInitialized){
       });
       
       console.log('callInDB:', callInDB);
+    const resultStock=  await axios.post(`${import.meta.env.VITE_API_URL_AI_MESSAGES}/messages/batch`, 
+        aiMessages.map(msg => ({
+          callId: callInDB.data._id,
+          role: msg.role,
+          content: msg.content,
+          category: msg.category,
+          priority: msg.priority,
+          timestamp: msg.timestamp,
+          isProcessed: msg.isProcessed,
+        }))
+      );
+      console.log('resultStock:', resultStock);
       if (onCallSaved) {
         onCallSaved();
       }
@@ -1024,28 +1042,29 @@ if(isSdkInitialized){
   };
 
   const handleEndCall = async () => {
-    if (connection) {
+    try {
+      // Marquer l'appel comme terminé dans le composant global
+      AIAssistantAPI.setCallEnded(true);
+      
+      // Arrêter la capture vidéo
+      if (localStream) {
+        localStream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
+      }
+      
+      // Fermer la connexion socket
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+      
+      // Mettre à jour le statut de l'appel
+      setCallStatus('ended');
       if (provider === 'qalqul') {
-        manageHangupCall(calls[calls.length - 1]);
-      } else {
-        // Close WebSocket and cleanup audio processing before disconnecting
-        if (ws && ws.readyState === WebSocket.OPEN) {
-          console.log("Closing speech recognition WebSocket");
-          ws.close();
+        if (calls.length > 0) {
+          await manageHangupCall(calls[calls.length - 1]);
         }
-        if (audioProcessor) {
-          console.log("Disconnecting audio processor");
-          audioProcessor.disconnect();
-        }
-        if (audioContext) {
-          console.log("Closing audio context");
-          audioContext.close();
-        }
+      } else if (connection) {
         connection.disconnect();
       }
-      setCallStatus('ended');
-      onEnd();
-      
       if (callSid) {
         try {
           const call = await saveCallToDB(callSid);
@@ -1056,189 +1075,12 @@ if(isSdkInitialized){
       } else {
         console.warn("CallSid not available, cannot fetch details.");
       }
+      
+      // Appeler onEnd pour fermer l'interface d'appel
+      onEnd();
+    } catch (error) {
+      console.error('Error ending call:', error);
     }
-  };
-
-  useEffect(() => {
-    // Auto scroll to bottom when new messages arrive
-    if (messageContainerRef.current) {
-      messageContainerRef.current.scrollTo({
-        top: messageContainerRef.current.scrollHeight,
-        behavior: 'smooth'
-      });
-    }
-  }, [aiMessages]); // Run effect when messages change
-
-  const renderAIAssistant = () => {
-    if (isAssistantMinimized) {
-      return (
-        <button
-          onClick={() => setIsAssistantMinimized(false)}
-          className={`fixed bottom-4 right-4 p-4 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors ${
-            aiMessages.length > 0 ? 'animate-bounce' : ''
-          }`}
-        >
-          <MessageSquare className="w-6 h-6" />
-          {aiMessages.length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              {aiMessages.length}
-            </span>
-          )}
-        </button>
-      );
-    }
-
-    const getCategoryIcon = (category: string) => {
-      switch (category) {
-        case 'suggestion':
-          return '💡';
-        case 'alert':
-          return '⚠️';
-        case 'action':
-          return '✅';
-        default:
-          return 'ℹ️';
-      }
-    };
-
-    const getCategoryStyle = (category: string, priority: string) => {
-      const baseStyle = "p-3 rounded-lg mt-1 shadow-sm border";
-      switch (category) {
-        case 'suggestion':
-          return `${baseStyle} bg-blue-50 border-blue-100`;
-        case 'alert':
-          return `${baseStyle} ${priority === 'high' ? 'bg-red-50 border-red-100' : 'bg-yellow-50 border-yellow-100'}`;
-        case 'action':
-          return `${baseStyle} bg-green-50 border-green-100`;
-        default:
-          return `${baseStyle} bg-white border-gray-100`;
-      }
-    };
-
-    const categories: { id: typeof selectedCategory; label: string; icon: string }[] = [
-      { id: 'all', label: 'All', icon: '📝' },
-      { id: 'suggestion', label: 'Suggestions', icon: '💡' },
-      { id: 'alert', label: 'Alerts', icon: '⚠️' },
-      { id: 'action', label: 'Actions', icon: '✅' },
-      { id: 'info', label: 'Info', icon: 'ℹ️' },
-    ];
-
-    const filteredMessages = aiMessages.filter(
-      message => selectedCategory === 'all' || message.category === selectedCategory
-    );
-
-    // Group messages by date
-    const groupedMessages = filteredMessages.reduce((groups, message) => {
-      const date = message.timestamp.toLocaleDateString();
-      if (!groups[date]) {
-        groups[date] = [];
-      }
-      groups[date].push(message);
-      return groups;
-    }, {} as Record<string, AIAssistantMessage[]>);
-
-    return (
-      <div className="fixed bottom-4 right-4 w-96 bg-white rounded-lg shadow-xl">
-        <div className="p-4 border-b flex justify-between items-center bg-blue-600 text-white rounded-t-lg">
-          <h3 className="font-semibold">AI Assistant</h3>
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={() => setIsAssistantMinimized(true)}
-              className="text-white hover:bg-blue-700 rounded-lg p-1"
-            >
-              <span className="sr-only">Minimize</span>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 12H6" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Category Menu */}
-        <div className="p-2 bg-gray-50 border-b flex gap-1 overflow-x-auto">
-          {categories.map(category => {
-            const count = category.id === 'all' 
-              ? aiMessages.length 
-              : aiMessages.filter(m => m.category === category.id).length;
-            
-            return (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${
-                  selectedCategory === category.id
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <span>{category.icon}</span>
-                <span>{category.label}</span>
-                {count > 0 && (
-                  <span className={`ml-1 px-1.5 py-0.5 rounded-full text-xs ${
-                    selectedCategory === category.id
-                      ? 'bg-white text-blue-600'
-                      : 'bg-gray-100 text-gray-600'
-                  }`}>
-                    {count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Messages Container */}
-        <div ref={messageContainerRef} className="p-4 h-80 overflow-y-auto bg-gray-50 scroll-smooth">
-          {filteredMessages.length > 0 ? (
-            Object.entries(groupedMessages).map(([date, messages]) => (
-              <div key={date} className="mb-6">
-                <div className="text-xs text-gray-500 mb-2 sticky top-0 bg-gray-50 py-1">
-                  {date}
-                </div>
-                {messages.map((message, index) => (
-                  <div key={`${date}-${index}`} className="mb-4 animate-fade-in">
-                    <div className="text-xs text-gray-500 flex items-center gap-2">
-                      <span>{message.timestamp.toLocaleTimeString()}</span>
-                      <span className="px-2 py-0.5 rounded text-xs" 
-                            style={{
-                              backgroundColor: message.priority === 'high' ? '#FEE2E2' : 
-                                            message.priority === 'medium' ? '#FEF3C7' : '#E0F2FE',
-                              color: message.priority === 'high' ? '#991B1B' : 
-                                    message.priority === 'medium' ? '#92400E' : '#075985'
-                            }}>
-                        {message.priority}
-                      </span>
-                    </div>
-                    <div className={getCategoryStyle(message.category, message.priority)}>
-                      <div className="flex items-start gap-2">
-                        <span className="text-xl" role="img" aria-label={message.category}>
-                          {getCategoryIcon(message.category)}
-                        </span>
-                        <div className="flex-1 whitespace-pre-wrap">{message.content}</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ))
-          ) : (
-            <div className="text-gray-500 text-center p-4">
-              {selectedCategory === 'all' ? (
-                <>
-                  <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  AI assistant is listening and will provide suggestions during the call...
-                </>
-              ) : (
-                <>
-                  <span className="text-2xl mb-2 block">{getCategoryIcon(selectedCategory)}</span>
-                  No {selectedCategory} messages yet
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    );
   };
 
   if (error) {
@@ -1287,8 +1129,6 @@ if(isSdkInitialized){
       <div className="text-sm text-gray-500">
         {callStatus === 'active' ? 'Call in progress...' : 'Connecting...'}
       </div>
-
-      {callStatus === 'active' && provider === 'twilio' && renderAIAssistant()}
     </div>
   );
 }
