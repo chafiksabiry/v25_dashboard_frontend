@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.MATCHING_API_URL || 'http://38.242.208.242:5011/api';
+const API_BASE_URL = import.meta.env.MATCHING_API_URL 
 
 // Fonction pour récupérer tous les reps
 export const getReps = async () => {

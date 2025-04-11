@@ -396,7 +396,7 @@ const KnowledgeBase: React.FC = () => {
         throw new Error('No file selected');
       }
 
-      const companyId = Cookies.get('companyId');
+      const companyId = Cookies.get('userId');
       if (!companyId) {
         throw new Error('Company ID not found');
       }
