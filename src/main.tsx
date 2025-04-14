@@ -3,24 +3,31 @@ import './public-path';
 import { qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
 
 import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
+import { createRoot, Root } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
 import { store } from './store';
 import App from './App';
 import './index.css';
 import 'react-toastify/dist/ReactToastify.css';
-import Cookies from 'js-cookie';
 
-let root = null;
+let root: Root | null = null;
 
-const companyId = Cookies.get('userId');
-  console.log('Stored userId from cookie:', companyId);
+// Vérification de l'authentification avec localStorage
+const userConfig = localStorage.getItem('user_config');
+console.log('Stored user config:', userConfig);
 
-  if (companyId == null){
-    window.location.href = "/app1"
-  }
-function render(props) {
+// Éviter la redirection si nous sommes déjà sur app1
+if (!userConfig && !window.location.pathname.includes('/app1')) {
+  console.log('No user config found, redirecting to app1');
+  window.location.href = "/app1";
+}
+
+interface RenderProps {
+  container?: HTMLElement;
+}
+
+function render(props: RenderProps) {
   const { container } = props;
   const rootElement = container
     ? container.querySelector('#root')
@@ -50,13 +57,13 @@ export async function bootstrap() {
   return Promise.resolve();
 }
 
-export async function mount(props) {
+export async function mount(props: RenderProps) {
   console.log('[App] Mounting...', props);
   render(props);
   return Promise.resolve();
 }
 
-export async function unmount(props) {
+export async function unmount(props: RenderProps) {
   console.log('[App] Unmounting...', props);
   const { container } = props;
   const rootElement = container

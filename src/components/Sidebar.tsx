@@ -16,7 +16,11 @@ import {
   Building2,
   Calendar,
   DollarSign,
-  ContactIcon
+  ContactIcon,
+  Book,
+  ChevronDown,
+  ChevronRight,
+  Lightbulb
 } from 'lucide-react';
 
 export function Sidebar() {
