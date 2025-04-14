@@ -28,7 +28,7 @@ export function Deals() {
       }
 
       // Use the token to fetch deals
-      const response = await fetch('http://localhost:5005/api/deals', {
+      const response = await fetch('https://api-dashboard.harx.ai/api/deals', {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',

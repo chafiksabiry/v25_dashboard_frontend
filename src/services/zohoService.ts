@@ -1,7 +1,7 @@
 // Service pour gérer les intégrations Zoho à travers l'application
 
 // Configuration temporaire pour le développement
-const API_BASE_URL = 'http://38.242.208.242:5005/api/zoho';
+export const API_BASE_URL = 'https://api-dashboard.harx.ai/api/zoho';
 
 // Créer le service global pour gérer le token Zoho
 export const ZohoTokenService = {
@@ -22,7 +22,7 @@ export const ZohoTokenService = {
     if (!token) return false;
     
     try {
-      const response = await fetch('http://localhost:5005/api/zoho/validate-token', {
+      const response = await fetch(`${API_BASE_URL}/validate-token`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -72,7 +72,7 @@ export const zohoApiCall = async <T,>(
       options.body = JSON.stringify(data);
     }
 
-    const response = await fetch(`http://localhost:5005/api/zoho/${endpoint}`, options);
+    const response = await fetch(`https://api-dashboard.harx.ai/api/zoho/${endpoint}`, options);
     const responseData = await response.json();
 
     if (!response.ok) {
@@ -132,7 +132,7 @@ export const configureZoho = async (config: {
   refreshToken: string;
 }): Promise<boolean> => {
   try {
-    const response = await fetch('http://localhost:5005/api/zoho/configure', {
+    const response = await fetch('https://api-dashboard.harx.ai/api/zoho/configure', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -158,7 +158,7 @@ export const disconnectZoho = async (): Promise<boolean> => {
     const token = ZohoTokenService.getToken();
     if (!token) return true;
 
-    const response = await fetch('http://localhost:5005/api/zoho/disconnect', {
+    const response = await fetch('https://api-dashboard.harx.ai/api/zoho/disconnect', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`

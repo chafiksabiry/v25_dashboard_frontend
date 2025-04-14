@@ -26,6 +26,367 @@ interface Email {
 
 function EmailsPanel() {
   const [activeFilter, setActiveFilter] = useState('inbox');
+  const [emails, setEmails] = useState<Email[]>([]);
+  const [sentEmailsCount, setSentEmailsCount] = useState(0);
+  const [inboxCount, setInboxCount] = useState(0);
+  const [archivedCount, setArchivedCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isComposeOpen, setIsComposeOpen] = useState(false);
+  const [emailForm, setEmailForm] = useState({
+    to: '',
+    subject: '',
+    content: ''
+  });
+  const navigate = useNavigate();
+  const [isZohoConnected, setIsZohoConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
+  const [isEmailDetailOpen, setIsEmailDetailOpen] = useState(false);
+
+  const fetchEmails = async () => {
+    let accessToken = localStorage.getItem("zoho_access_token");
+    if (!accessToken) {
+        window.location.href = `${import.meta.env.VITE_API_URL}/zoho/auth`;
+        return;
+    }
+    try {
+      setLoading(true);
+      const endpoints = {
+        inbox: '/zoho/emails/inbox',
+        sent: '/zoho/emails/sent',
+        archived: '/zoho/emails/archived'
+      };
+      
+      const endpoint = endpoints[activeFilter as keyof typeof endpoints] || '/zoho/emails/inbox';
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}${endpoint}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (response.data.success) {
+        const emailsData = response.data.data.data;
+        const cleanedEmails = (Array.isArray(emailsData) ? emailsData : emailsData.data || []).map((email: Email) => ({
+          ...email,
+          toAddress: email.toAddress
+            ?.replace(/&quot;/g, '"')
+            ?.replace(/&lt;/g, '<')
+            ?.replace(/&gt;/g, '>')
+        }));
+        setEmails(cleanedEmails);
+
+        if (activeFilter === 'inbox') {
+          setInboxCount(cleanedEmails.length);
+          setUnreadCount(cleanedEmails.filter((email: { status: string; }) => email.status === "0").length);
+        } else if (activeFilter === 'sent') {
+          setSentEmailsCount(cleanedEmails.length);
+        } else if (activeFilter === 'archived') {
+          setArchivedCount(cleanedEmails.length);
+        }
+      }
+    } catch (err) {
+      setError("Erreur lors de la récupération des emails");
+      console.error("Erreur:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (timestamp: string | number) => {
+    const parsedTime = Number(timestamp); // Assure que c'est bien un nombre
+    if (isNaN(parsedTime)) return "Date invalide"; // Gestion des erreurs
+
+    return new Date(parsedTime).toLocaleString();
+  };
+
+  const cleanEmailAddress = (email: string = '') => {
+    // Décode d'abord tous les caractères HTML
+    let cleaned = email
+      .replace(/&quot;/g, '"')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .trim();
+
+    // Extrait le nom ou l'email
+    const matches = cleaned.match(/["']?([^"'<]*?)["']?\s*<(.+?)>/);
+    if (matches) {
+      // Retourne le nom s'il existe, sinon la partie locale de l'email
+      return matches[1].trim() || matches[2].split('@')[0];
+    }
+    
+    // Si pas de format spécial, retourner la partie avant @ ou l'email complet
+    return cleaned.split('@')[0];
+  };
+
+  const getEmailPart = (email: string) => {
+    return email
+      ?.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/)?.[0] // Extrait l'adresse email
+      || email;
+  };
+
+  const handleSendEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    // TODO: Implémenter l'envoi d'email
+    console.log('Email à envoyer:', emailForm);
+    setIsComposeOpen(false);
+    setEmailForm({ to: '', subject: '', content: '' });
+  };
+
+  const handleReply = (email: Email) => {
+    setEmailForm({
+      to: email.fromAddress,
+      subject: `Re: ${email.subject}`,
+      content: `\n\n-------- Original Message --------\nFrom: ${email.sender}\nSubject: ${email.subject}\n`
+    });
+    setIsComposeOpen(true);
+  };
+
+  const handleArchive = async (email: Email) => {
+    const accessToken = localStorage.getItem("zoho_access_token");
+    if (!accessToken) return;
+
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_API_URL}/zoho/emails/${email.id}/archive`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      
+      // Rafraîchir les données après l'archivage
+      await fetchEmails();
+      await fetchAllCounts(); // Mettre à jour tous les compteurs
+      
+      // Optionnel : Afficher un message de succès
+      alert("Email archivé avec succès");
+    } catch (err) {
+      console.error("Erreur lors de l'archivage:", err);
+      setError("Erreur lors de l'archivage de l'email");
+      alert("Erreur lors de l'archivage de l'email");
+    }
+  };
+
+  const handleShare = async (email: Email) => {
+    // Créer un lien partageble
+    const shareText = `
+Sujet: ${email.subject}
+De: ${email.sender}
+Date: ${formatDate(email.receivedTime)}
+    `;
+    
+    try {
+      await navigator.clipboard.writeText(shareText);
+      alert("Détails de l'email copiés dans le presse-papier !");
+    } catch (err) {
+      console.error("Erreur lors de la copie:", err);
+      alert("Erreur lors de la copie des détails");
+    }
+  };
+
+  const handleZohoConnect = async () => {
+    try {
+      setIsLoading(true);
+      
+      const configData = {
+        clientId: "1000.xxxx", // Remplacer par votre vrai Client ID
+        clientSecret: "xxxx", // Remplacer par votre vrai Client Secret
+        refreshToken: "xxxx" // Remplacer par votre vrai Refresh Token
+      };
+      
+      console.log("Tentative de configuration avec:", configData);
+      
+      // Première étape : Configuration
+      const configResponse = await fetch('https://api-dashboard.harx.ai/api/zoho/configure', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(configData)
+      });
+
+      const configResult = await configResponse.json();
+      console.log("Configuration response:", configResult);
+
+      if (!configResponse.ok) {
+        throw new Error(configResult.message || 'Erreur lors de la configuration de Zoho');
+      }
+
+      if (configResult.success) {
+        console.log("Configuration réussie, récupération du token...");
+        // Deuxième étape : Récupération du token
+        const tokenResponse = await fetch('https://api-dashboard.harx.ai/api/zoho/token', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!tokenResponse.ok) {
+          throw new Error('Erreur lors de la récupération du token');
+        }
+
+        const tokenResult = await tokenResponse.json();
+        console.log("Token response:", tokenResult);
+        
+        if (tokenResult.access_token) {
+          console.log("Nouveau token récupéré:", tokenResult.access_token);
+          localStorage.setItem('zoho_access_token', tokenResult.access_token);
+          setIsZohoConnected(true);
+          // Vous pouvez ajouter ici d'autres actions après la connexion réussie
+        } else {
+          throw new Error('Token non reçu');
+        }
+      }
+      
+    } catch (error) {
+      console.error('Erreur lors de la configuration:', error);
+      setIsZohoConnected(false);
+      setError(error instanceof Error ? error.message : 'Une erreur est survenue');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const checkZohoConnection = () => {
+    const token = localStorage.getItem('zoho_access_token');
+    if (!token) {
+      setIsZohoConnected(false);
+      return false;
+    }
+    return true;
+  };
+
+  const fetchAllCounts = async () => {
+    let accessToken = localStorage.getItem("zoho_access_token");
+    if (!accessToken) return;
+    
+    try {
+      const [sentResponse, archivedResponse, inboxResponse] = await Promise.all([
+        axios.get(`${import.meta.env.VITE_API_URL}/zoho/emails/sent`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+        axios.get(`${import.meta.env.VITE_API_URL}/zoho/emails/archived`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+        axios.get(`${import.meta.env.VITE_API_URL}/zoho/emails/inbox`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+      ]);
+
+      if (sentResponse.data.success) {
+        const sentEmails = sentResponse.data.data.data;
+        setSentEmailsCount(Array.isArray(sentEmails) ? sentEmails.length : (sentEmails.data || []).length);
+      }
+
+      if (archivedResponse.data.success) {
+        const archivedEmails = archivedResponse.data.data.data;
+        setArchivedCount(Array.isArray(archivedEmails) ? archivedEmails.length : (archivedEmails.data || []).length);
+      }
+
+      if (inboxResponse.data.success) {
+        const inboxEmails = inboxResponse.data.data.data;
+        const cleanedInbox = Array.isArray(inboxEmails) ? inboxEmails : (inboxEmails.data || []);
+        setInboxCount(cleanedInbox.length);
+        setUnreadCount(cleanedInbox.filter((email: { status: string }) => email.status === "0").length);
+      }
+    } catch (err) {
+      console.error("Erreur lors de la récupération des compteurs:", err);
+    }
+  };
+
+  const handleDisconnect = () => {
+    // Supprimer le token
+    localStorage.removeItem('zoho_access_token');
+    
+    // Réinitialiser les états
+    setIsZohoConnected(false);
+    setEmails([]);
+    setSentEmailsCount(0);
+    setInboxCount(0);
+    setArchivedCount(0);
+    setUnreadCount(0);
+    setError(null);
+    
+    // Rediriger vers la page d'intégrations
+    navigate('/integrations');
+  };
+
+  const handleEmailClick = (email: Email) => {
+    setSelectedEmail(email);
+    setIsEmailDetailOpen(true);
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem('zoho_access_token');
+    console.log("=== Initialisation ===");
+    console.log("Token au démarrage:", token ? "Présent" : "Absent");
+    
+    if (token) {
+      console.log("Token value:", token);
+      setIsZohoConnected(true);
+      fetchAllCounts();
+    } else {
+      console.log("Aucun token trouvé - Configuration de Zoho");
+      setIsZohoConnected(false);
+      setIsLoading(false);
+      handleZohoConnect();
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchEmails();
+  }, [activeFilter]);
+
+  useEffect(() => {
+    console.log("Emails actuels:", emails);
+    console.log("Loading state:", loading);
+    console.log("Error state:", error);
+  }, [emails, loading, error]);
+
+  useEffect(() => {
+    if (!checkZohoConnection()) {
+      navigate('/integrations');
+    } else {
+      fetchAllCounts();
+    }
+  }, [navigate]);
+
+  // if (isLoading) {
+  //   return (
+  //     <div className="flex items-center justify-center h-64">
+  //       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+  //     </div>
+  //   );
+  // }
+
+  if (!checkZohoConnection()) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="text-center space-y-4">
+            <div className="flex items-center justify-center gap-2 text-amber-600">
+              <AlertCircle className="w-6 h-6" />
+              <h2 className="text-xl font-semibold">Connexion requise</h2>
+            </div>
+            <p className="text-gray-600">
+              Vous devez vous connecter à Zoho CRM pour accéder aux emails.
+            </p>
+            <button
+              onClick={() => navigate('/integrations')}
+              className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700"
+            >
+              Se connecter à Zoho CRM
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

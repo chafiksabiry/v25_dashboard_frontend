@@ -40,7 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshAccessToken = async (config: UserConfig): Promise<{ accessToken: string, expiresIn: number } | null> => {
     try {
-      const response = await fetch('http://localhost:5005/api/auth/refresh-token', {
+      const response = await fetch('https://api-dashboard.harx.ai/api/auth/refresh-token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

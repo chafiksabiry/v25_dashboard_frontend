@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
-import { ToastContainer } from 'react-toastify';
+import { Toaster } from 'react-hot-toast';
 import { store } from './store';
 import { AuthProvider } from './contexts/AuthContext';
 import Sidebar from './components/Sidebar';
@@ -55,7 +55,7 @@ function App() {
               </div>
             </div>
           </div>
-          <ToastContainer />
+          <Toaster position="top-right" />
         </Router>
       </Provider>
     </AuthProvider>
