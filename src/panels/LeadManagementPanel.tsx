@@ -139,7 +139,7 @@ function LeadManagementPanel() {
       const token = ZohoTokenService.getToken();
       if (!token) throw new Error('No Zoho token found');
 
-      const response = await fetch('http://localhost:5005/api/zoho/pipelines', {
+      const response = await fetch('https://api-dashboard.harx.ai/api/zoho/pipelines', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -174,7 +174,7 @@ function LeadManagementPanel() {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/leads`, {
+      const response = await fetch(`https://api-dashboard.harx.ai/api/zoho/leads`, {
         method: "GET",
         headers: {
           "Authorization": `Zoho-oauthtoken ${accessToken}`,
@@ -271,7 +271,7 @@ function LeadManagementPanel() {
       console.log("Tentative de configuration avec:", configData);
       
       // Première étape : Configuration
-      const configResponse = await fetch('http://localhost:5005/api/zoho/configure', {
+      const configResponse = await fetch('https://api-dashboard.harx.ai/api/zoho/configure', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -289,7 +289,7 @@ function LeadManagementPanel() {
       if (configResult.success) {
         console.log("Configuration réussie, récupération du token...");
         // Deuxième étape : Récupération du token
-        const tokenResponse = await fetch('http://localhost:5005/api/zoho/token', {
+        const tokenResponse = await fetch('https://api-dashboard.harx.ai/api/zoho/token', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
@@ -361,7 +361,7 @@ function LeadManagementPanel() {
         Stage: stage
       };
       
-      const response = await fetch(`http://localhost:5005/api/zoho/leads/${selectedDeal.id}`, {
+      const response = await fetch(`https://api-dashboard.harx.ai/api/zoho/leads/${selectedDeal.id}`, {
         method: "PUT",
         headers: {
           "Authorization": `Zoho-oauthtoken ${accessToken}`,
@@ -432,7 +432,7 @@ function LeadManagementPanel() {
         Stage: updatedDeal.Stage,
       };
       
-      const response = await fetch(`http://localhost:5005/api/zoho/leads/${updatedDeal.id}`, {
+      const response = await fetch(`https://api-dashboard.harx.ai/api/zoho/leads/${updatedDeal.id}`, {
         method: "PUT",
         headers: {
           "Authorization": `Zoho-oauthtoken ${accessToken}`,

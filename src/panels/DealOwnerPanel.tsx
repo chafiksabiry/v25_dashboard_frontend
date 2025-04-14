@@ -65,7 +65,7 @@ const DealOwnerPanel = () => {
       const token = ZohoTokenService.getToken();
       if (!token) throw new Error('No Zoho token found');
 
-      const response = await fetch('http://localhost:5005/api/zoho/pipelines', {
+      const response = await fetch('https://api-dashboard.harx.ai/api/zoho/pipelines', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -96,7 +96,7 @@ const DealOwnerPanel = () => {
       const token = ZohoTokenService.getToken();
       if (!token) throw new Error('No Zoho token found');
 
-      const url = new URL('http://localhost:5005/api/zoho/leads-by-pipeline');
+      const url = new URL('https://api-dashboard.harx.ai/api/zoho/leads-by-pipeline');
       if (pipelineId && pipelineId !== 'all') {
         url.searchParams.append('pipeline', pipelineId);
       }

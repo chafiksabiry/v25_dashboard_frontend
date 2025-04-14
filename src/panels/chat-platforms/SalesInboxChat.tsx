@@ -261,7 +261,7 @@ const SalesInboxChat: React.FC = () => {
         refreshToken: "xxxx"
       };
       
-      const configResponse = await fetch('http://localhost:5005/api/zoho/configure', {
+      const configResponse = await fetch('https://api-dashboard.harx.ai/api/zoho/configure', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -276,7 +276,7 @@ const SalesInboxChat: React.FC = () => {
       }
 
       if (configResult.success) {
-        const tokenResponse = await fetch('http://localhost:5005/api/zoho/token', {
+        const tokenResponse = await fetch('https://api-dashboard.harx.ai/api/zoho/token', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'

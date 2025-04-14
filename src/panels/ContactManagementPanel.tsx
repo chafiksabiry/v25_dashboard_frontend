@@ -46,7 +46,7 @@ function ContactManagementPanel() {
     }
   
     try {
-      const response = await fetch("http://localhost:5005/api/zoho/contacts", {
+      const response = await fetch("https://api-dashboard.harx.ai/api/zoho/contacts", {
         method: "GET",
         headers: {
           Authorization: `Bearer ${accessToken}`,

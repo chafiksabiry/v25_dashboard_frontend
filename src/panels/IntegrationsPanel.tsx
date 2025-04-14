@@ -117,7 +117,7 @@ const saveZohoConfigToDB = async (config: ZohoDBConfig): Promise<ZohoResponse> =
       };
     }
 
-    const response = await fetch('http://localhost:5005/api/zoho/db/save', {
+    const response = await fetch('https://api-dashboard.harx.ai/api/zoho/db/save', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -148,7 +148,7 @@ const getZohoConfigFromDB = async (): Promise<ZohoDBConfig | null> => {
       return null;
     }
 
-    const response = await fetch('http://localhost:5005/api/zoho/db/config', {
+    const response = await fetch('https://api-dashboard.harx.ai/api/zoho/db/config', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -172,7 +172,7 @@ const deleteZohoConfigFromDB = async (): Promise<ZohoResponse> => {
     // Pour la suppression, on permet de continuer même sans token
     // car on veut pouvoir nettoyer même si le token est invalide
 
-    const response = await fetch('http://localhost:5005/api/zoho/db/config', {
+    const response = await fetch('https://api-dashboard.harx.ai/api/zoho/db/config', {
       method: 'DELETE',
       headers: token ? {
         'Authorization': `Bearer ${token}`
@@ -204,7 +204,7 @@ const getZohoData = async (endpoint: string): Promise<ZohoResponse> => {
       };
     }
 
-    const response = await fetch(`http://localhost:5005/api/zoho/data/${endpoint}`, {
+    const response = await fetch(`https://api-dashboard.harx.ai/api/zoho/data/${endpoint}`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -905,7 +905,7 @@ export function IntegrationsPanel() {
 
       if (integration.id === 'zoho-crm') {
         const token = ZohoTokenService.getToken();
-        const response = await fetch('http://localhost:5005/api/zoho/disconnect', {
+        const response = await fetch('https://api-dashboard.harx.ai/api/zoho/disconnect', {
           method: 'POST',
           headers: token ? {
             'Authorization': `Bearer ${token}`,
@@ -1021,7 +1021,7 @@ export function IntegrationsPanel() {
       });
 
       // Appel à l'API pour configurer Zoho
-      const response = await fetch('http://localhost:5005/api/zoho/configure', {
+      const response = await fetch('https://api-dashboard.harx.ai/api/zoho/configure', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

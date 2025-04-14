@@ -27,7 +27,7 @@ export function Leads() {
       }
 
       // Use the token to fetch leads
-      const response = await fetch('http://localhost:5005/api/leads', {
+      const response = await fetch('https://api-dashboard.harx.ai/api/leads', {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
