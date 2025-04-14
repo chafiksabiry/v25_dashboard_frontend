@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Cookies from 'js-cookie';
 import {
   Plug,
   Search,
@@ -389,8 +388,8 @@ export function IntegrationsPanel() {
         return <Network className="w-5 h-5" />;
     }
   };
-  const userId = Cookies.get('userId');
-  console.log('Stored userId from cookie:', userId);
+  const userId = localStorage.getItem('userId');
+  console.log('Stored userId:', userId);
 
   // ✅ Fetch the integration status when the component mounts
   useEffect(() => {
@@ -505,7 +504,7 @@ export function IntegrationsPanel() {
     setErrors(newErrors);
     return !hasErrors;
   };
-  const handleConnectClick = (integration) => {
+  const handleConnectClick = (integration: Integration) => {
     setSelectedIntegration(integration);
     console.log("you selected", integration.name);
   };
@@ -599,7 +598,6 @@ export function IntegrationsPanel() {
         const data = await response.json();
         
         if (data.success) {
-          // Supprimer le token local
           ZohoTokenService.removeToken();
           setZohoDBConfig(null);
           setIsZohoTokenValid(false);
@@ -617,14 +615,13 @@ export function IntegrationsPanel() {
           throw new Error(data.message || 'Failed to disconnect from Zoho');
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Disconnect error:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.message || 
+      const errorMessage = error instanceof Error ? error.message : 
+                          (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 
                           'Failed to disconnect integration';
       setError(errorMessage);
       
-      // Mise à jour du statut en cas d'erreur
       setIntegrationStates(prev => ({
         ...prev,
         [integration.id]: {
@@ -633,7 +630,7 @@ export function IntegrationsPanel() {
         }
       }));
     } finally {
-    setLoading(false);
+      setLoading(null);
     }
   };
 
@@ -690,7 +687,7 @@ export function IntegrationsPanel() {
     }
 
     try {
-      setLoading(true);
+      setLoading('saving');
       setError(null);
 
       if (selectedIntegration.id === 'zoho-crm') {
@@ -786,6 +783,8 @@ export function IntegrationsPanel() {
           }));
         }
       }
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Failed to save configuration');
     } finally {
       setLoading(null);
     }
@@ -1039,11 +1038,11 @@ export function IntegrationsPanel() {
                   Cancel
                 </button>
                 <button
-                  onClick={handleConnect}
-                  disabled={loading}
+                  onClick={() => selectedIntegration && handleConnect(selectedIntegration)}
+                  disabled={loading === 'saving'}
                   className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 disabled:bg-cyan-300"
                 >
-                  {loading ? 'Saving...' : 'Save Settings'}
+                  {loading === 'saving' ? 'Saving...' : 'Save Settings'}
                 </button>
               </div>
             </div>
