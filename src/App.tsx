@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
-import { ToastContainer } from 'react-toastify';
+import { Toaster } from 'react-hot-toast';
 import { store } from './store';
 import Sidebar from './components/Sidebar';
 import DashboardPanel from './panels/DashboardPanel';
@@ -52,7 +52,7 @@ function App() {
               </div>
             </div>
           </div>
-          <ToastContainer />
+          <Toaster position="top-right" />
         </Router>
       </Provider>
     </AuthProvider>

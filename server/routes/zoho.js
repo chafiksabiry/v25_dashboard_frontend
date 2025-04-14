@@ -1,3 +1,14 @@
+const express = require('express');
+const router = express.Router();
+const { getLeads, getDeals } = require('../controllers/zoho');
+
+// Leads endpoint
+router.get('/leads', getLeads);
+
+// Deals endpoint
+router.get('/deals', getDeals);
+
+// Mail endpoint (existing)
 router.get('/mail', async (req, res) => {
   try {
     const accessToken = req.headers.authorization?.split(' ')[1];
@@ -23,4 +34,6 @@ router.get('/mail', async (req, res) => {
       error: 'Erreur lors de la récupération des emails' 
     });
   }
-}); 
+});
+
+module.exports = router; 

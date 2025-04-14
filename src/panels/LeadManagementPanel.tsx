@@ -18,7 +18,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { LeadUploader } from "../components/LeadUploader";
-import { ZohoTokenService } from '../services/zohoService';
+import { ZohoTokenService, API_BASE_URL } from '../services/zohoService';
 import { useNavigate } from 'react-router-dom';
 
 function LeadManagementPanel() {
@@ -167,7 +167,6 @@ function LeadManagementPanel() {
       const accessToken = localStorage.getItem('zoho_access_token');
       console.log("=== Fetch Deals ===");
       console.log("Token disponible:", accessToken ? "Oui" : "Non");
-      console.log("Token utilisé:", accessToken);
       
       if (!accessToken) {
         setIsZohoConnected(false);
@@ -175,7 +174,7 @@ function LeadManagementPanel() {
         return;
       }
 
-      const response = await fetch('http://localhost:5005/api/zoho/leads', {
+      const response = await fetch(`${API_BASE_URL}/leads`, {
         method: "GET",
         headers: {
           "Authorization": `Zoho-oauthtoken ${accessToken}`,

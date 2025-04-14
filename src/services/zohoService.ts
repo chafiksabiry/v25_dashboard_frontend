@@ -1,7 +1,7 @@
 // Service pour gérer les intégrations Zoho à travers l'application
 
 // Configuration temporaire pour le développement
-const API_BASE_URL = 'http://38.242.208.242:5005/api/zoho';
+export const API_BASE_URL = 'http://localhost:5005/api/zoho';
 
 // Créer le service global pour gérer le token Zoho
 export const ZohoTokenService = {
@@ -22,7 +22,7 @@ export const ZohoTokenService = {
     if (!token) return false;
     
     try {
-      const response = await fetch('http://localhost:5005/api/zoho/validate-token', {
+      const response = await fetch(`${API_BASE_URL}/validate-token`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

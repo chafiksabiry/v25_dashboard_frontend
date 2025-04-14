@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
-    base: 'https://dashboard.harx.ai/',
+    base: mode === 'production' ? 'https://dashboard.harx.ai/' : '/',
     plugins: [
       react({
         jsxRuntime: 'classic',
@@ -29,18 +29,22 @@ export default defineConfig(({ mode }) => {
         useDevMode: true,
         scopeCss: true,
       }),
-      removeReactRefreshScript(), // Add the script removal plugin
+      removeReactRefreshScript(),
     ],
-
     define: {
       'import.meta.env': env,
     },
     server: {
       port: 5180,
       cors: true,
-      hmr: false,
+      hmr: {
+        protocol: 'ws',
+        host: 'localhost',
+        port: 5180,
+      },
       fs: {
-        strict: true, // Ensure static assets are correctly resolved
+        strict: true,
+        allow: ['..'],
       },
     },
     build: {
@@ -50,14 +54,13 @@ export default defineConfig(({ mode }) => {
         output: {
           format: 'umd',
           name: 'app7',
-          entryFileNames: 'index.js', // Fixed name for the JS entry file
-          chunkFileNames: 'chunk-[name].js', // Fixed name for chunks
+          entryFileNames: 'index.js',
+          chunkFileNames: 'chunk-[name].js',
           assetFileNames: (assetInfo) => {
-            // Ensure CSS files are consistently named
             if (assetInfo.name.endsWith('.css')) {
               return 'index.css';
             }
-            return '[name].[ext]'; // Default for other asset types
+            return '[name].[ext]';
           },
         },
       },
@@ -66,6 +69,9 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, 'src'),
       },
+    },
+    optimizeDeps: {
+      include: ['react', 'react-dom'],
     },
   };
 });

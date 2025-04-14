@@ -28,6 +28,7 @@ import {
   disconnectZoho,
   configureZoho
 } from '../services/zohoService';
+import { toast } from 'react-hot-toast';
 
 interface UserConfig {
   clientId: string;
@@ -1001,111 +1002,71 @@ export function IntegrationsPanel() {
   };
 
   const handleSaveConfig = async () => {
-    if (!selectedIntegration) return;
-
-    if (!validateForm()) {
-      return;
-    }
-
     try {
-      setLoading(selectedIntegration.id);
-      setError(null);
-
-      if (selectedIntegration.id === 'zoho-crm') {
-        try {
-          // Nettoyer et valider les valeurs
-          let clientSecret = configValues.client_secret;
-          
-          // Si le client_secret est un JSON string, essayer de l'extraire
-          if (clientSecret.startsWith('[')) {
-            try {
-              const parsed = JSON.parse(clientSecret);
-              clientSecret = parsed[0]?.value || '';
-            } catch (e) {
-              console.error('Error parsing client secret:', e);
-            }
-          }
-
-          // Vérifier que toutes les valeurs sont valides
-          if (!configValues.refresh_token || !configValues.client_id || !clientSecret) {
-            throw new Error('Tous les champs sont requis');
-          }
-
-          // Préparation des données dans le format attendu par le backend
-          const configData = {
-            refreshToken: configValues.refresh_token.trim(),
-            clientId: configValues.client_id.trim(),
-            clientSecret: clientSecret.trim()
-          };
-
-          console.log('Sending configuration to server:', {
-            refreshToken: configData.refreshToken,
-            clientId: configData.clientId,
-            clientSecret: '***hidden***'
-          });
-
-          // Appel à l'API pour configurer Zoho
-          const response = await fetch('http://localhost:5005/api/zoho/configure', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify(configData)
-          });
-
-          // Vérifier d'abord si la réponse est JSON
-          const contentType = response.headers.get('content-type');
-          if (!contentType || !contentType.includes('application/json')) {
-            throw new Error('Réponse invalide du serveur');
-          }
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.message || `Erreur ${response.status}: ${data.error || 'Erreur inconnue'}`);
-          }
-
-          if (data.success) {
-            // Stocker le token d'accès
-            if (data.accessToken) {
-              ZohoTokenService.setToken(data.accessToken);
-            }
-
-            // Mise à jour du statut de l'intégration
-            setIntegrationStates(prev => ({
-              ...prev,
-              'zoho-crm': {
-                ...prev['zoho-crm'],
-                status: 'connected' as const
-              }
-            }));
-
-            setIsZohoTokenValid(true);
-            setSelectedIntegration(null);
-            setConfigValues({});
-            setErrors({});
-
-            console.log('Zoho CRM configured successfully');
-          } else {
-            throw new Error(data.message || 'La configuration a échoué');
-          }
-        } catch (error) {
-          console.error('Configuration error:', error);
-          const errorMessage = error instanceof Error ? error.message : 'Échec de la configuration de Zoho CRM';
-          setError(errorMessage);
-          
-          setIntegrationStates(prev => ({
-            ...prev,
-            'zoho-crm': {
-              ...prev['zoho-crm'],
-              status: 'error' as const
-            }
-          }));
-        }
+      if (!configValues.refresh_token || !configValues.client_id || !clientSecret) {
+        throw new Error('Tous les champs sont requis');
       }
-    } finally {
-      setLoading(null);
+
+      // Préparation des données dans le format attendu par le backend
+      const configData = {
+        refreshToken: configValues.refresh_token.trim(),
+        clientId: configValues.client_id.trim(),
+        clientSecret: clientSecret.trim()
+      };
+
+      console.log('Sending configuration to server:', {
+        refreshToken: configData.refreshToken,
+        clientId: configData.clientId,
+        clientSecret: '***hidden***'
+      });
+
+      // Appel à l'API pour configurer Zoho
+      const response = await fetch('http://localhost:5005/api/zoho/configure', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(configData)
+      });
+
+      // Vérifier d'abord si la réponse est JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Réponse invalide du serveur');
+      }
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle rate limiting specifically
+        if (data.isRateLimited) {
+          throw new Error('Zoho a détecté trop de requêtes. Veuillez attendre quelques minutes avant de réessayer.');
+        }
+        throw new Error(data.message || `Erreur ${response.status}: ${data.error || 'Erreur inconnue'}`);
+      }
+
+      if (data.success) {
+        // Stocker le token d'accès
+        if (data.accessToken) {
+          ZohoTokenService.setToken(data.accessToken);
+        }
+
+        // Mise à jour du statut de l'intégration
+        setIntegrationStates(prev => ({
+          ...prev,
+          'zoho-crm': {
+            ...prev['zoho-crm'],
+            status: 'connected' as const
+          }
+        }));
+
+        // Afficher un message de succès
+        toast.success('Configuration Zoho CRM mise à jour avec succès');
+      }
+    } catch (error) {
+      console.error('Configuration error:', error);
+      toast.error(error.message || 'Erreur lors de la configuration de Zoho CRM');
     }
   };
 
