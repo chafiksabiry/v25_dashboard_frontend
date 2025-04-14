@@ -1,169 +1,93 @@
-import React, { useState, useEffect } from "react";
-import {
-  MessageSquare,
-  Users,
-  Clock,
-  CheckCircle2,
-  Video,
-  Share2,
-  BarChart2,
-} from "lucide-react";
+import React, { useState } from "react";
+import { MessageSquare, ChevronDown } from "lucide-react";
+import WhatsAppChat from "./chat-platforms/WhatsAppChat";
+import MessengerChat from "./chat-platforms/MessengerChat";
+import InstagramChat from "./chat-platforms/InstagramChat";
+import TikTokChat from "./chat-platforms/TikTokChat";
+import SalesInboxChat from "./chat-platforms/SalesInboxChat";
+import { channelConfig } from "./chat-platforms/channelConfig";
+
+// Définition du type pour tous les canaux
+type ChannelType = "salesinbox" | "whatsapp" | "messenger" | "instagram" | "tiktok";
 
 function ChatPanel() {
-  const [chats, setChats] = useState([]);
-  const [activeChat, setActiveChat] = useState<string | null>(null);
-  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [activeChannel, setActiveChannel] = useState<ChannelType>("salesinbox");
+  const [showChannelMenu, setShowChannelMenu] = useState(false);
 
-  const fetchChats = async () => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/zoho/chats`);
-      console.log("status de la réponse :", response.status); // Log du code de statut
-      console.log("headers de la réponse :", response.headers); // Log des headers pour le débogage
-
-      if (!response.ok) {
-        throw new Error(
-          `Échec de la récupération des chats : ${response.statusText}`
-        );
-      }
-
-      const data = await response.json();
-      console.log("Données reçues :", data); // Log des données de réponse
-
-      setChats(data.data || []); // Assurez-vous d'utiliser le bon format des données
-    } catch (error) {
-      console.error("Erreur lors de la récupération des chats :", error);
+  // Fonction pour afficher le composant correspondant au canal actif
+  const renderActiveChannelComponent = () => {
+    switch(activeChannel) {
+      case "whatsapp":
+        return <WhatsAppChat />;
+      case "messenger":
+        return <MessengerChat />;
+      case "instagram":
+        return <InstagramChat />;
+      case "tiktok":
+        return <TikTokChat />;
+      case "salesinbox":
+      default:
+        return <SalesInboxChat />;
     }
   };
-
-  const fetchChatMessages = async (chatId: string) => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/zoho/chats/1631/transcript`);
-      if (!response.ok) {
-        throw new Error(`Erreur lors de la récupération des messages : ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      console.log("Messages reçus :", data);
-  
-      setChatMessages(data.data || []);
-      setActiveChat(chatId);
-    } catch (error) {
-      console.error("Erreur lors de la récupération des messages :", error);
-    }
-  };
-  
-
-  // Fetch chats when the component is mounted
-  useEffect(() => {
-    fetchChats();
-  }, []);
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <MessageSquare className="w-6 h-6 text-green-600" />
+    <div className="space-y-6 p-4 max-w-[1400px] mx-auto">
+      <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-orange-100 rounded-xl transition-all hover:bg-orange-200">
+              <MessageSquare className="w-7 h-7 text-orange-600" />
             </div>
-            <h2 className="text-xl font-semibold">Live Chat</h2>
+            <h2 className="text-2xl font-bold text-gray-800">Live Chat</h2>
           </div>
-          <div className="flex gap-2">
-            <button className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">
+          
+          {/* Menu déroulant pour les canaux avec icônes */}
+          <div className="relative">
+            <button 
+              className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-800 rounded-xl hover:bg-gray-200 transition-all font-medium"
+              onClick={() => setShowChannelMenu(!showChannelMenu)}
+            >
+              {channelConfig[activeChannel].icon}
+              {channelConfig[activeChannel].label}
+              <ChevronDown className="w-4 h-4 ml-2" />
+            </button>
+            
+            {showChannelMenu && (
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg z-10 border border-gray-100">
+                {(Object.keys(channelConfig) as ChannelType[]).map((channel) => (
+                  <button
+                    key={channel}
+                    className={`w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center ${
+                      activeChannel === channel ? 'bg-gray-50 font-medium' : ''
+                    } ${channel !== 'tiktok' ? 'border-b border-gray-100' : ''}`}
+                    onClick={() => {
+                      setActiveChannel(channel);
+                      setShowChannelMenu(false);
+                    }}
+                  >
+                    {channelConfig[channel].icon}
+                    <span className={`text-${channelConfig[channel].color}-600`}>
+                      {channelConfig[channel].label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          <div className="flex gap-3">
+            <button className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-medium">
               Settings
             </button>
-            <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+            <button className="px-5 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all font-medium">
               New Chat
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="w-5 h-5 text-blue-600" />
-              <span className="font-medium">Active Chats</span>
-            </div>
-            <div className="text-2xl font-bold">{chats.length}</div>
-            <div className="text-sm text-blue-600">Online now</div>
-          </div>
-          {/* Other stats */}
-        </div>
-
-        <div className="grid grid-cols-3 gap-6">
-          <div className="col-span-1 border rounded-lg overflow-hidden">
-            <div className="p-4 bg-gray-50 border-b">
-              <h3 className="font-semibold">Active Conversations</h3>
-            </div>
-            <div className="divide-y">
-              {chats.map((chat: any) => (
-                <button
-                  key={chat.chat_id} // Use unique id from the chat object
-                  className="w-full p-4 text-left hover:bg-gray-50 flex items-center gap-3"
-                  onClick={() => setActiveChat(chat.chat_id)}
-                >
-                  <img
-                    src={`https://i.pravatar.cc/32?img=${chat.chat_id}`} // Example placeholder image
-                    alt="Customer"
-                    className="w-10 h-10 rounded-full"
-                  />
-                  <div>
-                    <div className="font-medium">
-                      {chat.visitor_name || "Customer"}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {chat.time || "2 min ago"}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="col-span-2 border rounded-lg">
-            <div className="p-4 bg-gray-50 border-b flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <img
-                  src="https://i.pravatar.cc/32?img=21"
-                  alt="Customer"
-                  className="w-10 h-10 rounded-full"
-                />
-                <div>
-                  <div className="font-medium">John Smith</div>
-                  <div className="text-sm text-gray-500">Online</div>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button className="p-2 hover:bg-gray-200 rounded-lg">
-                  <Video className="w-5 h-5" />
-                </button>
-                <button className="p-2 hover:bg-gray-200 rounded-lg">
-                  <Share2 className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-            <div className="h-96 p-4 bg-gray-50">
-              {/* Chat messages */}
-              <div className="text-center text-gray-500 mt-32">
-                {activeChat
-                  ? `Chat with ${activeChat}`
-                  : "Select a conversation to start chatting"}
-              </div>
-            </div>
-            <div className="p-4 border-t">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Type your message..."
-                  className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-                <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                  Send
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Le reste du contenu existant */}
+        {renderActiveChannelComponent()}
       </div>
     </div>
   );
