@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@qalqul/sdk-call": "git+https://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@github.com/qalqul/qalqul-sdk-call.git",
     "@reduxjs/toolkit": "^2.2.1",
     "@supabase/supabase-js": "^2.39.7",
     "@twilio/voice-sdk": "^2.12.3",
@@ -19,6 +20,8 @@
     "cheerio": "^1.0.0",
     "cross-spawn": "^7.0.6",
     "date-fns": "^3.3.1",
+    "js-cookie": "^3.0.5",
+    "jwt-decode": "^4.0.0",
     "lodash": "^4.17.21",
     "lucide-react": "^0.344.0",
     "multer": "^1.4.5-lts.1",
@@ -30,6 +33,9 @@
     "react-toastify": "^10.0.4",
     "socket.io-client": "^4.7.4",
     "sweetalert2": "^11.17.2",
+    "sweetalert2-react-content": "^5.1.0",
+    "tailwind-scrollbar": "^3.1.0",
+    "uuid": "^11.1.0",
     "vite-plugin-qiankun": "^1.0.15",
     "vite-react-typescript-starter": "file:",
     "zod": "^3.22.4"

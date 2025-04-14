@@ -1,0 +1,114 @@
+import React, { useState } from 'react';
+import { X } from 'lucide-react';
+import { toast } from 'react-toastify';
+
+export function IntegrationsPanel() {
+  const [activeFilter, setActiveFilter] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
+  const [configValues, setConfigValues] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
+
+  const integrations = [
+    { id: 'twilio', name: 'Twilio', description: 'Cloud communications platform', config: { fields: [ { key: 'account_sid', label: 'Account SID', type: 'text', required: true }, { key: 'auth_token', label: 'Auth Token', type: 'password', required: true }, { key: 'phone_number', label: 'Phone Number', type: 'text', required: true } ] } }
+  ];
+
+  const handleConnectClick = (integration) => {
+    setSelectedIntegration(integration);
+  };
+
+  const handleFieldChange = (key, value) => {
+    setConfigValues(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleConnect = async (integration: Integration) => {
+    console.log(`Connecting ${integration.name}...`);
+
+    if (!selectedIntegration) return;
+
+    try {
+        setLoading(integration.id);
+        setError(null);
+
+        // Prepare credentials from user input
+        const requestData = {
+            userId: "65d2b8f4e45a3c5a12e8f123", // Replace with actual user ID from auth state
+            accountSid: configValues.account_sid,
+            authToken: configValues.auth_token,
+            phoneNumber: configValues.phone_number
+        };
+
+        // Send request to backend
+        const response = await fetch("http://localhost:5000/api/twilio/setup", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(requestData)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            toast.success("Twilio connected successfully!");
+            setSelectedIntegration(null);
+
+            // Update integration state to "connected"
+            setConfigValues({});
+            setErrors({});
+            integration.status = "connected";
+        } else {
+            throw new Error(result.error);
+        }
+    } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Failed to connect Twilio.");
+    } finally {
+        setLoading(null);
+    }
+};
+
+
+  return (
+    <div>
+      {integrations.map(integration => (
+        <button key={integration.id} onClick={() => handleConnectClick(integration)}>
+          Connect {integration.name}
+        </button>
+      ))}
+
+      {selectedIntegration && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-lg w-full p-6">
+            <div className="flex justify-between mb-4">
+              <h3 className="text-lg font-semibold">{selectedIntegration.name} Settings</h3>
+              <button onClick={() => setSelectedIntegration(null)}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {selectedIntegration.config?.fields?.map(field => (
+              <div key={field.key} className="mb-4">
+                <label>{field.label}</label>
+                <input
+                  type={field.type}
+                  value={configValues[field.key] || ''}
+                  onChange={e => handleFieldChange(field.key, e.target.value)}
+                  className={`border p-2 w-full ${errors[field.key] ? 'border-red-500' : 'border-gray-300'}`}
+                />
+                {errors[field.key] && <p className="text-red-500 text-sm">{errors[field.key]}</p>}
+              </div>
+            ))}
+
+            <button onClick={handleConnect} className="bg-blue-500 text-white px-4 py-2 rounded">
+              Connect
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default IntegrationsPanel;

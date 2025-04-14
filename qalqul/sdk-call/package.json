@@ -1,0 +1,21 @@
+{
+  "name": "@qalqul/sdk-call",
+  "version": "0.12.3",
+  "main": "./dist/index.js",
+  "scripts": {
+    "watch:ts": "tsc --watch",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@qalqul/sdk-call": "file:",
+    "@qalqul/sipml": "https://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@github.com/qalqul/qalqul-sipml.git",
+    "@types/socket.io-client": "^3.0.0",
+    "patch-package": "^8.0.0",
+    "rxjs": "^6.3.3",
+    "socket.io-client": "^4.7.2"
+  },
+  "devDependencies": {
+    "@types/sipml": "^0.0.27",
+    "typescript": "^3.1.3"
+  }
+}

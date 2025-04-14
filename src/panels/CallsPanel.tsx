@@ -18,10 +18,17 @@ import {
   Info
 } from 'lucide-react';
 import { CallInterface } from '../components/CallInterface';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
+import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
+import { GlobalAIAssistant } from '../components/GlobalAIAssistant';
+import { AIAssistantAPI } from '../components/GlobalAIAssistant';
 
 interface ActiveCall {
   number: string;
   agentId: string;
+  callId: string;
 }
 
 function CallsPanel() {
@@ -32,235 +39,274 @@ function CallsPanel() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState<boolean>(true);
+  const [selectedProvider, setSelectedProvider] = useState<'twilio' | 'qalqul'>('twilio');
   const navigate = useNavigate();
+  const { currentUser, loading: authLoading } = useAuth();
 
+  useEffect(() => {
+    AIAssistantAPI.showPanel();
+    
+    return () => {
+      AIAssistantAPI.hidePanel();
+    };
+  }, []);
 
   const handleCall = (phoneNumber: string) => {
-    const phoneRegex = /^\+([1-9]{1,4})\d{1,14}$/;  // Expression régulière pour valider le numéro international
+    const phoneRegex = /^(\+|00)([1-9]{1})\d{1,14}$/;
     if (phoneRegex.test(phoneNumber)) {
-      const mockAgentId = '65d8f1234567890123456789';  // ID agent statique
+      if (!currentUser) {
+        setError('You must be logged in to make calls');
+        return;
+      }
       setActiveCall({
         number: phoneNumber,
-        agentId: mockAgentId
+        agentId: currentUser.id,
+        callId: `call_${Date.now()}`
       });
       setShowPhoneInput(false);
       setError('');
     } else {
-      setError('Please enter a valid international phone number (e.g. +13024440090)');
+      setError('Please enter a valid international phone number (e.g. +13024440090 or 0013024440090)');
+    }
+  };
+
+  const fetchCalls = async () => {
+    try {
+      if (!currentUser?.id) return;
+      
+      const response = await axios.get(`${import.meta.env.VITE_API_URL_CALL}/api/calls`, {
+        params: { userId: currentUser.id }
+      });
+      console.log("response.data.data",response.data.data);
+       setCalls(response.data.data);
+      //console.log("allCalls", allCalls);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching calls:', error);
+      setError('Failed to fetch calls');
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    const fetchCalls = async () => {
-      try {
-        setLoading(true);
-        const response = await callsApi.getAll(); // Fetch calls from API
-        console.log("response :", response)
-        setCalls(response.data);
-      } catch (err) {
-        console.error("Error fetching calls:", err);
-        setError("Failed to load calls.");
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (!authLoading) {
+      fetchCalls();
+    }
+  }, [currentUser?.id, authLoading]);
 
-    fetchCalls();
-  }, []);
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    );
+  }
 
+  if (!currentUser) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-gray-500">Please log in to access calls.</p>
+      </div>
+    );
+  }
+  //console.log("allCallss", allCalls);
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Phone className="w-6 h-6 text-blue-600" />
+    <>
+      <div className="space-y-6">
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <Phone className="w-6 h-6 text-blue-600" />
+              </div>
+              <h2 className="text-xl font-semibold">Calls Dashboard</h2>
             </div>
-            <h2 className="text-xl font-semibold">Calls Dashboard</h2>
-          </div>
-          {!showPhoneInput ? (
-            <button
-              onClick={() => setShowPhoneInput(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              New Call
-            </button>
-          ) : (
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="Enter phone number"
-                className="px-4 py-2 border border-gray-300 rounded-lg"
-              />
+            {!showPhoneInput ? (
               <button
-                onClick={() => handleCall(phoneNumber)}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                onClick={() => setShowPhoneInput(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
-                Call
+                New Call
               </button>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="Enter phone number"
+                  className="px-4 py-2 border border-gray-300 rounded-lg"
+                />
+                <button
+                  onClick={() => handleCall(phoneNumber)}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                >
+                  Call
+                </button>
+              </div>
+            )}
+          </div>
+
+          {error && (
+            <div className="bg-red-100 text-red-600 text-sm p-3 rounded-lg mb-6">
+              {error}
             </div>
           )}
-        </div>
 
-        {error && (
-          <div className="bg-red-100 text-red-600 text-sm p-3 rounded-lg mb-6">
-            {error}
+          <div className="grid grid-cols-4 gap-4 mb-6">
+            <div className="bg-green-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <PhoneIncoming className="w-5 h-5 text-green-600" />
+                <span className="font-medium">Incoming</span>
+              </div>
+              <div className="text-2xl font-bold">24</div>
+              <div className="text-sm text-green-600">Last 24 hours</div>
+            </div>
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <PhoneOutgoing className="w-5 h-5 text-blue-600" />
+                <span className="font-medium">Outgoing</span>
+              </div>
+              <div className="text-2xl font-bold">18</div>
+              <div className="text-sm text-blue-600">Last 24 hours</div>
+            </div>
+            <div className="bg-yellow-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className="w-5 h-5 text-yellow-600" />
+                <span className="font-medium">Average Duration</span>
+              </div>
+              <div className="text-2xl font-bold">5m 23s</div>
+              <div className="text-sm text-yellow-600">This week</div>
+            </div>
+            <div className="bg-red-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <PhoneMissed className="w-5 h-5 text-red-600" />
+                <span className="font-medium">Missed</span>
+              </div>
+              <div className="text-2xl font-bold">3</div>
+              <div className="text-sm text-red-600">Today</div>
+            </div>
           </div>
-        )}
 
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <div className="bg-green-50 p-4 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <PhoneIncoming className="w-5 h-5 text-green-600" />
-              <span className="font-medium">Incoming</span>
-            </div>
-            <div className="text-2xl font-bold">24</div>
-            <div className="text-sm text-green-600">Last 24 hours</div>
+          <div className="flex items-center gap-4 mb-6">
+            <button
+              className={`px-4 py-2 rounded-lg ${activeFilter === 'all'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              onClick={() => setActiveFilter('all')}
+            >
+              All Calls
+            </button>
+            <button
+              className={`px-4 py-2 rounded-lg ${activeFilter === 'incoming'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              onClick={() => setActiveFilter('incoming')}
+            >
+              Incoming
+            </button>
+            <button
+              className={`px-4 py-2 rounded-lg ${activeFilter === 'outgoing'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              onClick={() => setActiveFilter('outgoing')}
+            >
+              Outgoing
+            </button>
+            <button
+              className={`px-4 py-2 rounded-lg ${activeFilter === 'missed'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              onClick={() => setActiveFilter('missed')}
+            >
+              Missed
+            </button>
           </div>
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <PhoneOutgoing className="w-5 h-5 text-blue-600" />
-              <span className="font-medium">Outgoing</span>
-            </div>
-            <div className="text-2xl font-bold">18</div>
-            <div className="text-sm text-blue-600">Last 24 hours</div>
-          </div>
-          <div className="bg-yellow-50 p-4 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <Clock className="w-5 h-5 text-yellow-600" />
-              <span className="font-medium">Average Duration</span>
-            </div>
-            <div className="text-2xl font-bold">5m 23s</div>
-            <div className="text-sm text-yellow-600">This week</div>
-          </div>
-          <div className="bg-red-50 p-4 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <PhoneMissed className="w-5 h-5 text-red-600" />
-              <span className="font-medium">Missed</span>
-            </div>
-            <div className="text-2xl font-bold">3</div>
-            <div className="text-sm text-red-600">Today</div>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-4 mb-6">
-          <button
-            className={`px-4 py-2 rounded-lg ${activeFilter === 'all'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            onClick={() => setActiveFilter('all')}
-          >
-            All Calls
-          </button>
-          <button
-            className={`px-4 py-2 rounded-lg ${activeFilter === 'incoming'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            onClick={() => setActiveFilter('incoming')}
-          >
-            Incoming
-          </button>
-          <button
-            className={`px-4 py-2 rounded-lg ${activeFilter === 'outgoing'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            onClick={() => setActiveFilter('outgoing')}
-          >
-            Outgoing
-          </button>
-          <button
-            className={`px-4 py-2 rounded-lg ${activeFilter === 'missed'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            onClick={() => setActiveFilter('missed')}
-          >
-            Missed
-          </button>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="text-left border-b">
-                <th className="pb-3">Type</th>
-                <th className="pb-3">Customer</th>
-                <th className="pb-3">Time</th>
-                <th className="pb-3">Duration</th>
-                <th className="pb-3">Status</th>
-                <th className="pb-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {allCalls.map((call, index) => (
-                <tr key={call._id} className="hover:bg-gray-50">
-                  <td className="py-3">
-                    <div className="flex items-center gap-2">
-                      {call.direction === "inbound" ? (
-                        <PhoneIncoming className="w-5 h-5 text-green-600" />
-                      ) : (
-                        <PhoneOutgoing className="w-5 h-5 text-blue-600" />
-                      )}
-                      <span>{call.direction.charAt(0).toUpperCase() + call.direction.slice(1)}</span>
-                    </div>
-                  </td>
-                  <td className="py-3">
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={`https://i.pravatar.cc/32?img=${index + 10}`}
-                        alt="Customer"
-                        className="w-8 h-8 rounded-full"
-                      />
-                      <div>
-                        <div className="font-medium">{(call.lead) ? call.lead.name : ""}</div>
-                        <div className="text-sm text-gray-500">{(call.lead) ? call.lead.phone : ""}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3">{new Date(call.createdAt).toLocaleString()}</td>
-                  <td className="py-3">{call.duration} sec</td>
-                  <td className="py-3">
-                    <span
-                      className={`px-2 py-1 rounded-full text-sm ${call.status === "completed"
-                        ? "bg-green-100 text-green-600"
-                        : call.status === "missed"
-                          ? "bg-red-100 text-red-600"
-                          : "bg-gray-100 text-gray-600"
-                        }`}
-                    >
-                      {call.status.charAt(0).toUpperCase() + call.status.slice(1)}
-                    </span>
-                  </td>
-                  <td className="py-3">
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="p-2 hover:bg-gray-100 rounded-lg"
-                        onClick={() => handleCall(call.lead.phone)}
-                      >
-                        <PhoneCall className="w-5 h-5" />
-                      </button>
-                      <button className="p-2 hover:bg-gray-100 rounded-lg">
-                        <MessageCircle className="w-5 h-5" />
-                      </button>
-                      <button
-                        className="p-2 hover:bg-gray-100 rounded-lg"
-                        onClick={() => navigate(`/call-report`, { state: { call } })}
-                      >
-                        <Info className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left border-b">
+                  <th className="pb-3">Type</th>
+                  <th className="pb-3">Customer</th>
+                  <th className="pb-3">Time</th>
+                  <th className="pb-3">Duration</th>
+                  <th className="pb-3">Status</th>
+                  <th className="pb-3">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y">
+                {Array.isArray(allCalls) && allCalls.map((call, index) => (
+                  <tr key={call._id} className="hover:bg-gray-50">
+                    <td className="py-3">
+                      <div className="flex items-center gap-2">
+                        {call.direction === "inbound" ? (
+                          <PhoneIncoming className="w-5 h-5 text-green-600" />
+                        ) : (
+                          <PhoneOutgoing className="w-5 h-5 text-blue-600" />
+                        )}
+                        <span>{call.direction.charAt(0).toUpperCase() + call.direction.slice(1)}</span>
+                      </div>
+                    </td>
+                    <td className="py-3">
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={`https://i.pravatar.cc/32?img=${index + 10}`}
+                          alt="Customer"
+                          className="w-8 h-8 rounded-full"
+                        />
+                        <div>
+                          <div className="font-medium">{(call.lead) ? call.lead.name : ""}</div>
+                          <div className="text-sm text-gray-500">{(call.lead) ? call.lead.phone : ""}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3">{new Date(call.createdAt).toLocaleString()}</td>
+                    <td className="py-3">{call.duration} sec</td>
+                    <td className="py-3">
+                      <span
+                        className={`px-2 py-1 rounded-full text-sm ${call.status === "completed"
+                          ? "bg-green-100 text-green-600"
+                          : call.status === "missed"
+                            ? "bg-red-100 text-red-600"
+                            : "bg-gray-100 text-gray-600"
+                          }`}
+                      >
+                        {call.status ? call.status.charAt(0).toUpperCase() + call.status.slice(1) : ''}
+                      </span>
+                    </td>
+                    <td className="py-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          className="p-2 hover:bg-gray-100 rounded-lg"
+                          onClick={() => handleCall(call.lead.phone)}
+                        >
+                          <PhoneCall className="w-5 h-5" />
+                        </button>
+                        <button className="p-2 hover:bg-gray-100 rounded-lg">
+                          <MessageCircle className="w-5 h-5" />
+                        </button>
+                        <button
+                          className="p-2 hover:bg-gray-100 rounded-lg"
+                          onClick={() => navigate(`/call-report`, { state: { call } })}
+                        >
+                          <Info className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
+
+      <GlobalAIAssistant />
 
       {activeCall && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
@@ -274,12 +320,66 @@ function CallsPanel() {
             <CallInterface
               phoneNumber={activeCall.number}
               agentId={activeCall.agentId}
-              onEnd={() => setActiveCall(null)}
+              onEnd={() => {
+                setActiveCall(null);
+              }}
+              onCallSaved={fetchCalls}
+              provider={selectedProvider}
+              callId={activeCall.callId}
             />
           </div>
         </div>
       )}
-    </div>
+
+      {showPhoneInput && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Call Provider
+              </label>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setSelectedProvider('twilio')}
+                  className={`px-4 py-2 rounded-lg ${
+                    selectedProvider === 'twilio'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Twilio
+                </button>
+                <button
+                  onClick={() => setSelectedProvider('qalqul')}
+                  className={`px-4 py-2 rounded-lg ${
+                    selectedProvider === 'qalqul'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Qalqul
+                </button>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="Enter phone number"
+                className="px-4 py-2 border border-gray-300 rounded-lg flex-1"
+              />
+              <button
+                onClick={() => handleCall(phoneNumber)}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                Call
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

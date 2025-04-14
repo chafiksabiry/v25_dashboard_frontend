@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import Cookies from 'js-cookie';
 import {
   Plug,
   Search,
@@ -53,7 +55,7 @@ interface Integration {
   name: string;
   description: string;
   category: string;
-  status: 'connected' | 'error' | 'pending';
+  status: 'connected' | 'error' | 'pending' | 'disconnected';
   icon_url: string;
   requiresUserToken?: boolean;
   userConfig?: UserConfig;
@@ -81,6 +83,18 @@ interface ZohoDBConfig extends ZohoConfig {
   environment: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+interface IntegrationResponse {
+  id: string;
+  data?: {
+    success: boolean;
+    status: string;
+  };
+  error?: any;
+  config?: {
+    url: string;
+  };
 }
 
 // Créer un service global pour gérer le token Zoho
@@ -224,446 +238,7 @@ const getZohoData = async (endpoint: string): Promise<ZohoResponse> => {
 };
 
 export function IntegrationsPanel() {
-  const integrations: Integration[] = [
-    {
-      id: 'user-token',
-      name: 'User Authentication',
-      description: 'Configure your authentication credentials for all integrations',
-      category: 'authentication',
-      status: 'pending',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=usertoken',
-      requiresUserToken: true,
-      config: {
-        fields: [
-          {
-            key: 'client_id',
-            label: 'Client ID',
-            type: 'text',
-            required: true,
-            isUserToken: true,
-            placeholder: 'Enter your client ID',
-            validation: (value) => {
-              if (value.length < 5) {
-                return 'Client ID must be at least 5 characters long';
-              }
-              return undefined;
-            }
-          },
-          {
-            key: 'client_secret',
-            label: 'Client Secret',
-            type: 'password',
-            required: true,
-            isUserToken: true,
-            placeholder: 'Enter your client secret',
-            validation: (value) => {
-              if (value.length < 8) {
-                return 'Client secret must be at least 8 characters long';
-              }
-              return undefined;
-            }
-          },
-          {
-            key: 'refresh_token',
-            label: 'Refresh Token',
-            type: 'password',
-            required: true,
-            isUserToken: true,
-            placeholder: 'Enter your refresh token',
-            validation: (value) => {
-              if (value.length < 8) {
-                return 'Refresh token must be at least 8 characters long';
-              }
-              return undefined;
-            }
-          }
-        ]
-      }
-    },
-    {
-      id: 'twilio',
-      name: 'Twilio',
-      description: 'Cloud communications platform for voice, SMS, and video',
-      category: 'phone',
-      status: 'pending',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=twilio',
-      config: {
-        fields: [
-          {
-            key: 'account_sid',
-            label: 'Account SID',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'auth_token',
-            label: 'Auth Token',
-            type: 'password',
-            required: true
-          },
-          {
-            key: 'phone_number',
-            label: 'Phone Number',
-            type: 'text',
-            required: true,
-            placeholder: '+1234567890'
-          }
-        ]
-      }
-    },
-    {
-      id: 'intercom',
-      name: 'Intercom',
-      description: 'Customer messaging and engagement platform',
-      category: 'chat',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=intercom',
-      config: {
-        fields: [
-          {
-            key: 'access_token',
-            label: 'Access Token',
-            type: 'password',
-            required: true
-          },
-          {
-            key: 'workspace_id',
-            label: 'Workspace ID',
-            type: 'text',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'livechat',
-      name: 'LiveChat',
-      description: 'Live chat and customer service platform',
-      category: 'chat',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=livechat',
-      config: {
-        fields: [
-          {
-            key: 'api_key',
-            label: 'API Key',
-            type: 'password',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'zendesk',
-      name: 'Zendesk',
-      description: 'Customer service and engagement',
-      category: 'ticketing',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=zendesk',
-      config: {
-        fields: [
-          {
-            key: 'subdomain',
-            label: 'Subdomain',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'api_token',
-            label: 'API Token',
-            type: 'password',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'slack',
-      name: 'Slack',
-      description: 'Team communication and collaboration',
-      category: 'communication',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=slack',
-      config: {
-        fields: [
-          {
-            key: 'bot_token',
-            label: 'Bot Token',
-            type: 'password',
-            required: true
-          },
-          {
-            key: 'signing_secret',
-            label: 'Signing Secret',
-            type: 'password',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'teams',
-      name: 'Microsoft Teams',
-      description: 'Team collaboration and meetings',
-      category: 'communication',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=msteams',
-      config: {
-        fields: [
-          {
-            key: 'client_id',
-            label: 'Client ID',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'client_secret',
-            label: 'Client Secret',
-            type: 'password',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'zoom',
-      name: 'Zoom',
-      description: 'Video conferencing and meetings',
-      category: 'communication',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=zoom',
-      config: {
-        fields: [
-          {
-            key: 'api_key',
-            label: 'API Key',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'api_secret',
-            label: 'API Secret',
-            type: 'password',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'ovh',
-      name: 'OVH',
-      description: 'Enterprise-grade telephony and cloud communications',
-      category: 'phone',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=ovh',
-      config: {
-        fields: [
-          {
-            key: 'application_key',
-            label: 'Application Key',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'application_secret',
-            label: 'Application Secret',
-            type: 'password',
-            required: true
-          },
-          {
-            key: 'consumer_key',
-            label: 'Consumer Key',
-            type: 'password',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'zoho-crm',
-      name: 'Zoho CRM',
-      description: 'Customer relationship management and sales automation',
-      category: 'crm',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=zohocrm',
-      config: {
-        fields: [
-          {
-            key: 'client_id',
-            label: 'Client ID',
-            type: 'text',
-            required: true,
-            placeholder: 'Enter your Zoho client ID'
-          },
-          {
-            key: 'client_secret',
-            label: 'Client Secret',
-            type: 'password',
-            required: true,
-            placeholder: 'Enter your Zoho client secret',
-            validation: (value: string) => {
-              if (!value) return 'Client Secret is required';
-              if (value.startsWith('[')) {
-                try {
-                  const parsed = JSON.parse(value);
-                  if (!parsed[0]?.value) return 'Invalid Client Secret format';
-                } catch (e) {
-                  return 'Invalid Client Secret format';
-                }
-              }
-              return undefined;
-            }
-          },
-          {
-            key: 'refresh_token',
-            label: 'Refresh Token',
-            type: 'password',
-            required: true,
-            placeholder: 'Enter your Zoho refresh token'
-          }
-        ]
-      }
-    },
-    {
-      id: 'zoho-mail',
-      name: 'Zoho Mail',
-      description: 'Professional email and collaboration platform',
-      category: 'email',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=zohomail',
-      config: {
-        fields: [
-          {
-            key: 'client_id',
-            label: 'Client ID',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'client_secret',
-            label: 'Client Secret',
-            type: 'password',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'gmail',
-      name: 'Gmail',
-      description: 'Google email and messaging platform with OAuth2 integration',
-      category: 'email',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=gmail',
-      config: {
-        fields: [
-          {
-            key: 'client_id',
-            label: 'Client ID',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'client_secret',
-            label: 'Client Secret',
-            type: 'password',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'azure-ad',
-      name: 'Microsoft Azure AD',
-      description: 'Enterprise identity and access management',
-      category: 'authentication',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=azuread',
-      config: {
-        fields: [
-          {
-            key: 'tenant_id',
-            label: 'Tenant ID',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'client_id',
-            label: 'Client ID',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'client_secret',
-            label: 'Client Secret',
-            type: 'password',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'aws-ses',
-      name: 'AWS SES',
-      description: 'Amazon Simple Email Service for scalable email communication',
-      category: 'email',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=awsses',
-      config: {
-        fields: [
-          {
-            key: 'access_key_id',
-            label: 'Access Key ID',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'secret_access_key',
-            label: 'Secret Access Key',
-            type: 'password',
-            required: true
-          },
-          {
-            key: 'region',
-            label: 'Region',
-            type: 'text',
-            required: true
-          }
-        ]
-      }
-    },
-    {
-      id: 'aws-connect',
-      name: 'AWS Connect',
-      description: 'Amazon Connect cloud contact center service',
-      category: 'phone',
-      status: 'connected',
-      icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=awsconnect',
-      config: {
-        fields: [
-          {
-            key: 'access_key_id',
-            label: 'Access Key ID',
-            type: 'text',
-            required: true
-          },
-          {
-            key: 'secret_access_key',
-            label: 'Secret Access Key',
-            type: 'password',
-            required: true
-          },
-          {
-            key: 'instance_id',
-            label: 'Instance ID',
-            type: 'text',
-            required: true
-          }
-        ]
-      }
-    }
-  ];
-
+  const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
@@ -672,11 +247,13 @@ export function IntegrationsPanel() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [userToken, setUserToken] = useState<UserConfig | null>(() => {
-    // Initialize from localStorage
     const savedConfig = localStorage.getItem('user_config');
     return savedConfig ? JSON.parse(savedConfig) : null;
   });
   const [zohoDBConfig, setZohoDBConfig] = useState<ZohoDBConfig | null>(null);
+  const [isZohoTokenValid, setIsZohoTokenValid] = useState<boolean>(() => {
+    return ZohoTokenService.getToken() !== null;
+  });
 
   const [integrationStates, setIntegrationStates] = useState<Record<string, Integration>>(() => {
     const states: Record<string, Integration> = {};
@@ -812,6 +389,85 @@ export function IntegrationsPanel() {
         return <Network className="w-5 h-5" />;
     }
   };
+  const userId = Cookies.get('userId');
+  console.log('Stored userId from cookie:', userId);
+
+  // ✅ Fetch the integration status when the component mounts
+  useEffect(() => {
+    const fetchIntegrationStatus = async () => {
+      try {
+        setLoading('fetching');
+        
+        const integrationEndpoints = [
+          { id: "salesforce", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/salesforce/status?userId=${userId}` },
+          { id: "hubspot", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/hubspot/status?userId=${userId}` },
+          { id: "twilio", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/twilio/twilio-status?userId=${userId}` },
+          { id: "ringcentral", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/ringcentral/status?userId=${userId}` },
+          { id: "teams", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/teams/status?userId=${userId}` },
+          { id: "zoom", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/zoom/status?userId=${userId}` },
+          { id: "telegram", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/telegram/status?userId=${userId}` },
+          { id: "slack", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/slack/status?userId=${userId}` },
+          { id: "whatsapp", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/whatsapp/status?userId=${userId}` },
+          { id: "gmail", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/gmail/status?userId=${userId}` },
+          { id: "microsoft-outlook", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/outlook/status?userId=${userId}` },
+          { id: "aws-ses", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/awsSes/status?userId=${userId}` },
+          { id: "sendgrid", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/sendgrid/status?userId=${userId}` },
+          { id: "mailchimp", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/mailchimp/status?userId=${userId}` },
+          { id: "freshdesk", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/freshdesk/status?userId=${userId}` },
+          { id: "zendesk", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/zendesk/status?userId=${userId}` },
+          { id: "servicenow", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/servicenow/status?userId=${userId}` },
+          { id: "microsoft-azure-ad", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/azureAd/status?userId=${userId}` },
+          { id: "aws-connect", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/awsConnect/status?userId=${userId}` },
+          { id: "google-analytics", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/googleAnalytics/status?userId=${userId}` },
+          { id: "jira", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/jira/status?userId=${userId}` },
+          { id: "intercom", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/intercom/status?userId=${userId}` },
+          { id: "livechat", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/liveChat/status?userId=${userId}` },
+          { id: "ovh", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/ovh/status?userId=${userId}` },
+          { id: "aws-sns", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/awsSns/status?userId=${userId}` },
+          { id: "facebook", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/facebook/status?userId=${userId}` },
+          { id: "twitter", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/twitter/status?userId=${userId}` },
+          { id: "instagram", url: `${import.meta.env.VITE_BACKEND_URL_INTEGRATIONS}/instagram/status?userId=${userId}` },
+        ];
+        
+        const responses = await Promise.all(
+          integrationEndpoints.map(async (integration) => {
+            try {
+              const response = await axios.get(integration.url);
+              return {
+                id: integration.id,
+                data: response.data,
+                config: response.config
+              };
+            } catch (err) {
+              return {
+                id: integration.id,
+                error: err
+              };
+            }
+          })
+        );
+        
+        setIntegrations(prevIntegrations =>
+          prevIntegrations.map(integration => {
+            const response = responses.find(res => res.id === integration.id);
+            
+            if (response && response.data && response.data.success) {
+              return { ...integration, status: response.data.status };
+            } else {
+              return { ...integration, status: "error" };
+            }
+          })
+        );
+      } catch (err) {
+        console.error("Error fetching integration status:", err);
+        setError("Failed to load integration statuses.");
+      } finally {
+        setLoading(null);
+      }
+    };
+    
+    fetchIntegrationStatus();
+  }, [userId]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -849,14 +505,41 @@ export function IntegrationsPanel() {
     setErrors(newErrors);
     return !hasErrors;
   };
-
-  const handleConnect = async (integration: Integration) => {
+  const handleConnectClick = (integration) => {
+    setSelectedIntegration(integration);
+    console.log("you selected", integration.name);
+  };
+  const handleConnect = async (integration?: Integration) => {
+    if (!integration) return;
+    
+    if (integration.status === "connected") {
+      alert(`${integration.name} is already connected!`);
+      return;
+    }
+  
+    console.log(`Connecting ${integration.name}...`);
+  
+    // Gather required fields and check for errors
+    const requiredFields = integration.config?.fields || [];
+    let hasError = false;
+    const newErrors: Record<string, string> = {};
+  
+    requiredFields.forEach(field => {
+      if (field.required && !configValues[field.key]) {
+        newErrors[field.key] = `${field.label} is required`;
+        hasError = true;
+      }
+    });
+  
+    setErrors(newErrors);
+    
+    if (hasError) return;
+  
     try {
       setLoading(integration.id);
       setError(null);
 
       if (integration.id === 'zoho-crm') {
-        // Au lieu de rediriger directement, on affiche d'abord le popup de configuration
         setSelectedIntegration(integration);
         setConfigValues({
           client_id: '',
@@ -864,7 +547,6 @@ export function IntegrationsPanel() {
           refresh_token: ''
         });
         
-        // Si on a déjà une configuration, on la charge
         const existingConfig = await getZohoConfigFromDB();
         if (existingConfig) {
           setConfigValues({
@@ -951,7 +633,7 @@ export function IntegrationsPanel() {
         }
       }));
     } finally {
-      setLoading(null);
+    setLoading(false);
     }
   };
 
@@ -1008,7 +690,7 @@ export function IntegrationsPanel() {
     }
 
     try {
-      setLoading(selectedIntegration.id);
+      setLoading(true);
       setError(null);
 
       if (selectedIntegration.id === 'zoho-crm') {
@@ -1122,11 +804,6 @@ export function IntegrationsPanel() {
     if (activeFilter !== 'all' && integration.category !== activeFilter) return false;
     if (searchTerm && !integration.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
-  });
-
-  // Ajouter un état pour la validité du token
-  const [isZohoTokenValid, setIsZohoTokenValid] = useState<boolean>(() => {
-    return ZohoTokenService.getToken() !== null;
   });
 
   return (
@@ -1362,11 +1039,11 @@ export function IntegrationsPanel() {
                   Cancel
                 </button>
                 <button
-                  onClick={handleSaveConfig}
-                  disabled={loading === selectedIntegration.id}
+                  onClick={handleConnect}
+                  disabled={loading}
                   className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 disabled:bg-cyan-300"
                 >
-                  {loading === selectedIntegration.id ? 'Saving...' : 'Save Settings'}
+                  {loading ? 'Saving...' : 'Save Settings'}
                 </button>
               </div>
             </div>

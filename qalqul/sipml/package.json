@@ -1,0 +1,10 @@
+{
+  "name": "@qalqul/sipml",
+  "version": "1.0.2",
+  "main": "./lib/sipml.js",
+  "license": "MIT",
+  "dependencies": {
+    "@qalqul/sipml": "file:",
+    "@types/sipml": "^0.0.27"
+  }
+}

@@ -1,10 +1,11 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
 import { store } from './store';
+import { AuthProvider } from './contexts/AuthContext';
 import Sidebar from './components/Sidebar';
-import DashboardPanel from './panels/DashboardPanel';
+//import DashboardPanel from './panels/DashboardPanel';
 import CompanyProfilePanel from './panels/CompanyProfilePanel';
 import LeadManagementPanel from './panels/LeadManagementPanel';
 import RepMatchingPanel from './panels/RepMatchingPanel';
@@ -21,7 +22,7 @@ import IntegrationsPanel from './panels/IntegrationsPanel';
 import SettingsPanel from './panels/SettingsPanel';
 import DealManagementPanel from './panels/DealManagementPanel';
 import ContactManagementPanel from './panels/ContactManagementPanel';
-import { AuthProvider } from './contexts/AuthContext';
+import DashboardPanel from './panels/DashboardPanel';
 
 function App() {
   return (
