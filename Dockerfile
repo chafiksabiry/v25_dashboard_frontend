@@ -33,7 +33,7 @@ ENV VITE_BACKEND_KNOWLEDGEBASE_BACKEND=https://preprod-api-knowledge-base.harx.a
 ENV VITE_MATCHING_API_URL=https://preprod-api-matching.harx.ai/api
 # WebSocket URL for Speech-to-Text
 #ENV VITE_WS_URL=ws://38.242.208.242:5006
-ENV VITE_WS_URL=wss://api-calls.harx.ai/speech-to-text
+ENV VITE_WS_URL=wss://preprod-api-dash-calls.harx.ai/speech-to-text
 ENV VITE_API_URL_AI_MESSAGES=https://preprod-api-messages-service.harx.ai/api
 
 
