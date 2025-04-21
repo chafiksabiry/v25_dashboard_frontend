@@ -10,18 +10,25 @@ import { store } from './store';
 import App from './App';
 import './index.css';
 import 'react-toastify/dist/ReactToastify.css';
+import Cookies from 'js-cookie';
 
 let root: Root | null = null;
 
 // Vérification de l'authentification avec localStorage
-const userId = localStorage.getItem('userId');
+/* const userId = localStorage.getItem('userId');
 console.log('Stored user config:', userId);
 
 // Éviter la redirection si nous sommes déjà sur app1
 if (!userId && !window.location.pathname.includes('/app1')) {
   console.log('No user config found, redirecting to app1');
   window.location.href = "/app1";
-}
+} */
+const companyId = Cookies.get('userId');
+  console.log('Stored userId from cookie:', companyId);
+
+  if (companyId == null){
+    window.location.href = "/app1"
+  }
 
 interface RenderProps {
   container?: HTMLElement;
