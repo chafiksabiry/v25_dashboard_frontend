@@ -5,7 +5,7 @@ import { ToastContainer } from 'react-toastify';
 import { store } from './store';
 import { AuthProvider } from './contexts/AuthContext';
 import Sidebar from './components/Sidebar';
-import DashboardPanel from './panels/DashboardPanel';
+//import DashboardPanel from './panels/DashboardPanel';
 import CompanyProfilePanel from './panels/CompanyProfilePanel';
 import LeadManagementPanel from './panels/LeadManagementPanel';
 import RepMatchingPanel from './panels/RepMatchingPanel';
@@ -23,6 +23,7 @@ import SettingsPanel from './panels/SettingsPanel';
 import KnowledgeBase from './panels/KnowledgeBase';
 import KnowledgeInsights from './panels/KnowledgeInsights';
 import MatchingDashboard from './panels/MatchingDashboard';
+import OverviewPanel from './panels/OverviewPanel'
 import GigDetail from './pages/GigDetail';
 
 import { setUserId } from "./store/slices/userSlice"; // Import Redux action
@@ -39,7 +40,7 @@ function App() {
             <div className="flex-1 pl-64">
               <div className="p-8">
                 <Routes>
-                  <Route path="/app7" element={<DashboardPanel />} />
+                  <Route path="/app7" element={<OverviewPanel />} />
                   <Route path="/" element={<Navigate to="/app7" replace />} />
                   {/*<Route path="/dashboardcompany" element={<Navigate to="/dashboardcompany" replace />} />*/}
                   <Route path="/company" element={<CompanyProfilePanel />} />
