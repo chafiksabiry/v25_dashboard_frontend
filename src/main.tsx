@@ -14,11 +14,11 @@ import 'react-toastify/dist/ReactToastify.css';
 let root: Root | null = null;
 
 // Vérification de l'authentification avec localStorage
-const userConfig = localStorage.getItem('user_config');
-console.log('Stored user config:', userConfig);
+const userId = localStorage.getItem('userId');
+console.log('Stored user config:', userId);
 
 // Éviter la redirection si nous sommes déjà sur app1
-if (!userConfig && !window.location.pathname.includes('/app1')) {
+if (!userId && !window.location.pathname.includes('/app1')) {
   console.log('No user config found, redirecting to app1');
   window.location.href = "/app1";
 }
