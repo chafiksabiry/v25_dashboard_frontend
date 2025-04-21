@@ -41,6 +41,11 @@ declare global {
 }
 
 export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provider = 'twilio', keepAIPanelAfterCall = true, callId }: CallInterfaceProps) {
+  // Constants for audio processing and transcription
+  const SPEECH_THRESHOLD = 0.015;
+  const SILENCE_TIMEOUT = 2000;
+  const TRANSCRIPT_PROCESS_DELAY = 2000;
+
   const [duration, setDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
@@ -297,38 +302,26 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
     }
   };
 
-  // États pour stocker les messages AI localement
-  const [aiMessages, setAiMessages] = useState<AIAssistantMessage[]>([]);
   const [lastProcessedTranscript, setLastProcessedTranscript] = useState<string>('');
   const [transcriptBuffer, setTranscriptBuffer] = useState<string>('');
   const transcriptTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [messageQueue, setMessageQueue] = useState<AIAssistantMessage[]>([]);
-  const [isProcessingQueue, setIsProcessingQueue] = useState(false);
-  const [lastMessageTime, setLastMessageTime] = useState<Date | null>(null);
-  const MESSAGE_THROTTLE_MS = 12000;
-  const BATCH_SIZE = 1;
-  const SIMILARITY_THRESHOLD = 0.7;
-  const [lastSpeechTimestamp, setLastSpeechTimestamp] = useState<number>(0);
-  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
-  const SPEECH_THRESHOLD = 0.015;
-  const SILENCE_TIMEOUT = 2000;
-  const TRANSCRIPT_PROCESS_DELAY = 2000;
+  const [isProcessingTranscript, setIsProcessingTranscript] = useState(false);
   const [lastProcessedText, setLastProcessedText] = useState<string>('');
   const [currentSpeechSegment, setCurrentSpeechSegment] = useState<string>('');
-  const [isProcessingTranscript, setIsProcessingTranscript] = useState(false);
+  const [lastSpeechTimestamp, setLastSpeechTimestamp] = useState<number>(0);
+  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
 
   const navigate = useNavigate();
   const socketRef = useRef<any>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Initialement, s'assurer que le panel AI est visible
   useEffect(() => {
     // Ensure AI panel is visible at start
     AIAssistantAPI.showPanel();
     AIAssistantAPI.setCallEnded(false);
-    
-    // Clear previous messages at the start of a new call
-    AIAssistantAPI.setMessages([]);
+    AIAssistantAPI.clearMessages();
   }, []);
 
   const processMarkdownResponse = (markdown: string): { content: string, category: 'suggestion' | 'alert' | 'info' | 'action', priority: 'high' | 'medium' | 'low' } => {
@@ -383,11 +376,14 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
       console.log('🎯 Sending transcription to AI assistant:', transcription);
       const apiUrl = `${import.meta.env.VITE_API_URL_CALL}/api/calls/ai-assist`;
       
+      // Get current messages from global state for context
+      const currentMessages = (window as any).AIAssistant.getMessages?.() || [];
+      
       const payload = {
         transcription,
         callSid: callSid || 'unknown',
         isAgent: false,
-        context: aiMessages.slice(-5).map(msg => ({
+        context: currentMessages.slice(-5).map((msg: AIAssistantMessage) => ({
           role: msg.role,
           content: msg.content,
           category: msg.category,
@@ -412,88 +408,17 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
             isProcessed: false
           };
 
-          setAiMessages(prev => [...prev, newMessage]);
+          console.log('🆕 Creating new AI message:', newMessage);
           
-          // Ajouter le message au composant global
+          // Add message directly to global state
           AIAssistantAPI.addMessage(newMessage);
-          
-          console.log('✅ Added new AI message:', newMessage);
+          console.log('✅ Message added to global state');
         }
       }
     } catch (error) {
       console.error('🚨 Error processing transcription:', error);
     }
   };
-
-  const processMessageQueue = useCallback(async () => {
-    if (messageQueue.length === 0) {
-      console.log('⏳ Queue processing skipped - empty queue');
-      return;
-    }
-
-    if (isProcessingQueue) {
-      console.log('⏳ Queue processing skipped - already processing');
-      return;
-    }
-
-    console.log('🔄 Processing message queue:', { queueLength: messageQueue.length });
-    setIsProcessingQueue(true);
-
-    const now = new Date();
-    const shouldThrottle = lastMessageTime && 
-                          (now.getTime() - lastMessageTime.getTime() < MESSAGE_THROTTLE_MS);
-    
-    if (shouldThrottle) {
-      console.log('⏰ Throttling message display, waiting for timeout');
-      setIsProcessingQueue(false);
-      return;
-    }
-
-    try {
-      // Take the first message from the queue
-      const messageToProcess = messageQueue[0];
-      console.log('📝 Processing message:', messageToProcess);
-      
-      // Add message to display
-      setAiMessages(prev => [...prev, messageToProcess]);
-      console.log('✨ Message added to display');
-      
-      // Remove processed message from queue
-      setMessageQueue(prev => prev.slice(1));
-      setLastMessageTime(now);
-    } catch (error) {
-      console.error('❌ Error processing message:', error);
-    } finally {
-      setIsProcessingQueue(false);
-    }
-    
-    console.log('✅ Queue processing complete');
-  }, [messageQueue, isProcessingQueue, lastMessageTime, MESSAGE_THROTTLE_MS]);
-
-  // Update the queue processing effect
-  useEffect(() => {
-    const processQueue = () => {
-      if (messageQueue.length > 0 && !isProcessingQueue) {
-        processMessageQueue();
-      }
-    };
-
-    // Process immediately if possible
-    processQueue();
-
-    // Also set up interval for periodic processing
-    const interval = setInterval(processQueue, 1000);
-    return () => clearInterval(interval);
-  }, [messageQueue, isProcessingQueue, processMessageQueue]);
-
-  const processTranscriptBuffer = useCallback(() => {
-    if (transcriptBuffer && transcriptBuffer !== lastProcessedTranscript) {
-      console.log("📝 Processing transcript buffer:", transcriptBuffer);
-      handleTranscription(transcriptBuffer);
-      setLastProcessedTranscript(transcriptBuffer);
-      setTranscriptBuffer('');
-    }
-  }, [transcriptBuffer, lastProcessedTranscript, handleTranscription]);
 
   // Nouvelle fonction pour vérifier si on a eu assez de silence
   const hasEnoughSilence = () => {
@@ -670,6 +595,8 @@ if(isSdkInitialized){
             const Sid = conn.parameters.CallSid;
             console.log("CallSid recupéré", Sid);
             setCallSid(Sid);
+            // Set call details in global state
+            AIAssistantAPI.setCallDetails(Sid, agentId);
             setCallStatus("active");
 
             // Wait a moment for the media stream to be ready
@@ -912,10 +839,32 @@ if(isSdkInitialized){
 
                   // Set up cleanup for call end
                   conn.on("disconnect", async () => {
-                    console.log("❌ Call disconnected");
-                    await cleanup();
-                    setCallStatus("ended");
-            onEnd();
+                
+                    console.log("❌ Call disconnected - Starting cleanup and save process");
+                   
+                    const currentCallSid = conn.parameters.CallSid;
+                    onEnd();
+                    try {
+                      // First do the cleanup to ensure resources are released
+                      await cleanup();
+                      console.log("✅ Cleanup completed, proceeding to save call details");
+
+                      // Save call details using global state
+                      if (currentCallSid) {
+                        await AIAssistantAPI.saveCallToDB();
+                        console.log("✅ Successfully saved call details to DB");
+                        if (onCallSaved) {
+                          onCallSaved();
+                        }
+                      } else {
+                        console.warn("⚠️ No CallSid available for saving call details");
+                      }
+                    } catch (error) {
+                      console.error("❌ Error during cleanup or save:", error);
+                    } finally {
+                       setCallStatus("ended"); 
+                      /* onEnd(); */
+                    }
                   });
 
                   // Return cleanup function for component unmount
@@ -932,25 +881,6 @@ if(isSdkInitialized){
             }, 1000);
           });
 
-          conn.on("disconnect", async () => {
-            console.log("❌ Call disconnected");
-            // Close WebSocket and cleanup audio processing
-            if (ws && ws.readyState === WebSocket.OPEN) {
-              console.log("Closing speech recognition WebSocket");
-              ws.close();
-            }
-            if (audioProcessor) {
-              console.log("Disconnecting audio processor");
-              audioProcessor.disconnect();
-            }
-            if (audioContext) {
-              console.log("Closing audio context");
-              audioContext.close();
-            }
-            setCallStatus("ended");
-            onEnd();
-          });
-
         }
       } catch (err) {
         console.error("Error initiating call:", err);
@@ -960,55 +890,7 @@ if(isSdkInitialized){
     };
 
     initiateCall();
-  }, [phoneNumber, onEnd, '65d2b8f4e45a3c5a12e8f123', provider]);
-
-  const saveCallToDB = async (callSid: string) => {
-    try {
-      const result = await axios.post(`${import.meta.env.VITE_API_URL_CALL}/api/calls/call-details`, {
-        callSid,
-        userId: '65d2b8f4e45a3c5a12e8f123'
-      });
-      const call = result.data.data;
-      console.log("call details from twilio", result.data);
-      
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const cloudinaryRecord = await axios.post(`${import.meta.env.VITE_API_URL_CALL}/api/calls/fetch-recording`, {
-        recordingUrl: call.recordingUrl,
-        userId: '65d2b8f4e45a3c5a12e8f123'
-      });
-      
-      const callInDB = await axios.post(`${import.meta.env.VITE_API_URL_CALL}/api/calls/store-call`, {
-        CallSid: callSid,
-        agentId,
-        leadId: agentId,
-        call,
-        cloudinaryrecord: cloudinaryRecord.data.url,
-        userId: '65d2b8f4e45a3c5a12e8f123'
-      });
-      
-      console.log('callInDB:', callInDB);
-    const resultStock=  await axios.post(`${import.meta.env.VITE_API_URL_AI_MESSAGES}/messages/batch`, 
-        aiMessages.map(msg => ({
-          callId: callInDB.data._id,
-          role: msg.role,
-          content: msg.content,
-          category: msg.category,
-          priority: msg.priority,
-          timestamp: msg.timestamp,
-          isProcessed: msg.isProcessed,
-        }))
-      );
-      console.log('resultStock:', resultStock);
-      if (onCallSaved) {
-        onCallSaved();
-      }
-      return callInDB;
-    } catch (error) {
-      console.error("Error saving call:", error);
-      throw error;
-    }
-  };
+  }, [phoneNumber, onEnd, agentId, provider]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -1043,43 +925,39 @@ if(isSdkInitialized){
 
   const handleEndCall = async () => {
     try {
-      // Marquer l'appel comme terminé dans le composant global
+      console.log("🔴 Manual call end initiated");
+      
+      // Mark call as ended in global component
       AIAssistantAPI.setCallEnded(true);
       
-      // Arrêter la capture vidéo
+      // Stop video capture if exists
       if (localStream) {
         localStream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
       }
       
-      // Fermer la connexion socket
+      // Close socket connection if exists
       if (socketRef.current) {
         socketRef.current.disconnect();
       }
       
-      // Mettre à jour le statut de l'appel
+      // Update call status
       setCallStatus('ended');
+
+      // Handle provider-specific disconnection
       if (provider === 'qalqul') {
         if (calls.length > 0) {
           await manageHangupCall(calls[calls.length - 1]);
         }
       } else if (connection) {
+        // The disconnect handler will handle cleanup and saving
         connection.disconnect();
       }
-      if (callSid) {
-        try {
-          const call = await saveCallToDB(callSid);
-          console.log("Call in db:", call);
-        } catch (error) {
-          console.error("Error fetching call details:", error);
-        }
-      } else {
-        console.warn("CallSid not available, cannot fetch details.");
-      }
       
-      // Appeler onEnd pour fermer l'interface d'appel
+      // Close the interface
       onEnd();
     } catch (error) {
-      console.error('Error ending call:', error);
+      console.error('❌ Error ending call:', error);
+      onEnd();
     }
   };
 
