@@ -54,7 +54,7 @@ function CompanyProfilePanel() {
   const [currentField, setCurrentField] = useState<any>(null);
 
   // Récupérer l'ID de l'entreprise depuis localStorage
-  const userConfig = localStorage.getItem('user_config');
+ /*  const userConfig = localStorage.getItem('user_config');
   const companyId = userConfig ? JSON.parse(userConfig).clientId : null;
   console.log('Stored user config:', userConfig);
 
@@ -68,7 +68,9 @@ function CompanyProfilePanel() {
     if (companyId) {
       fetchCompanyDetails();
     }
-  }, [companyId, userConfig, navigate]);
+  }, [companyId, userConfig, navigate]); */
+const companyId = Cookies.get('userId');
+  console.log('Stored userId from cookie:', companyId);
 
   // Helper functions for the new UI
   const hasContactInfo = company.contact && (
