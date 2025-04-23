@@ -284,7 +284,7 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
        // script: script_form._id,
         id_lead: "65d2b8f4e45a3c5a12e8f123",
         //sip_started_at: start_time,
-        caller: currentUser?.id,
+        caller: agentId,
        // project: project,
       };
       console.log("data call to store:", storeCall);
