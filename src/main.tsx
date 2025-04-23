@@ -26,10 +26,10 @@ if (!userId && !window.location.pathname.includes('/app1')) {
 const companyId = Cookies.get('userId');
   console.log('Stored userId from cookie:', companyId);
 
-  if (companyId == null){
+   if (companyId == null){
     window.location.href = "/app1"
   }
-
+ 
 interface RenderProps {
   container?: HTMLElement;
 }
