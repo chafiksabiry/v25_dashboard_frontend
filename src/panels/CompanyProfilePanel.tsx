@@ -71,7 +71,6 @@ function CompanyProfilePanel() {
   }, [companyId, userConfig, navigate]); */
 const companyId = Cookies.get('userId');
   console.log('Stored userId from cookie:', companyId);
- 
 
   // Helper functions for the new UI
   const hasContactInfo = company.contact && (
@@ -211,20 +210,16 @@ const companyId = Cookies.get('userId');
       const response = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL_COMPANY}/companies/${companyId}`
       );
-      console.log('Company details:', response.data.data);
       setCompany(response.data.data);
       if (response.data.data.logoUrl) {
         setLogoUrl(response.data.data.logoUrl);
       }
-      console.log('loding1', loading);
     } catch (err) {
       setError("Erreur lors du chargement des détails de company.");
       console.error('Error fetching company details:', err);
     } finally {
       setLoading(false);
-      console.log('loding2', loading);
     }
-    
   };
 
   const handleEdit = (field: string) => {
@@ -304,11 +299,6 @@ const companyId = Cookies.get('userId');
       });
     }
   };
-  useEffect(() => {
-    fetchCompanyDetails();
-  }, []);
-
-
 
   if (loading) {
     return <div>Loading...</div>;
