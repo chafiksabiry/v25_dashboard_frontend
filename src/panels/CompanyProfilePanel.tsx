@@ -299,6 +299,9 @@ const companyId = Cookies.get('userId');
       });
     }
   };
+  useEffect(() => {
+    fetchCompanyDetails();
+  }, []);
 
   if (loading) {
     return <div>Loading...</div>;
