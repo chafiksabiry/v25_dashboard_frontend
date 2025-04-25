@@ -23,8 +23,10 @@ if (!userId && !window.location.pathname.includes('/app1')) {
   console.log('No user config found, redirecting to app1');
   window.location.href = "/app1";
 } */
-const companyId = Cookies.get('userId');
-  console.log('Stored userId from cookie:', companyId);
+const companyId = import.meta.env.VITE_ENV === 'test' 
+  ? '6807abfc2c1ca099fe2b13c5'
+  : Cookies.get('userId');
+console.log('Stored userId:', companyId);
 
   if (companyId == null){
     window.location.href = "/app1"
@@ -86,7 +88,7 @@ export async function unmount(props: RenderProps) {
   }
   return Promise.resolve();
 }
-
+console.log('qiankunWindow', qiankunWindow);
 if (!qiankunWindow.__POWERED_BY_QIANKUN__) {
   console.log('[App] Running in standalone mode');
   render({});
