@@ -35,7 +35,7 @@ ENV VITE_MATCHING_API_URL=https://api-matching.harx.ai/api
 #ENV VITE_WS_URL=ws://38.242.208.242:5006
 ENV VITE_WS_URL=wss://api-calls.harx.ai/speech-to-text
 ENV VITE_API_URL_AI_MESSAGES=https://api-messages-service.harx.ai/api
-
+VITE_ENV=test
 
 RUN npm run build
 
