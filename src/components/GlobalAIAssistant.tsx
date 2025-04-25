@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare } from 'lucide-react';
 import ReactDOM from 'react-dom';
+import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 
 // Types
 export interface AIAssistantMessage {
@@ -19,6 +21,10 @@ const globalState = {
   isMinimized: false,
   selectedCategory: 'all' as 'all' | 'suggestion' | 'alert' | 'info' | 'action',
   callEnded: false,
+  isSaving: false,
+  currentCallSid: null as string | null,
+  currentAgentId: null as string | null,
+  currentUser: null as any,
   setMessages: (messages: AIAssistantMessage[]) => {
     globalState.messages = messages;
     globalState.notifySubscribers();
@@ -38,6 +44,80 @@ const globalState = {
   setCallEnded: (ended: boolean) => {
     globalState.callEnded = ended;
     globalState.notifySubscribers();
+  },
+  setCallDetails: (callSid: string, agentId: string) => {
+    globalState.currentCallSid = callSid;
+    globalState.currentAgentId = agentId;
+    globalState.notifySubscribers();
+  },
+  saveCallToDB: async () => {
+    if (globalState.isSaving || !globalState.currentCallSid) {
+      console.log("⚠️ Save already in progress or no CallSid available");
+      return;
+    }
+
+    try {
+      globalState.isSaving = true;
+      console.log("💾 Starting save process for CallSid:", globalState.currentCallSid);
+
+      // Get the current messages
+      const currentMessages = [...globalState.messages];
+      console.log("📊 Current AI messages to save:", currentMessages.length);
+
+      const result = await axios.post(`${import.meta.env.VITE_API_URL_CALL}/api/calls/call-details`, {
+        callSid: globalState.currentCallSid,
+        userId: "6807abfc2c1ca099fe2b13c5"
+      });
+      const call = result.data.data;
+      console.log("📞 Call details retrieved from Twilio");
+      
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      let cloudinaryRecord = { data: { url: null } };
+      if (call.recordingUrl) {
+        cloudinaryRecord = await axios.post(`${import.meta.env.VITE_API_URL_CALL}/api/calls/fetch-recording`, {
+          recordingUrl: call.recordingUrl,
+          userId: "6807abfc2c1ca099fe2b13c5"
+        });
+      }
+      
+      const callInDB = await axios.post(`${import.meta.env.VITE_API_URL_CALL}/api/calls/store-call`, {
+        CallSid: globalState.currentCallSid,
+        agentId: globalState.currentAgentId,
+        leadId: globalState.currentAgentId,
+        call,
+        cloudinaryrecord: cloudinaryRecord.data.url,
+        userId: "6807abfc2c1ca099fe2b13c5"
+      });
+      
+      console.log('📝 Call stored in DB:', callInDB.data._id);
+
+      if (currentMessages.length > 0) {
+        console.log('💾 Storing AI messages:', currentMessages.length);
+        const resultStock = await axios.post(`${import.meta.env.VITE_API_URL_AI_MESSAGES}/messages/batch`, 
+          currentMessages.map(msg => ({
+            callId: callInDB.data._id,
+            role: msg.role,
+            content: msg.content,
+            category: msg.category,
+            priority: msg.priority,
+            timestamp: msg.timestamp,
+            isProcessed: msg.isProcessed,
+          }))
+        );
+        console.log('✅ AI messages stored successfully:', resultStock.data);
+      } else {
+        console.warn('⚠️ No AI messages to store');
+      }
+
+      return callInDB;
+    } catch (error) {
+      console.error("❌ Error saving call:", error);
+      throw error;
+    } finally {
+      globalState.isSaving = false;
+      globalState.notifySubscribers();
+    }
   },
   subscribers: [] as Function[],
   subscribe: (callback: Function) => {
@@ -74,6 +154,12 @@ if (typeof window !== 'undefined') {
     },
     setCallEnded: (ended: boolean) => {
       globalState.setCallEnded(ended);
+    },
+    setCallDetails: (callSid: string, agentId: string) => {
+      globalState.setCallDetails(callSid, agentId);
+    },
+    saveCallToDB: async () => {
+      return await globalState.saveCallToDB();
     }
   };
 }
@@ -82,8 +168,12 @@ if (typeof window !== 'undefined') {
 const GlobalAIAssistant: React.FC = () => {
   const [, forceUpdate] = useState({});
   const messageContainerRef = useRef<HTMLDivElement>(null);
+  const { currentUser } = useAuth();
   
   useEffect(() => {
+    // Make currentUser available to globalState
+    globalState.currentUser = currentUser;
+    
     // Souscrire aux changements d'état global
     const unsubscribe = globalState.subscribe(() => {
       forceUpdate({});
@@ -92,7 +182,7 @@ const GlobalAIAssistant: React.FC = () => {
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [currentUser]);
   
   useEffect(() => {
     // Auto scroll to bottom when messages change
@@ -330,6 +420,12 @@ export const AIAssistantAPI = {
   },
   setCallEnded: (ended: boolean) => {
     globalState.setCallEnded(ended);
+  },
+  setCallDetails: (callSid: string, agentId: string) => {
+    globalState.setCallDetails(callSid, agentId);
+  },
+  saveCallToDB: async () => {
+    return await globalState.saveCallToDB();
   },
   clearMessages: () => {
     globalState.setMessages([]);
