@@ -69,8 +69,10 @@ function CompanyProfilePanel() {
       fetchCompanyDetails();
     }
   }, [companyId, userConfig, navigate]); */
-const companyId = Cookies.get('userId');
-  console.log('Stored userId from cookie:', companyId);
+const companyId = import.meta.env.VITE_ENV === 'test' 
+  ? '6807abfc2c1ca099fe2b13c5'
+  : Cookies.get('userId');
+console.log('Stored userId:', companyId);
 
   // Helper functions for the new UI
   const hasContactInfo = company.contact && (
