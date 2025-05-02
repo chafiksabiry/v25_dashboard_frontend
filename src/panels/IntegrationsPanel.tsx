@@ -937,9 +937,11 @@ export function IntegrationsPanel() {
       }
     } catch (error) {
       console.error('Disconnect error:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.message || 
-                          'Failed to disconnect integration';
+      const errorMessage = error && typeof error === 'object' && 'response' in error
+        ? (error as any).response?.data?.message
+        : error instanceof Error
+          ? error.message
+          : 'Failed to disconnect integration';
       setError(errorMessage);
       
       // Mise à jour du statut en cas d'erreur
@@ -1045,51 +1047,94 @@ export function IntegrationsPanel() {
           });
 
           // Appel à l'API pour configurer Zoho
-          const response = await fetch('https://api-dashboard.harx.ai/api/zoho/configure', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify(configData)
-          });
+          const maxRetries = 3;
+          const baseDelay = 2000; // Augmenté à 2 secondes
+          let retryCount = 0;
+          let lastError = null;
 
-          // Vérifier d'abord si la réponse est JSON
-          const contentType = response.headers.get('content-type');
-          if (!contentType || !contentType.includes('application/json')) {
-            throw new Error('Réponse invalide du serveur');
-          }
+          while (retryCount < maxRetries) {
+            try {
+              const response = await fetch('https://api-dashboard.harx.ai/api/zoho/configure', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json'
+                },
+                body: JSON.stringify(configData)
+              });
 
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.message || `Erreur ${response.status}: ${data.error || 'Erreur inconnue'}`);
-          }
-
-          if (data.success) {
-            // Stocker le token d'accès
-            if (data.accessToken) {
-              ZohoTokenService.setToken(data.accessToken);
-            }
-
-            // Mise à jour du statut de l'intégration
-            setIntegrationStates(prev => ({
-              ...prev,
-              'zoho-crm': {
-                ...prev['zoho-crm'],
-                status: 'connected' as const
+              // Vérifier d'abord si la réponse est JSON
+              const contentType = response.headers.get('content-type');
+              if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Réponse invalide du serveur');
               }
-            }));
 
-            setIsZohoTokenValid(true);
-            setSelectedIntegration(null);
-            setConfigValues({});
-            setErrors({});
+              const data = await response.json();
 
-            console.log('Zoho CRM configured successfully');
-          } else {
-            throw new Error(data.message || 'La configuration a échoué');
+              if (!response.ok) {
+                if (data.error === 'Access Denied' && data.error_description?.includes('too many requests')) {
+                  // Rate limit error - wait and retry
+                  const delay = baseDelay * Math.pow(2, retryCount);
+                  const retryMessage = `Trop de requêtes. Nouvelle tentative dans ${delay/1000} secondes... (${retryCount + 1}/${maxRetries})`;
+                  setError(retryMessage);
+                  await new Promise(resolve => setTimeout(resolve, delay));
+                  retryCount++;
+                  lastError = new Error(`Rate limit exceeded. Retry ${retryCount}/${maxRetries}`);
+                  continue;
+                }
+                throw new Error(data.message || `Erreur ${response.status}: ${data.error || 'Erreur inconnue'}`);
+              }
+
+              if (data.success) {
+                // Stocker le token d'accès
+                if (data.accessToken) {
+                  ZohoTokenService.setToken(data.accessToken);
+                }
+
+                // Mise à jour du statut de l'intégration
+                setIntegrationStates(prev => ({
+                  ...prev,
+                  'zoho-crm': {
+                    ...prev['zoho-crm'],
+                    status: 'connected' as const
+                  }
+                }));
+
+                setIsZohoTokenValid(true);
+                setSelectedIntegration(null);
+                setConfigValues({});
+                setErrors({});
+
+                console.log('Zoho CRM configured successfully');
+                return;
+              } else {
+                throw new Error(data.message || 'La configuration a échoué');
+              }
+            } catch (error) {
+              lastError = error;
+              retryCount++;
+              if (retryCount >= maxRetries) {
+                break;
+              }
+              const delay = baseDelay * Math.pow(2, retryCount);
+              await new Promise(resolve => setTimeout(resolve, delay));
+            }
           }
+
+          // If we get here, all retries failed
+          console.error('Configuration error after retries:', lastError);
+          const errorMessage = lastError instanceof Error && lastError.message.includes('Rate limit exceeded')
+            ? 'Trop de tentatives de connexion. Veuillez patienter quelques minutes avant de réessayer.'
+            : 'Échec de la configuration de Zoho CRM après plusieurs tentatives';
+          setError(errorMessage);
+          
+          setIntegrationStates(prev => ({
+            ...prev,
+            'zoho-crm': {
+              ...prev['zoho-crm'],
+              status: 'error' as const
+            }
+          }));
         } catch (error) {
           console.error('Configuration error:', error);
           const errorMessage = error instanceof Error ? error.message : 'Échec de la configuration de Zoho CRM';

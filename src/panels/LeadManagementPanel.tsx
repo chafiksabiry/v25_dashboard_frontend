@@ -18,8 +18,10 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { LeadUploader } from "../components/LeadUploader";
-import { ZohoTokenService, API_BASE_URL } from '../services/zohoService';
+import { ZohoTokenService } from '../services/zohoService';
 import { useNavigate } from 'react-router-dom';
+
+const zohoApiUrl = import.meta.env.VITE_ZOHO_API_URL;
 
 function LeadManagementPanel() {
   const navigate = useNavigate();
@@ -27,11 +29,15 @@ function LeadManagementPanel() {
   const [isZohoConnected, setIsZohoConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [zohoError, setZohoError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 3;
+  const retryDelay = 5000; // 5 seconds
 
-  interface Deal {
+  interface Lead {
     Pipeline_Id: string;
     id: string;
-    Deal_Name: string;
+    Lead_Name: string;
     Amount: number;
     Probability: number;
     Stage: string;
@@ -90,48 +96,101 @@ function LeadManagementPanel() {
     };
   }
 
-  const [deals, setDeals] = useState<Deal[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [selectedPipeline, setSelectedPipeline] = useState<string>('all');
   const [selectedStage, setSelectedStage] = useState<string>('all');
-  
+  const [hasMoreRecords, setHasMoreRecords] = useState(false);
+  const leadsPerPage = 200;
+  const leadsPerView = 10; // Number of leads to display at once
+  const [totalLeads, setTotalLeads] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const dealsPerPage = 20;
+  const [currentViewIndex, setCurrentViewIndex] = useState(0); // Index for horizontal scrolling
+  const [allLeads, setAllLeads] = useState<Lead[]>([]);
 
-  // Modifier ces nouveaux états pour gérer les filtres avancés
+  // Modify these new states to handle advanced filters
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [filterStage, setFilterStage] = useState<string>('all');
   const [searchText, setSearchText] = useState('');
 
-  // Modifier la logique de filtrage pour intégrer les nouveaux filtres
-  const filteredDeals = deals.filter(deal => {
-    // Filtre par pipeline
-    const pipelineMatch = selectedPipeline === 'all' || 
-      pipelines.find(p => p.id === deal.Pipeline_Id)?.display_value === selectedPipeline;
-    
-    // Filtre par stage
-    const stageMatch = filterStage === 'all' || deal.Stage === filterStage;
-    // Filtre par texte de recherche
-    const searchMatch = !searchText || 
-      deal.Deal_Name.toLowerCase().includes(searchText.toLowerCase()) ||
-      deal.Account_Name?.name?.toLowerCase().includes(searchText.toLowerCase()) ||
-      deal.Contact_Name?.name?.toLowerCase().includes(searchText.toLowerCase());
-    
-    return pipelineMatch && stageMatch && searchMatch;
-  });
-
-  // Extraire les stages uniques
-  const uniqueStages = [...new Set(deals.map(deal => deal.Stage))].filter(Boolean);
-
-  const indexOfLastDeal = currentPage * dealsPerPage;
-  const indexOfFirstDeal = indexOfLastDeal - dealsPerPage;
-  const currentDeals = filteredDeals.slice(indexOfFirstDeal, indexOfLastDeal);
-
-  const handlePageChange = (pageNumber: number) => {
-    setCurrentPage(pageNumber);
+  // Calculate the lead range for the current page
+  const getCurrentPageRange = () => {
+    const start = (currentPage - 1) * leadsPerPage + 1;
+    const end = Math.min(start + leadsPerPage - 1, totalLeads);
+    return { start, end };
   };
 
-  const totalPages = Math.ceil(filteredDeals.length / dealsPerPage);
+  // Calculate the leads to display for the current view
+  const getCurrentViewLeads = () => {
+    const startIndex = currentViewIndex * leadsPerView;
+    const endIndex = startIndex + leadsPerView;
+    return leads.slice(startIndex, endIndex);
+  };
+
+  const handleNextView = () => {
+    const maxViewIndex = Math.ceil(leads.length / leadsPerView) - 1;
+    if (currentViewIndex < maxViewIndex) {
+      setCurrentViewIndex(prev => prev + 1);
+    }
+  };
+
+  const handlePrevView = () => {
+    if (currentViewIndex > 0) {
+      setCurrentViewIndex(prev => prev - 1);
+    }
+  };
+
+  // Reset the view index when changing page
+  useEffect(() => {
+    setCurrentViewIndex(0);
+  }, [currentPage]);
+
+  // Modify the filtering logic to incorporate new filters
+  useEffect(() => {
+    if (!Array.isArray(allLeads)) {
+      setFilteredLeads([]);
+      setTotalLeads(0);
+      return;
+    }
+
+    const filtered = allLeads.filter(lead => {
+      // Filter by pipeline
+      const pipelineMatch = selectedPipeline === 'all' || 
+        pipelines.find(p => p.id === lead.Pipeline_Id)?.display_value === selectedPipeline;
+      
+      // Filter by stage
+      const stageMatch = filterStage === 'all' || lead.Stage === filterStage;
+      // Filter by search text
+      const searchMatch = !searchText || 
+        lead.Lead_Name.toLowerCase().includes(searchText.toLowerCase()) ||
+        lead.Account_Name?.name?.toLowerCase().includes(searchText.toLowerCase()) ||
+        lead.Contact_Name?.name?.toLowerCase().includes(searchText.toLowerCase());
+      
+      return pipelineMatch && stageMatch && searchMatch;
+    });
+
+    setFilteredLeads(filtered);
+    setTotalLeads(filtered.length);
+  }, [allLeads, selectedPipeline, filterStage, searchText, pipelines]);
+
+  // Calculate the leads to display for the current page
+  const getCurrentPageLeads = () => {
+    return leads;
+  };
+
+  const handlePageChange = (pageNumber: number) => {
+    if (pageNumber < 1) return;
+    setCurrentPage(pageNumber);
+    fetchLeads(pageNumber);
+  };
+
+  const handlePageInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value);
+    if (!isNaN(value) && value > 0) {
+      handlePageChange(value);
+    }
+  };
 
   const fetchPipelines = async () => {
     try {
@@ -139,7 +198,7 @@ function LeadManagementPanel() {
       const token = ZohoTokenService.getToken();
       if (!token) throw new Error('No Zoho token found');
 
-      const response = await fetch('https://api-dashboard.harx.ai/api/zoho/pipelines', {
+      const response = await fetch(`${zohoApiUrl}/pipelines`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -162,11 +221,11 @@ function LeadManagementPanel() {
     }
   };
 
-  const fetchDeals = async () => {
+  const fetchLeads = async (page: number = 1) => {
     try {
       const accessToken = localStorage.getItem('zoho_access_token');
-      console.log("=== Fetch Deals ===");
-      console.log("Token disponible:", accessToken ? "Oui" : "Non");
+      console.log("=== Fetch Leads ===");
+      console.log("Token available:", accessToken ? "Yes" : "No");
       
       if (!accessToken) {
         setIsZohoConnected(false);
@@ -174,7 +233,7 @@ function LeadManagementPanel() {
         return;
       }
 
-      const response = await fetch(`https://api-dashboard.harx.ai/api/zoho/leads`, {
+      const apiResponse = await fetch(`${zohoApiUrl}/leads?page=${page}`, {
         method: "GET",
         headers: {
           "Authorization": `Zoho-oauthtoken ${accessToken}`,
@@ -182,35 +241,42 @@ function LeadManagementPanel() {
         }
       });
 
-      console.log("Status de la réponse:", response.status);
-      const responseText = await response.text();
-      console.log("Réponse brute:", responseText);
-
-      if (!response.ok) {
-        const errorData = JSON.parse(responseText);
-        console.error("Erreur réponse leads:", errorData);
-        
-        if (errorData.message.includes('configuration')) {
-          console.log("Configuration requise, tentative de configuration...");
-          await handleZohoConnect();
-          return;
-        }
-        
-        throw new Error(errorData.message || "Erreur lors de la récupération des leads");
+      if (!apiResponse.ok) {
+        const errorData = JSON.parse(await apiResponse.text());
+        throw new Error(errorData.message || "Error retrieving leads");
       }
 
-      const result = JSON.parse(responseText);
-      console.log("Leads récupérés :", result);
+      const result = JSON.parse(await apiResponse.text());
       
-      if (result.data?.data) {
-        setDeals(result.data.data);
+      console.log("Result leads : ", result.data.data.data);
+      console.log("Result info : ", result.data.data.info);
+      if (result.data?.data?.data) {
+        setLeads(result.data.data.data);
         setIsZohoConnected(true);
+        
+        if (result.data.data.info) {
+          setHasMoreRecords(result.data.data.info.more_records || false);
+          setCurrentPage(result.data.data.info.page || 1);
+        }
+
+        // Update allLeads with new leads
+        setAllLeads(prevLeads => {
+          const newLeads = [...prevLeads];
+          const startIndex = (page - 1) * leadsPerPage;
+          result.data.data.data.forEach((lead: Lead, index: number) => {
+            newLeads[startIndex + index] = lead;
+          });
+          return newLeads;
+        });
       } else {
-        console.log("Aucun lead trouvé dans la réponse");
+        setLeads([]);
+        setAllLeads([]);
       }
       
-    } catch (error: unknown) {
-      console.error("Erreur lors de la récupération des leads:", error);
+    } catch (error) {
+      console.error("Error retrieving leads:", error);
+      setLeads([]);
+      setAllLeads([]);
       if (error instanceof Error && 
           (error.message.includes('401') || error.message.includes('configuration'))) {
         setIsZohoConnected(false);
@@ -221,57 +287,61 @@ function LeadManagementPanel() {
     }
   };
 
-  // Modifier l'useEffect initial pour ne pas vérifier la configuration
+  // Modify the initial useEffect to not check configuration
   useEffect(() => {
     const token = localStorage.getItem('zoho_access_token');
-    console.log("=== Initialisation ===");
-    console.log("Token au démarrage:", token ? "Présent" : "Absent");
+    console.log("=== Initialization ===");
+    console.log("Token at startup:", token ? "Present" : "Absent");
     
     if (token) {
       console.log("Token value:", token);
       setIsZohoConnected(true);
-      fetchDeals();
+      fetchLeads(1);
       fetchPipelines();
     } else {
-      console.log("Aucun token trouvé - Configuration de Zoho");
+      console.log("No token found - Zoho configuration");
       setIsZohoConnected(false);
       setIsLoading(false);
       handleZohoConnect();
     }
   }, []);
 
-  // Réinitialiser la page courante quand on change de filtre
+  // Reset the current page when changing filter
   useEffect(() => {
-    setCurrentPage(1);
+    // Don't reset the page, but retrieve data from the current page
+    fetchLeads(currentPage);
   }, [selectedPipeline]);
 
   const handlePipelineChange = (pipelineId: string) => {
     setSelectedPipeline(pipelineId);
-    setSelectedStage('all'); // Réinitialiser le stage sélectionné
+    setSelectedStage('all'); // Reset selected stage
     
-    // Trouver et logger les stages de la pipeline sélectionnée
+    // Find and log stages of the selected pipeline
     const selectedPipelineData = pipelines.find(p => p.id === pipelineId);
     if (selectedPipelineData) {
-      console.log('Pipeline sélectionnée:', selectedPipelineData.display_value);
-      console.log('Stages disponibles:', selectedPipelineData.maps);
+      console.log('Selected pipeline:', selectedPipelineData.display_value);
+      console.log('Available stages:', selectedPipelineData.maps);
     }
   };
+
+  console.log("Leads:", leads);
 
   const handleZohoConnect = async () => {
     try {
       setIsLoading(true);
+      setZohoError(null);
       
-      // Assurez-vous d'utiliser les bonnes valeurs pour ces paramètres
+      // Ensure you use the correct values for these parameters
       const configData = {
-        clientId: "1000.xxxx", // Remplacer par votre vrai Client ID
-        clientSecret: "xxxx", // Remplacer par votre vrai Client Secret
-        refreshToken: "xxxx" // Remplacer par votre vrai Refresh Token
+        clientId: "1000.xxxx", // Replace with your actual Client ID
+        clientSecret: "xxxx", // Replace with your actual Client Secret
+        refreshToken: "xxxx" // Replace with your actual Refresh Token
       };
       
-      console.log("Tentative de configuration avec:", configData);
+      console.log("Attempting configuration with:", configData);
       
-      // Première étape : Configuration
-      const configResponse = await fetch('https://api-dashboard.harx.ai/api/zoho/configure', {
+      // First step: Configuration
+      const configResponse = await fetch(`${zohoApiUrl}/configure`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -283,13 +353,25 @@ function LeadManagementPanel() {
       console.log("Configuration response:", configResult);
 
       if (!configResponse.ok) {
-        throw new Error(configResult.message || 'Erreur lors de la configuration de Zoho');
+        if (configResult.error === "Access Denied" && configResult.error_description?.includes("too many requests")) {
+          if (retryCount < maxRetries) {
+            setZohoError(`Too many requests. New attempt in ${retryDelay/1000} seconds... (${retryCount + 1}/${maxRetries})`);
+            setRetryCount(prev => prev + 1);
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            return handleZohoConnect();
+          } else {
+            throw new Error("Maximum attempts reached. Please try again later.");
+          }
+        }
+        throw new Error(configResult.message || 'Error during configuration');
       }
 
       if (configResult.success) {
-        console.log("Configuration réussie, récupération du token...");
-        // Deuxième étape : Récupération du token
-        const tokenResponse = await fetch('https://api-dashboard.harx.ai/api/zoho/token', {
+        console.log("Configuration successful, retrieving token...");
+        setRetryCount(0); // Reset counter in case of success
+        
+        // Second step: Retrieving token
+        const tokenResponse = await fetch(`${zohoApiUrl}/token`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
@@ -297,56 +379,58 @@ function LeadManagementPanel() {
         });
 
         if (!tokenResponse.ok) {
-          throw new Error('Erreur lors de la récupération du token');
+          throw new Error('Error retrieving token');
         }
 
         const tokenResult = await tokenResponse.json();
         console.log("Token response:", tokenResult);
         
         if (tokenResult.access_token) {
-          console.log("Nouveau token récupéré:", tokenResult.access_token);
+          console.log("New token retrieved:", tokenResult.access_token);
           localStorage.setItem('zoho_access_token', tokenResult.access_token);
           setIsZohoConnected(true);
-          // Recharger les données après avoir obtenu le token
-          await Promise.all([fetchDeals(), fetchPipelines()]);
+          // Reload data after obtaining token
+          await Promise.all([fetchLeads(), fetchPipelines()]);
         } else {
-          throw new Error('Token non reçu');
+          throw new Error('Token not received');
         }
       }
       
     } catch (error) {
-      console.error('Erreur lors de la configuration:', error);
+      console.error('Error during configuration:', error);
       setIsZohoConnected(false);
+      setZohoError(error instanceof Error ? error.message : 'Unknown error during connection to Zoho CRM');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
-  const [showDealDetails, setShowDealDetails] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [showLeadDetails, setShowLeadDetails] = useState(false);
 
-  const handleDealClick = (deal: Deal) => {
-    setSelectedDeal(deal);
-    setShowDealDetails(true);
+  const handleLeadClick = (lead: Lead) => {
+    setSelectedLead(lead);
+    setShowLeadDetails(true);
   };
 
-  const closeDealDetails = () => {
-    setShowDealDetails(false);
-    setSelectedDeal(null);
+  const closeLeadDetails = () => {
+    setShowLeadDetails(false);
+    setSelectedLead(null);
   };
 
-  // Ajouter un nouvel état pour suivre le stage sélectionné
-  const [selectedStageInModal, setSelectedStageInModal] = useState<string>("Analyse des besoins");
+  // Add a new state to track selected stage
+  const [selectedStageInModal, setSelectedStageInModal] = useState<string>("Analyze Needs");
   
-  const refreshDeals = () => {
-    fetchDeals();
+  const refreshLeads = () => {
+    // Don't reset the page, but retrieve data from the current page
+    fetchLeads(currentPage);
   };
 
   // Add a new state for tracking updates
   const [isUpdating, setIsUpdating] = useState(false);
 
   const handleStageClick = async (stage: string) => {
-    if (!selectedDeal || stage === selectedDeal.Stage) return;
+    if (!selectedLead || stage === selectedLead.Stage) return;
     
     setIsUpdating(true);
     setSelectedStageInModal(stage);
@@ -354,14 +438,14 @@ function LeadManagementPanel() {
     try {
       const accessToken = localStorage.getItem('zoho_access_token');
       if (!accessToken) {
-        throw new Error("Token d'accès non trouvé");
+        throw new Error("Access token not found");
       }
       
       const updateData = {
         Stage: stage
       };
       
-      const response = await fetch(`https://api-dashboard.harx.ai/api/zoho/leads/${selectedDeal.id}`, {
+      const response = await fetch(`${zohoApiUrl}/leads/${selectedLead.id}`, {
         method: "PUT",
         headers: {
           "Authorization": `Zoho-oauthtoken ${accessToken}`,
@@ -371,29 +455,29 @@ function LeadManagementPanel() {
       });
       
       if (!response.ok) {
-        throw new Error("Failed to update deal stage");
+        throw new Error("Failed to update lead stage");
       }
       
-      // Update the local deal data to reflect the change
-      const updatedDeal = { ...selectedDeal, Stage: stage };
-      setSelectedDeal(updatedDeal);
+      // Update local lead data to reflect the change
+      const updatedLead = { ...selectedLead, Stage: stage };
+      setSelectedLead(updatedLead);
       
-      // Update the deals list
-      setDeals(prevDeals => 
-        prevDeals.map(deal => 
-          deal.id === selectedDeal.id ? updatedDeal : deal
+      // Update leads list
+      setLeads(prevLeads => 
+        prevLeads.map(lead => 
+          lead.id === selectedLead.id ? updatedLead : lead
         )
       );
       
-      // Refresh deals from the server to get the latest data
-      refreshDeals();
+      // Refresh leads from the server to get the latest data
+      refreshLeads();
       
       // Show success notification
-      console.log("Deal updated successfully");
+      console.log("Lead updated successfully");
       
     } catch (error: unknown) {
-      console.error("Error updating deal:", error);
-      if (error instanceof Error && error.message === "Token d'accès non trouvé") {
+      console.error("Error updating lead:", error);
+      if (error instanceof Error && error.message === "Access token not found") {
         setIsZohoConnected(false);
       }
     } finally {
@@ -402,37 +486,37 @@ function LeadManagementPanel() {
   };
 
   const [showEditForm, setShowEditForm] = useState(false);
-  const [editableDeal, setEditableDeal] = useState<Deal | null>(null);
+  const [editableLead, setEditableLead] = useState<Lead | null>(null);
 
-  const handleEditClick = (e: React.MouseEvent, deal: Deal) => {
-    e.stopPropagation();  // Empêche le déclenchement du clic sur la ligne
-    setEditableDeal(deal);
+  const handleEditClick = (e: React.MouseEvent, lead: Lead) => {
+    e.stopPropagation();  // Prevent click triggering on the line
+    setEditableLead(lead);
     setShowEditForm(true);
   };
 
   const closeEditForm = () => {
     setShowEditForm(false);
-    setEditableDeal(null);
+    setEditableLead(null);
   };
 
-  const handleEditFormSubmit = async (e: React.FormEvent, updatedDeal: Deal) => {
+  const handleEditFormSubmit = async (e: React.FormEvent, updatedLead: Lead) => {
     e.preventDefault();
     setIsUpdating(true);
     
     try {
       const accessToken = localStorage.getItem('zoho_access_token');
       if (!accessToken) {
-        throw new Error("Token d'accès non trouvé");
+        throw new Error("Access token not found");
       }
       
       const updateData = {
-        Deal_Name: updatedDeal.Deal_Name,
-        Amount: updatedDeal.Amount,
-        Probability: updatedDeal.Probability,
-        Stage: updatedDeal.Stage,
+        Lead_Name: updatedLead.Lead_Name,
+        Amount: updatedLead.Amount,
+        Probability: updatedLead.Probability,
+        Stage: updatedLead.Stage,
       };
       
-      const response = await fetch(`https://api-dashboard.harx.ai/api/zoho/leads/${updatedDeal.id}`, {
+      const response = await fetch(`${zohoApiUrl}/leads/${updatedLead.id}`, {
         method: "PUT",
         headers: {
           "Authorization": `Zoho-oauthtoken ${accessToken}`,
@@ -442,25 +526,25 @@ function LeadManagementPanel() {
       });
       
       if (!response.ok) {
-        throw new Error("Failed to update deal");
+        throw new Error("Failed to update lead");
       }
       
-      // Mettre à jour la liste des deals
-      setDeals(prevDeals => 
-        prevDeals.map(deal => 
-          deal.id === updatedDeal.id ? updatedDeal : deal
+      // Update leads list
+      setLeads(prevLeads => 
+        prevLeads.map(lead => 
+          lead.id === updatedLead.id ? updatedLead : lead
         )
       );
       
-      // Rafraîchir les deals depuis le serveur
-      refreshDeals();
+      // Refresh leads from the server
+      refreshLeads();
       
       closeEditForm();
-      console.log("Deal updated successfully");
+      console.log("Lead updated successfully");
       
     } catch (error: unknown) {
-      console.error("Error updating deal:", error);
-      if (error instanceof Error && error.message === "Token d'accès non trouvé") {
+      console.error("Error updating lead:", error);
+      if (error instanceof Error && error.message === "Access token not found") {
         setIsZohoConnected(false);
       }
     } finally {
@@ -468,15 +552,15 @@ function LeadManagementPanel() {
     }
   };
 
-  // Ajouter une fonction de déconnexion
+  // Add a logout function
   const handleZohoDisconnect = () => {
     localStorage.removeItem('zoho_access_token');
     setIsZohoConnected(false);
-    setDeals([]);
+    setLeads([]);
     setPipelines([]);
   };
 
-  // Vérifier si Zoho est connecté
+  // Check if Zoho is connected
   const checkZohoConnection = () => {
     const token = ZohoTokenService.getToken();
     if (!token) {
@@ -487,24 +571,14 @@ function LeadManagementPanel() {
 
   useEffect(() => {
     if (!checkZohoConnection()) {
-      setError('Connexion à Zoho CRM requise');
+      setError('Connection to Zoho CRM required');
     } else {
-      fetchDeals();
+      fetchLeads();
     }
   }, []);
 
-  const getStageColor = (forecastType: string) => {
-    switch (forecastType) {
-      case 'Closed Won':
-        return 'bg-green-100 text-green-800';
-      case 'Closed Lost':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-blue-100 text-blue-800';
-    }
-  };
 
-  // Obtenir les stages de la pipeline sélectionnée
+  // Get stages of the selected pipeline
   const getSelectedPipelineStages = () => {
     if (selectedPipeline === 'all') {
       return [];
@@ -512,8 +586,6 @@ function LeadManagementPanel() {
     return pipelines.find(p => p.id === selectedPipeline)?.maps || [];
   };
 
-  const selectedStages = getSelectedPipelineStages();
-  const selectedPipelineData = pipelines.find(p => p.id === selectedPipeline);
 
   if (isLoading) {
     return (
@@ -530,16 +602,24 @@ function LeadManagementPanel() {
           <div className="text-center space-y-4">
             <div className="flex items-center justify-center gap-2 text-amber-600">
               <AlertCircle className="w-6 h-6" />
-              <h2 className="text-xl font-semibold">Connexion requise</h2>
+              <h2 className="text-xl font-semibold">Connection Required</h2>
             </div>
             <p className="text-gray-600">
-              Vous devez vous connecter à Zoho CRM pour accéder aux leads.
+              You need to connect to Zoho CRM to access leads.
             </p>
+            {zohoError && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+                {zohoError}
+              </div>
+            )}
             <button
-              onClick={() => navigate('/integrations')}
-              className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700"
+              onClick={handleZohoConnect}
+              disabled={isLoading || retryCount >= maxRetries}
+              className={`px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 ${
+                (isLoading || retryCount >= maxRetries) ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
             >
-              Se connecter à Zoho CRM
+              {isLoading ? 'Connecting...' : 'Connect to Zoho CRM'}
             </button>
           </div>
         </div>
@@ -555,7 +635,7 @@ function LeadManagementPanel() {
             <div className="p-3 bg-blue-100 rounded-lg">
               <Users className="w-6 h-6 text-blue-600" />
             </div>
-            <h2 className="text-xl font-semibold">Deal Management</h2>
+            <h2 className="text-xl font-semibold">Lead Management</h2>
           </div>
           <div className="flex gap-2">
             {isZohoConnected && (
@@ -563,7 +643,7 @@ function LeadManagementPanel() {
                 onClick={handleZohoDisconnect}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
               >
-                Déconnexion Zoho
+                Disconnect Zoho
               </button>
             )}
             <button
@@ -582,94 +662,96 @@ function LeadManagementPanel() {
               <div className="p-4 bg-blue-100 rounded-full inline-block mb-4">
                 <Building2 className="w-10 h-10 text-blue-600" />
               </div>
-              <h2 className="text-xl font-semibold mb-2">Connectez-vous à Zoho CRM</h2>
+              <h2 className="text-xl font-semibold mb-2">Connect to Zoho CRM</h2>
               <p className="text-gray-600 max-w-md mb-6">
-                Pour accéder à vos deals et gérer vos leads, vous devez d'abord vous connecter à votre compte Zoho CRM.
+                To access your leads and manage your leads, you must first connect to your Zoho CRM account.
               </p>
               <button
                 onClick={handleZohoConnect}
                 className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium flex items-center gap-2 mx-auto"
               >
                 <Users className="w-5 h-5" />
-                Se connecter à Zoho CRM
+                Connect to Zoho CRM
               </button>
             </div>
           </div>
         ) : (
           <>
             <div className="grid grid-cols-4 gap-4 mb-6">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-xl shadow-lg text-white">
+              <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100" style={{ backgroundColor: '#f3f4f6' }}>
                 <div className="flex items-center gap-2 mb-3">
-                  <Users className="w-6 h-6" />
-                  <span className="font-medium">Total Deals</span>
+                  <div className="p-2 bg-blue-50 rounded-lg">
+                    <Users className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="font-medium text-gray-700">Total Leads</div>
                 </div>
-                <div className="text-3xl font-bold">{deals.length}</div>
-                <div className="text-sm text-blue-50 flex items-center gap-1 mt-2">
-                  <ArrowUpRight className="w-4 h-4" />
-                  12% increase
-                </div>
-              </div>
-              <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 rounded-xl shadow-lg text-white">
-                <div className="flex items-center gap-2 mb-2">
-                  <DollarSign className="w-5 h-5" />
-                  <span className="font-medium">Pipeline Value</span>
-                </div>
-                <div className="text-2xl font-bold">$1.2M</div>
-                <div className="text-sm text-emerald-50 flex items-center gap-1">
-                  <ArrowUpRight className="w-4 h-4" />
-                  8% increase
+                <div className="text-3xl font-bold text-gray-800 mb-2">{leads?.length ?? 0}</div>
+                <div className="text-sm text-gray-600 flex items-center gap-1">
+                  <ArrowUpRight className="w-4 h-4 text-green-500" />
+                  <span className="text-green-500">12% increase</span>
                 </div>
               </div>
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-xl shadow-lg text-white">
-                <div className="flex items-center gap-2 mb-2">
-                  <Brain className="w-5 h-5" />
-                  <span className="font-medium">AI Score</span>
+              <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100" style={{ backgroundColor: '#f3f4f6' }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-2 bg-purple-50 rounded-lg">
+                    <DollarSign className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <span className="font-medium text-gray-700">Pipeline Value</span>
                 </div>
-                <div className="text-2xl font-bold">85%</div>
-                <div className="text-sm text-purple-50 flex items-center gap-1">
-                  <ArrowUpRight className="w-4 h-4" />
-                  5% increase
+                <div className="text-3xl font-bold text-gray-800 mb-2">$1.2M</div>
+                <div className="text-sm text-gray-600 flex items-center gap-1">
+                  <ArrowUpRight className="w-4 h-4 text-green-500" />
+                  <span className="text-green-500">8% increase</span>
                 </div>
               </div>
-              <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-6 rounded-xl shadow-lg text-white">
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock className="w-5 h-5" />
-                  <span className="font-medium">Avg Response</span>
+              <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100" style={{ backgroundColor: '#f3f4f6' }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-2 bg-amber-50 rounded-lg">
+                    <Brain className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <span className="font-medium text-gray-700">AI Score</span>
                 </div>
-                <div className="text-2xl font-bold">2.4h</div>
-                <div className="text-sm text-amber-50 flex items-center gap-1">
-                  <ArrowDownRight className="w-4 h-4" />
-                  3% increase
+                <div className="text-3xl font-bold text-gray-800 mb-2">85%</div>
+                <div className="text-sm text-gray-600 flex items-center gap-1">
+                  <ArrowUpRight className="w-4 h-4 text-green-500" />
+                  <span className="text-green-500">5% increase</span>
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100" style={{ backgroundColor: '#f3f4f6' }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-2 bg-emerald-50 rounded-lg">
+                    <Clock className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <span className="font-medium text-gray-700">Avg Response</span>
+                </div>
+                <div className="text-3xl font-bold text-gray-800 mb-2">2.4h</div>
+                <div className="text-sm text-gray-600 flex items-center gap-1">
+                  <ArrowDownRight className="w-4 h-4 text-red-500" />
+                  <span className="text-red-500">3% increase</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-4 mb-6">
               <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
                       value={searchText}
                       onChange={(e) => setSearchText(e.target.value)}
-                      placeholder="Search..."
-                    className="pl-10 pr-4 py-2 border rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                      placeholder="Search by name, company, amount..."
+                      className="pl-10 pr-4 py-2 border rounded-lg w-96 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                   </div>
                   <button 
                     onClick={() => setShowFilterPanel(!showFilterPanel)}
                     className="p-2 border rounded-lg hover:bg-gray-100 flex items-center gap-1"
                   >
                     <Filter className="w-5 h-5 text-gray-600" />
-                    <span className="text-gray-600">Filtres</span>
+                    <span className="text-gray-600">Advanced Filters</span>
                   </button>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-500">
-                    {filteredDeals.length} deals found
-                  </span>
                 </div>
               </div>
 
@@ -728,11 +810,6 @@ function LeadManagementPanel() {
                             </option>
                           ))}
                         </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-purple-600">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                          </svg>
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -785,133 +862,163 @@ function LeadManagementPanel() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr key="header" className="text-left border-b">
-                    <th className="pb-3">Deal Details</th>
-                    <th className="pb-3">Stage</th>
-                    <th className="pb-3">Value</th>
-                    <th className="pb-3">AI Insights</th>
-                    <th className="pb-3">Last Contact</th>
-                    <th className="pb-3">Next Action</th>
-                    <th className="pb-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {currentDeals.map((deal) => (
-                    <tr 
-                      key={deal.id} 
-                      className="hover:bg-gray-50 cursor-pointer"
-                      onClick={() => handleDealClick(deal)}
-                    >
-                      <td className="py-3">
-                        <div>
-                          <div className="font-medium">{deal.Deal_Name}</div>
-                          <div className="text-sm text-gray-500 flex items-center gap-1">
-                            <Building2 className="w-4 h-4" />
-                            {deal.Account_Name?.name || "N/A"}
-                          </div>
-                          <div className="text-sm text-gray-500 flex items-center gap-1">
-                            <MapPin className="w-4 h-4" />
-                            {deal.Contact_Name?.name || "N/A"}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3">
-                        <span className="text-black text-xs font-bold">
-                          {deal.Stage}
-                        </span>
-                      </td>
-                      <td className="py-3">
-                        <div>
-                          <div className="font-medium">
-                            {deal.$currency_symbol || "$"}{deal.Amount?.toLocaleString()}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {deal.Probability}% probability
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1">
-                            <Brain className="w-4 h-4 text-purple-600" />
-                            <span>
-                              Score: {deal.metadata?.ai_analysis?.score || "N/A"}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Sparkles className="w-4 h-4 text-yellow-600" />
-                            <span>
-                              {deal.Type || "N/A"}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3">
-                        <div>
-                          <div className="text-sm">
-                            {deal.Modified_Time ? new Date(deal.Modified_Time).toLocaleDateString() : "N/A"}
-                          </div>
-                          <div className="text-sm text-gray-500">{deal.Owner?.name || "N/A"}</div>
-                        </div>
-                      </td>
-                      <td className="py-3">
-                        <div className="text-sm">Follow-up</div>
-                        <div className="text-sm text-gray-500">Tomorrow</div>
-                      </td>
-                      <td className="py-3">
-                        <div className="flex items-center gap-2">
-                          <button
-                            className="p-2 hover:bg-gray-100 rounded-lg text-purple-600"
-                            title="AI Analysis"
-                          >
-                            <Brain className="w-5 h-5" />
-                          </button>
-                          <button
-                            className="p-2 hover:bg-gray-100 rounded-lg text-blue-600"
-                            title="Generate Script"
-                          >
-                            <Bot className="w-5 h-5" />
-                          </button>
-                          <button
-                            className="p-2 hover:bg-gray-100 rounded-lg"
-                            title="Edit Deal"
-                            onClick={(e) => handleEditClick(e, deal)}
-                          >
-                            <Edit className="w-5 h-5" />
-                          </button>
-                        </div>
-                      </td>
+              <div className="relative">
+                <table className="w-full">
+                  <thead className="sticky top-0 bg-white z-10">
+                    <tr key="header" className="text-left border-b">
+                      <th className="pb-3 px-4 py-3 text-sm font-semibold text-gray-600 bg-gray-50">#</th>
+                      <th className="pb-3 px-4 py-3 text-sm font-semibold text-gray-600 bg-gray-50">Lead Details</th>
+                      <th className="pb-3 px-4 py-3 text-sm font-semibold text-gray-600 bg-gray-50">Stage</th>
+                      <th className="pb-3 px-4 py-3 text-sm font-semibold text-gray-600 bg-gray-50">Value</th>
+                      <th className="pb-3 px-4 py-3 text-sm font-semibold text-gray-600 bg-gray-50">AI Insights</th>
+                      <th className="pb-3 px-4 py-3 text-sm font-semibold text-gray-600 bg-gray-50">Last Contact</th>
+                      <th className="pb-3 px-4 py-3 text-sm font-semibold text-gray-600 bg-gray-50">Next Action</th>
+                      <th className="pb-3 px-4 py-3 text-sm font-semibold text-gray-600 bg-gray-50">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                </table>
+                <div className="max-h-[400px] overflow-y-auto">
+                  <table className="w-full">
+                    <tbody className="divide-y">
+                      {getCurrentPageLeads().length > 0 ? (
+                        getCurrentPageLeads().map((lead, index) => (
+                          <tr 
+                            key={lead.id} 
+                            className="hover:bg-gray-50 cursor-pointer"
+                            onClick={() => handleLeadClick(lead)}
+                          >
+                            <td className="py-3">
+                              <div className="text-gray-600 font-medium">
+                                {index + 1}
+                              </div>
+                            </td>
+                            <td className="py-3">
+                              <div>
+                                <div className="font-medium">{lead.Lead_Name}</div>
+                                <div className="text-sm text-gray-500 flex items-center gap-1">
+                                  <Building2 className="w-4 h-4" />
+                                  {lead.Account_Name?.name || "N/A"}
+                                </div>
+                                <div className="text-sm text-gray-500 flex items-center gap-1">
+                                  <MapPin className="w-4 h-4" />
+                                  {lead.Contact_Name?.name || "N/A"}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3">
+                              <span className="text-black text-xs font-bold">
+                                {lead.Stage}
+                              </span>
+                            </td>
+                            <td className="py-3">
+                              <div>
+                                <div className="font-medium">
+                                  {lead.$currency_symbol || "$"}{lead.Amount?.toLocaleString()}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {lead.Probability}% probability
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1">
+                                  <Brain className="w-4 h-4 text-purple-600" />
+                                  <span>
+                                    Score: {lead.metadata?.ai_analysis?.score || "N/A"}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Sparkles className="w-4 h-4 text-yellow-600" />
+                                  <span>
+                                    {lead.Type || "N/A"}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3">
+                              <div>
+                                <div className="text-sm">
+                                  {lead.Modified_Time ? new Date(lead.Modified_Time).toLocaleDateString() : "N/A"}
+                                </div>
+                                <div className="text-sm text-gray-500">{lead.Owner?.name || "N/A"}</div>
+                              </div>
+                            </td>
+                            <td className="py-3">
+                              <div className="text-sm">Follow-up</div>
+                              <div className="text-sm text-gray-500">Tomorrow</div>
+                            </td>
+                            <td className="py-3">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  className="p-2 hover:bg-gray-100 rounded-lg text-purple-600"
+                                  title="AI Analysis"
+                                >
+                                  <Brain className="w-5 h-5" />
+                                </button>
+                                <button
+                                  className="p-2 hover:bg-gray-100 rounded-lg text-blue-600"
+                                  title="Generate Script"
+                                >
+                                  <Bot className="w-5 h-5" />
+                                </button>
+                                <button
+                                  className="p-2 hover:bg-gray-100 rounded-lg"
+                                  title="Edit Lead"
+                                  onClick={(e) => handleEditClick(e, lead)}
+                                >
+                                  <Edit className="w-5 h-5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={7} className="py-4 text-center text-gray-500">
+                            {isLoading ? "Loading..." : "No leads found"}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </>
         )}
       </div>
       
       {isZohoConnected && (
-        <div className="flex justify-center items-center gap-4 mt-6">
+        <div className="flex justify-center items-center gap-2 mt-6">
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
+            className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
-            Previous
+            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+            </svg>
           </button>
-          
-          <span className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg font-medium">
-            Page {currentPage} of {totalPages}
-          </span>
-          
+
+          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2">
+            <input
+              type="number"
+              min="1"
+              value={currentPage}
+              onChange={handlePageInput}
+              className="w-20 px-2 py-1 bg-gray-50 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
+            />
+          </div>
+
           <button
             onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
+            disabled={!hasMoreRecords}
+            className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
-            Next
+            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+            </svg>
           </button>
         </div>
       )}
@@ -929,7 +1036,7 @@ function LeadManagementPanel() {
         </div>
       )}
 
-      {showDealDetails && selectedDeal && (
+      {showLeadDetails && selectedLead && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
@@ -942,7 +1049,7 @@ function LeadManagementPanel() {
                     Last Update : 09:20 AM
                   </div>
                   <button 
-                    onClick={closeDealDetails}
+                    onClick={closeLeadDetails}
                     className="p-1.5 hover:bg-gray-100 rounded-full text-gray-600"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -974,51 +1081,51 @@ function LeadManagementPanel() {
                     </span>
                   </div>
                   <div 
-                    className={`${selectedStageInModal === "Analyse des besoins" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
-                    onClick={() => !isUpdating && handleStageClick("Analyse des besoins")}
+                    className={`${selectedStageInModal === "Analyze Needs" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
+                    onClick={() => !isUpdating && handleStageClick("Analyze Needs")}
                   >
                     <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Qualification" ? "border-t-blue-500 border-b-blue-500" : "border-t-blue-100 border-b-blue-100"} -ml-[12px]`}></div>
-                    <span className="text-sm">Analyse des besoins</span>
-                    <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Analyse des besoins" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
+                    <span className="text-sm">Analyze Needs</span>
+                    <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Analyze Needs" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
                   </div>
                   <div 
-                    className={`${selectedStageInModal === "Négociation" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
-                    onClick={() => !isUpdating && handleStageClick("Négociation")}
+                    className={`${selectedStageInModal === "Negotiation" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
+                    onClick={() => !isUpdating && handleStageClick("Negotiation")}
                   >
-                    <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Analyse des besoins" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
-                    <span className="text-sm">Négociation</span>
-                    <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Négociation" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
+                    <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Analyze Needs" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
+                    <span className="text-sm">Negotiation</span>
+                    <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Negotiation" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
                   </div>
                   <div 
-                    className={`${selectedStageInModal === "Proposition/Chiffrage" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
-                    onClick={() => !isUpdating && handleStageClick("Proposition/Chiffrage")}
+                    className={`${selectedStageInModal === "Proposal/Pricing" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
+                    onClick={() => !isUpdating && handleStageClick("Proposal/Pricing")}
                   >
-                    <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Négociation" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
-                    <span className="text-sm">Proposition/Chiffrage</span>
-                    <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Proposition/Chiffrage" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
+                    <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Negotiation" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
+                    <span className="text-sm">Proposal/Pricing</span>
+                    <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Proposal/Pricing" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
                   </div>
                   <div 
-                    className={`${selectedStageInModal === "Proposition commerciale" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
-                    onClick={() => !isUpdating && handleStageClick("Proposition commerciale")}
+                    className={`${selectedStageInModal === "Proposal Commercial" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
+                    onClick={() => !isUpdating && handleStageClick("Proposal Commercial")}
                   >
-                    <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Proposition/Chiffrage" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
-                    <span className="text-sm">Proposition commerciale</span>
-                    <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Proposition commerciale" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
+                    <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Proposal/Pricing" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
+                    <span className="text-sm">Proposal Commercial</span>
+                    <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Proposal Commercial" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
                   </div>
                   <div 
-                    className={`${selectedStageInModal === "Identifiez les décideurs" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 rounded-r-md flex items-center relative cursor-pointer`}
-                    onClick={() => !isUpdating && handleStageClick("Identifiez les décideurs")}
+                    className={`${selectedStageInModal === "Identify Decision Makers" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 rounded-r-md flex items-center relative cursor-pointer`}
+                    onClick={() => !isUpdating && handleStageClick("Identify Decision Makers")}
                   >
-                    <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Proposition commerciale" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
-                    <span className="text-sm">Identifiez les décideurs</span>
+                    <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Proposal Commercial" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
+                    <span className="text-sm">Identify Decision Makers</span>
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 gap-4">
                 <div className="flex justify-between items-center text-sm py-3 border-b">
-                  <span className="text-gray-500">Deal Owner</span>
-                  <span className="font-medium">{selectedDeal.Owner?.name}</span>
+                  <span className="text-gray-500">Lead Owner</span>
+                  <span className="font-medium">{selectedLead.Owner?.name}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm py-3 border-b">
                   <span className="text-gray-500">Stage</span>
@@ -1042,14 +1149,14 @@ function LeadManagementPanel() {
         </div>
       )}
 
-      {showEditForm && editableDeal && (
+      {showEditForm && editableLead && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <Edit className="w-5 h-5 text-blue-600" />
-                  Edit Deal
+                  Edit Lead
                 </h2>
                 <button 
                   onClick={closeEditForm}
@@ -1061,7 +1168,7 @@ function LeadManagementPanel() {
                 </button>
               </div>
               
-              <form onSubmit={(e) => handleEditFormSubmit(e, editableDeal)}>
+              <form onSubmit={(e) => handleEditFormSubmit(e, editableLead)}>
                 <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
                   <div className="flex justify-between mb-4">
                     <div>
@@ -1076,49 +1183,49 @@ function LeadManagementPanel() {
 
                   <div className="flex">
                     <div 
-                      className={`${editableDeal.Stage === "Qualification" ? "bg-blue-500 text-white" : "bg-blue-100 text-gray-800"} py-1 px-4 rounded-l-md flex items-center cursor-pointer`}
-                      onClick={() => setEditableDeal({...editableDeal, Stage: "Qualification"})}
+                      className={`${editableLead.Stage === "Qualification" ? "bg-blue-500 text-white" : "bg-blue-100 text-gray-800"} py-1 px-4 rounded-l-md flex items-center cursor-pointer`}
+                      onClick={() => setEditableLead({...editableLead, Stage: "Qualification"})}
                     >
                       <span className="text-sm">Qualification</span>
                     </div>
                     <div 
-                      className={`${editableDeal.Stage === "Analyse des besoins" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
-                      onClick={() => setEditableDeal({...editableDeal, Stage: "Analyse des besoins"})}
+                      className={`${editableLead.Stage === "Analyze Needs" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
+                      onClick={() => setEditableLead({...editableLead, Stage: "Analyze Needs"})}
                     >
-                      <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableDeal.Stage === "Qualification" ? "border-t-blue-500 border-b-blue-500" : "border-t-blue-100 border-b-blue-100"} -ml-[12px]`}></div>
-                      <span className="text-sm">Analyse des besoins</span>
-                      <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableDeal.Stage === "Analyse des besoins" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
+                      <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableLead.Stage === "Qualification" ? "border-t-blue-500 border-b-blue-500" : "border-t-blue-100 border-b-blue-100"} -ml-[12px]`}></div>
+                      <span className="text-sm">Analyze Needs</span>
+                      <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableLead.Stage === "Analyze Needs" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
                     </div>
                     <div 
-                      className={`${editableDeal.Stage === "Négociation" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
-                      onClick={() => setEditableDeal({...editableDeal, Stage: "Négociation"})}
+                      className={`${editableLead.Stage === "Negotiation" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
+                      onClick={() => setEditableLead({...editableLead, Stage: "Negotiation"})}
                     >
-                      <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableDeal.Stage === "Analyse des besoins" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
-                      <span className="text-sm">Négociation</span>
-                      <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableDeal.Stage === "Négociation" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
+                      <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableLead.Stage === "Analyze Needs" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
+                      <span className="text-sm">Negotiation</span>
+                      <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableLead.Stage === "Negotiation" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
                     </div>
                     <div 
-                      className={`${editableDeal.Stage === "Proposition/Chiffrage" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
-                      onClick={() => setEditableDeal({...editableDeal, Stage: "Proposition/Chiffrage"})}
+                      className={`${editableLead.Stage === "Proposal/Pricing" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
+                      onClick={() => setEditableLead({...editableLead, Stage: "Proposal/Pricing"})}
                     >
-                      <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableDeal.Stage === "Négociation" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
-                      <span className="text-sm">Proposition/Chiffrage</span>
-                      <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableDeal.Stage === "Proposition/Chiffrage" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
+                      <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableLead.Stage === "Negotiation" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
+                      <span className="text-sm">Proposal/Pricing</span>
+                      <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableLead.Stage === "Proposal/Pricing" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
                     </div>
                     <div 
-                      className={`${editableDeal.Stage === "Proposition commerciale" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
-                      onClick={() => setEditableDeal({...editableDeal, Stage: "Proposition commerciale"})}
+                      className={`${editableLead.Stage === "Proposal Commercial" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
+                      onClick={() => setEditableLead({...editableLead, Stage: "Proposal Commercial"})}
                     >
-                      <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableDeal.Stage === "Proposition/Chiffrage" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
-                      <span className="text-sm">Proposition commerciale</span>
-                      <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableDeal.Stage === "Proposition commerciale" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
+                      <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableLead.Stage === "Proposal/Pricing" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
+                      <span className="text-sm">Proposal Commercial</span>
+                      <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableLead.Stage === "Proposal Commercial" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
                     </div>
                     <div 
-                      className={`${editableDeal.Stage === "Identifiez les décideurs" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 rounded-r-md flex items-center relative cursor-pointer`}
-                      onClick={() => setEditableDeal({...editableDeal, Stage: "Identifiez les décideurs"})}
+                      className={`${editableLead.Stage === "Identify Decision Makers" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 rounded-r-md flex items-center relative cursor-pointer`}
+                      onClick={() => setEditableLead({...editableLead, Stage: "Identify Decision Makers"})}
                     >
-                      <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableDeal.Stage === "Proposition commerciale" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
-                      <span className="text-sm">Identifiez les décideurs</span>
+                      <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableLead.Stage === "Proposal Commercial" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
+                      <span className="text-sm">Identify Decision Makers</span>
                     </div>
                   </div>
                 </div>
@@ -1126,11 +1233,11 @@ function LeadManagementPanel() {
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Deal Name</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Lead Name</label>
                       <input
                         type="text"
-                        value={editableDeal.Deal_Name}
-                        onChange={(e) => setEditableDeal({...editableDeal, Deal_Name: e.target.value})}
+                        value={editableLead.Lead_Name}
+                        onChange={(e) => setEditableLead({...editableLead, Lead_Name: e.target.value})}
                         className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         required
                       />
@@ -1140,12 +1247,12 @@ function LeadManagementPanel() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                          {editableDeal.$currency_symbol || "$"}
+                          {editableLead.$currency_symbol || "$"}
                         </span>
                         <input
                           type="number"
-                          value={editableDeal.Amount}
-                          onChange={(e) => setEditableDeal({...editableDeal, Amount: Number(e.target.value)})}
+                          value={editableLead.Amount}
+                          onChange={(e) => setEditableLead({...editableLead, Amount: Number(e.target.value)})}
                           className="w-full p-2.5 pl-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           required
                         />
@@ -1169,8 +1276,8 @@ function LeadManagementPanel() {
                         type="number"
                         min="0"
                         max="100"
-                        value={editableDeal.Probability}
-                        onChange={(e) => setEditableDeal({...editableDeal, Probability: Number(e.target.value)})}
+                        value={editableLead.Probability}
+                        onChange={(e) => setEditableLead({...editableLead, Probability: Number(e.target.value)})}
                         className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         required
                       />
@@ -1180,11 +1287,11 @@ function LeadManagementPanel() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Account</label>
                       <input
                         type="text"
-                        value={editableDeal.Account_Name?.name || ""}
-                        onChange={(e) => setEditableDeal({
-                          ...editableDeal,
+                        value={editableLead.Account_Name?.name || ""}
+                        onChange={(e) => setEditableLead({
+                          ...editableLead,
                           Account_Name: {
-                            id: editableDeal.Account_Name?.id || '',
+                            id: editableLead.Account_Name?.id || '',
                             name: e.target.value
                           }
                         })}
