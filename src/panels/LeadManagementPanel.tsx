@@ -229,7 +229,6 @@ function LeadManagementPanel() {
       
       if (!accessToken) {
         setIsZohoConnected(false);
-        handleZohoConnect();
         return;
       }
 
@@ -277,11 +276,6 @@ function LeadManagementPanel() {
       console.error("Error retrieving leads:", error);
       setLeads([]);
       setAllLeads([]);
-      if (error instanceof Error && 
-          (error.message.includes('401') || error.message.includes('configuration'))) {
-        setIsZohoConnected(false);
-        await handleZohoConnect();
-      }
     } finally {
       setIsLoading(false);
     }
@@ -290,19 +284,14 @@ function LeadManagementPanel() {
   // Modify the initial useEffect to not check configuration
   useEffect(() => {
     const token = localStorage.getItem('zoho_access_token');
-    console.log("=== Initialization ===");
-    console.log("Token at startup:", token ? "Present" : "Absent");
     
     if (token) {
-      console.log("Token value:", token);
       setIsZohoConnected(true);
       fetchLeads(1);
       fetchPipelines();
     } else {
-      console.log("No token found - Zoho configuration");
       setIsZohoConnected(false);
       setIsLoading(false);
-      handleZohoConnect();
     }
   }, []);
 
@@ -327,82 +316,8 @@ function LeadManagementPanel() {
   console.log("Leads:", leads);
 
   const handleZohoConnect = async () => {
-    try {
-      setIsLoading(true);
-      setZohoError(null);
-      
-      // Ensure you use the correct values for these parameters
-      const configData = {
-        clientId: "1000.xxxx", // Replace with your actual Client ID
-        clientSecret: "xxxx", // Replace with your actual Client Secret
-        refreshToken: "xxxx" // Replace with your actual Refresh Token
-      };
-      
-      console.log("Attempting configuration with:", configData);
-      
-      // First step: Configuration
-      const configResponse = await fetch(`${zohoApiUrl}/configure`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(configData)
-      });
-
-      const configResult = await configResponse.json();
-      console.log("Configuration response:", configResult);
-
-      if (!configResponse.ok) {
-        if (configResult.error === "Access Denied" && configResult.error_description?.includes("too many requests")) {
-          if (retryCount < maxRetries) {
-            setZohoError(`Too many requests. New attempt in ${retryDelay/1000} seconds... (${retryCount + 1}/${maxRetries})`);
-            setRetryCount(prev => prev + 1);
-            await new Promise(resolve => setTimeout(resolve, retryDelay));
-            return handleZohoConnect();
-          } else {
-            throw new Error("Maximum attempts reached. Please try again later.");
-          }
-        }
-        throw new Error(configResult.message || 'Error during configuration');
-      }
-
-      if (configResult.success) {
-        console.log("Configuration successful, retrieving token...");
-        setRetryCount(0); // Reset counter in case of success
-        
-        // Second step: Retrieving token
-        const tokenResponse = await fetch(`${zohoApiUrl}/token`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!tokenResponse.ok) {
-          throw new Error('Error retrieving token');
-        }
-
-        const tokenResult = await tokenResponse.json();
-        console.log("Token response:", tokenResult);
-        
-        if (tokenResult.access_token) {
-          console.log("New token retrieved:", tokenResult.access_token);
-          localStorage.setItem('zoho_access_token', tokenResult.access_token);
-          setIsZohoConnected(true);
-          // Reload data after obtaining token
-          await Promise.all([fetchLeads(), fetchPipelines()]);
-        } else {
-          throw new Error('Token not received');
-        }
-      }
-      
-    } catch (error) {
-      console.error('Error during configuration:', error);
-      setIsZohoConnected(false);
-      setZohoError(error instanceof Error ? error.message : 'Unknown error during connection to Zoho CRM');
-    } finally {
-      setIsLoading(false);
-    }
+    // Cette fonction ne sera appelée que manuellement depuis la page des intégrations
+    return;
   };
 
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -605,7 +520,7 @@ function LeadManagementPanel() {
               <h2 className="text-xl font-semibold">Connection Required</h2>
             </div>
             <p className="text-gray-600">
-              You need to connect to Zoho CRM to access leads.
+              You need to connect to Zoho CRM to access leads. Please configure your Zoho CRM integration first.
             </p>
             {zohoError && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
@@ -613,13 +528,10 @@ function LeadManagementPanel() {
               </div>
             )}
             <button
-              onClick={handleZohoConnect}
-              disabled={isLoading || retryCount >= maxRetries}
-              className={`px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 ${
-                (isLoading || retryCount >= maxRetries) ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              onClick={() => window.location.href = '/integrations'}
+              className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700"
             >
-              {isLoading ? 'Connecting...' : 'Connect to Zoho CRM'}
+              Configure Zoho CRM Integration
             </button>
           </div>
         </div>
