@@ -16,6 +16,8 @@ import {
   Edit,
   Upload,
   AlertCircle,
+  Phone,
+  Mail,
 } from "lucide-react";
 import { LeadUploader } from "../components/LeadUploader";
 import { ZohoTokenService } from '../services/zohoService';
@@ -35,13 +37,14 @@ function LeadManagementPanel() {
   const retryDelay = 5000; // 5 seconds
 
   interface Lead {
-    Pipeline: string | undefined;
+    Source: string;
     Pipeline_Id: string;
     id: string;
     Lead_Name: string;
     Amount: number;
     Probability: number;
     Stage: string;
+    Pipeline: string;
     Closing_Date?: string;
     Account_Name?: {
       name: string;
@@ -56,6 +59,8 @@ function LeadManagementPanel() {
       email: string;
       id: string;
     };
+    Email_1?: string;
+    Phone?: string;
     Created_Time?: string;
     Modified_Time?: string;
     Type?: string;
@@ -65,8 +70,6 @@ function LeadManagementPanel() {
         score?: string;
       };
     };
-    Deal_Name?: string;
-    Phone?: string;
   }
 
   interface Stage {
@@ -106,7 +109,6 @@ function LeadManagementPanel() {
   const [selectedStage, setSelectedStage] = useState<string>('all');
   const [hasMoreRecords, setHasMoreRecords] = useState(false);
   const leadsPerPage = 200;
-  const leadsPerView = 10; // Number of leads to display at once
   const [totalLeads, setTotalLeads] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [currentViewIndex, setCurrentViewIndex] = useState(0); // Index for horizontal scrolling
@@ -114,36 +116,7 @@ function LeadManagementPanel() {
 
   // Modify these new states to handle advanced filters
   const [showFilterPanel, setShowFilterPanel] = useState(false);
-  const [filterStage, setFilterStage] = useState<string>('all');
   const [searchText, setSearchText] = useState('');
-
-  // Calculate the lead range for the current page
-  const getCurrentPageRange = () => {
-    const start = (currentPage - 1) * leadsPerPage + 1;
-    const end = Math.min(start + leadsPerPage - 1, totalLeads);
-    return { start, end };
-  };
-
-  // Calculate the leads to display for the current view
-  const getCurrentViewLeads = () => {
-    const startIndex = currentViewIndex * leadsPerView;
-    const endIndex = startIndex + leadsPerView;
-    return leads.slice(startIndex, endIndex);
-  };
-
-  const handleNextView = () => {
-    const maxViewIndex = Math.ceil(leads.length / leadsPerView) - 1;
-    if (currentViewIndex < maxViewIndex) {
-      setCurrentViewIndex(prev => prev + 1);
-    }
-  };
-
-  const handlePrevView = () => {
-    if (currentViewIndex > 0) {
-      setCurrentViewIndex(prev => prev - 1);
-    }
-  };
-
   // Reset the view index when changing page
   useEffect(() => {
     setCurrentViewIndex(0);
@@ -157,127 +130,54 @@ function LeadManagementPanel() {
       return;
     }
 
-    console.log('=== Filtering Process ===');
-    console.log('Total leads before filtering:', allLeads.length);
-    console.log('Current filters:', {
-      pipeline: selectedPipeline,
-      stage: filterStage,
-      searchText: searchText
-    });
+    let filtered = allLeads.filter(lead => lead !== null && lead !== undefined);
 
-    // Log the first lead to check its structure
-    if (allLeads.length > 0) {
-      console.log('Sample lead structure:', allLeads[0]);
+    // First filter by pipeline
+    if (selectedPipeline !== 'all') {
+      const selectedPipelineData = pipelines.find(p => p.id === selectedPipeline);
+      const selectedPipelineName = selectedPipelineData?.display_value;
+      filtered = filtered.filter((lead: Lead) => lead && lead.Pipeline === selectedPipelineName);
     }
 
-    const filtered = allLeads.filter(lead => {
-      // Filter by pipeline name
-      const pipelineMatch = selectedPipeline === 'all' || 
-        lead.Pipeline === selectedPipeline;
-      
-      // Filter by stage
-      const stageMatch = filterStage === 'all' || lead.Stage === filterStage;
-      
-      // Filter by search text
-      const searchMatch = !searchText || 
-        lead.Lead_Name?.toLowerCase().includes(searchText.toLowerCase()) ||
-        lead.Account_Name?.name?.toLowerCase().includes(searchText.toLowerCase()) ||
-        lead.Contact_Name?.name?.toLowerCase().includes(searchText.toLowerCase());
-      
-      if (!pipelineMatch) {
-        console.log(`Lead ${lead.Lead_Name || 'Unnamed'} filtered out by pipeline:`, {
-          leadPipeline: lead.Pipeline,
-          selectedPipeline: selectedPipeline
-        });
-      }
-      if (!stageMatch) {
-        console.log(`Lead ${lead.Lead_Name || 'Unnamed'} filtered out by stage:`, {
-          leadStage: lead.Stage,
-          selectedStage: filterStage
-        });
-      }
-      if (!searchMatch) {
-        console.log(`Lead ${lead.Lead_Name || 'Unnamed'} filtered out by search:`, {
-          searchText: searchText,
-          leadName: lead.Lead_Name,
-          accountName: lead.Account_Name?.name,
-          contactName: lead.Contact_Name?.name
-        });
-      }
-      
-      return pipelineMatch && stageMatch && searchMatch;
-    });
+    // Then filter by stage if a stage is selected
+    if (selectedStage !== 'all') {
+      console.log('=== Stage Filter Debug ===');
+      console.log('Selected Stage:', selectedStage);
+      console.log('Before stage filter count:', filtered.length);
+      filtered = filtered.filter((lead: Lead) => {
+        const matches = lead && lead.Stage && lead.Stage.trim() === selectedStage.trim();
+        console.log('Lead:', lead.Lead_Name, 'Stage:', lead.Stage, 'Matches:', matches);
+        return matches;
+      });
+      console.log('After stage filter count:', filtered.length);
+    }
 
-    console.log('Filtered leads count:', filtered.length);
-    console.log('First few filtered leads:', filtered.slice(0, 3));
-    console.log('=== End Filtering Process ===');
+    // Finally apply search text filter
+    if (searchText) {
+      filtered = filtered.filter((lead: Lead) => 
+        lead && (
+          (lead.Lead_Name && lead.Lead_Name.toLowerCase().includes(searchText.toLowerCase())) ||
+          (lead.Account_Name?.name && lead.Account_Name.name.toLowerCase().includes(searchText.toLowerCase())) ||
+          (lead.Contact_Name?.name && lead.Contact_Name.name.toLowerCase().includes(searchText.toLowerCase()))
+        )
+      );
+    }
 
+    console.log('Final filtered leads count:', filtered.length);
     setFilteredLeads(filtered);
     setTotalLeads(filtered.length);
-    setCurrentPage(1); // Reset to first page when filters change
-  }, [allLeads, selectedPipeline, filterStage, searchText]);
-
-  // Reset the current page when changing filter
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [selectedPipeline, filterStage, searchText]);
+  }, [allLeads, selectedPipeline, selectedStage, searchText, pipelines]);
 
   // Calculate the leads to display for the current page
   const getCurrentPageLeads = () => {
-    const startIndex = (currentPage - 1) * leadsPerPage;
-    const endIndex = startIndex + leadsPerPage;
-    const pageLeads = filteredLeads.slice(startIndex, endIndex);
-    
-    console.log('=== Current Page Info ===');
-    console.log('Current page:', currentPage);
-    console.log('Start index:', startIndex);
-    console.log('End index:', endIndex);
-    console.log('Leads on current page:', pageLeads.length);
-    console.log('Total filtered leads:', filteredLeads.length);
-    console.log('=== End Page Info ===');
-    
-    return pageLeads;
+    return filteredLeads;
   };
 
   const handlePageChange = (pageNumber: number) => {
     if (pageNumber < 1) return;
-    const maxPage = Math.ceil(filteredLeads.length / leadsPerPage);
-    if (pageNumber > maxPage) return;
-    
-    // Mettre à jour la page courante
     setCurrentPage(pageNumber);
-    
-    // Calculer les indices de début et de fin pour la nouvelle page
-    const startIndex = (pageNumber - 1) * leadsPerPage;
-    const endIndex = startIndex + leadsPerPage;
-    
-    // Mettre à jour les leads affichés
-    const newPageLeads = filteredLeads.slice(startIndex, endIndex);
-    setLeads(newPageLeads);
-    
-    console.log('=== Page Change ===');
-    console.log('New page:', pageNumber);
-    console.log('Start index:', startIndex);
-    console.log('End index:', endIndex);
-    console.log('Leads on new page:', newPageLeads.length);
-    console.log('=== End Page Change ===');
+    fetchLeads(pageNumber);
   };
-
-  // Mettre à jour l'affichage des leads lorsque la page change
-  useEffect(() => {
-    const startIndex = (currentPage - 1) * leadsPerPage;
-    const endIndex = startIndex + leadsPerPage;
-    const pageLeads = filteredLeads.slice(startIndex, endIndex);
-    setLeads(pageLeads);
-  }, [currentPage, filteredLeads]);
-
-  // Calculer le nombre total de pages basé sur les leads filtrés
-  const totalPages = Math.ceil(filteredLeads.length / leadsPerPage);
-
-  // Mettre à jour hasMoreRecords basé sur les leads filtrés
-  useEffect(() => {
-    setHasMoreRecords(currentPage < totalPages);
-  }, [currentPage, totalPages, filteredLeads.length]);
 
   const handlePageInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
@@ -344,7 +244,16 @@ function LeadManagementPanel() {
       console.log("Result leads : ", result.data.data.data);
       console.log("Result info : ", result.data.data.info);
       if (result.data?.data?.data) {
-        setLeads(result.data.data.data);
+        const fetchedLeads = result.data.data.data;
+        
+        // Apply pipeline filter if needed
+        const selectedPipelineData = pipelines.find(p => p.id === selectedPipeline);
+        const selectedPipelineName = selectedPipelineData?.display_value;
+        const filteredLeads = selectedPipeline === 'all' 
+          ? fetchedLeads 
+          : fetchedLeads.filter((lead: Lead) => lead && lead.Pipeline === selectedPipelineName);
+        
+        setLeads(filteredLeads);
         setIsZohoConnected(true);
         
         if (result.data.data.info) {
@@ -356,8 +265,10 @@ function LeadManagementPanel() {
         setAllLeads(prevLeads => {
           const newLeads = [...prevLeads];
           const startIndex = (page - 1) * leadsPerPage;
-          result.data.data.data.forEach((lead: Lead, index: number) => {
-            newLeads[startIndex + index] = lead;
+          fetchedLeads.forEach((lead: Lead, index: number) => {
+            if (lead) {
+              newLeads[startIndex + index] = lead;
+            }
           });
           return newLeads;
         });
@@ -389,22 +300,33 @@ function LeadManagementPanel() {
     }
   }, []);
 
-  const handlePipelineChange = (pipelineId: string) => {
-    const selectedPipelineData = pipelines.find(p => p.id === pipelineId);
-    const pipelineName = selectedPipelineData?.display_value || 'all';
-    
-    console.log('Pipeline change:', {
-      pipelineId,
-      pipelineName,
-      selectedPipelineData
-    });
-    
-    setSelectedPipeline(pipelineName);
+  // Reset the current page when changing filter
+  useEffect(() => {
+    // Don't reset the page, but retrieve data from the current page
+    fetchLeads(currentPage);
+  }, [selectedPipeline]);
+
+  const handlePipelineChange = async (pipelineId: string) => {
+    setSelectedPipeline(pipelineId);
     setSelectedStage('all'); // Reset selected stage
     
+    // Find and log stages of the selected pipeline
+    const selectedPipelineData = pipelines.find(p => p.id === pipelineId);
     if (selectedPipelineData) {
       console.log('Selected pipeline:', selectedPipelineData.display_value);
       console.log('Available stages:', selectedPipelineData.maps);
+    }
+
+    // Update leads based on selected pipeline
+    if (pipelineId === 'all') {
+      await fetchLeads(currentPage);
+    } else {
+      // First ensure we have the latest data
+      await fetchLeads(currentPage);
+      // Then filter the leads using pipeline name
+      const selectedPipelineName = selectedPipelineData?.display_value;
+      const filteredLeads = leads.filter((lead: Lead) => lead && lead.Pipeline === selectedPipelineName);
+      setLeads(filteredLeads);
     }
   };
 
@@ -587,31 +509,23 @@ function LeadManagementPanel() {
     }
   }, []);
 
+
   // Get stages of the selected pipeline
   const getSelectedPipelineStages = () => {
-    if (selectedPipeline === 'all') {
+    if (selectedPipeline === 'all' || !pipelines) {
       return [];
     }
-    const selectedPipelineData = pipelines.find(p => p.display_value === selectedPipeline);
-    console.log('Getting stages for pipeline:', {
-      selectedPipeline,
-      selectedPipelineData,
-      stages: selectedPipelineData?.maps || []
-    });
+    const selectedPipelineData = pipelines.find(p => p.id === selectedPipeline);
+    console.log('Pipeline Stages:', selectedPipelineData?.maps); // Debug log
     return selectedPipelineData?.maps || [];
   };
 
-  const handleStageChange = (stageId: string) => {
-    const selectedStageData = getSelectedPipelineStages().find(s => s.id === stageId);
-    const stageName = selectedStageData?.display_value || 'all';
+  const handleStageChange = async (stageName: string) => {
+    console.log('Changing stage to:', stageName);
+    setSelectedStage(stageName);
     
-    console.log('Stage change:', {
-      stageId,
-      stageName,
-      selectedStageData
-    });
-    
-    setFilterStage(stageName);
+    // Pas besoin de refetch les leads, le useEffect s'en chargera
+    // Le filtrage sera appliqué automatiquement via le useEffect
   };
 
   if (isLoading) {
@@ -823,13 +737,13 @@ function LeadManagementPanel() {
                       </h3>
                       <div className="w-full relative">
                         <select
-                          value={filterStage}
+                          value={selectedStage}
                           onChange={(e) => handleStageChange(e.target.value)}
                           className="w-full p-2.5 text-gray-700 bg-white border border-purple-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none"
                         >
                           <option value="all">All Stages</option>
                           {getSelectedPipelineStages().map((stage) => (
-                            <option key={stage.id} value={stage.id}>
+                            <option key={stage.id} value={stage.display_value}>
                               {stage.display_value}
                             </option>
                           ))}
@@ -842,7 +756,7 @@ function LeadManagementPanel() {
                     <button
                       onClick={() => {
                         setSearchText('');
-                        setFilterStage('all');
+                        setSelectedStage('all');
                         handlePipelineChange('all');
                       }}
                       className="px-4 py-2 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-lg hover:from-gray-200 hover:to-gray-300 transition-colors flex items-center gap-2"
@@ -869,10 +783,10 @@ function LeadManagementPanel() {
                   </div>
                 )}
                 
-                {filterStage !== 'all' && (
+                {selectedStage !== 'all' && (
                   <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
-                    Stage: {filterStage}
-                    <button onClick={() => setFilterStage('all')} className="ml-1 hover:text-green-900">×</button>
+                    Stage: {getSelectedPipelineStages().find(s => s.id === selectedStage)?.display_value || selectedStage}
+                    <button onClick={() => setSelectedStage('all')} className="ml-1 hover:text-green-900">×</button>
                   </div>
                 )}
                 
@@ -887,7 +801,8 @@ function LeadManagementPanel() {
 
             <div className="overflow-x-auto">
               <div className="relative">
-                <table className="w-full border border-gray-200 rounded-xl shadow-sm table-fixed">
+                <div className="max-h-[400px] overflow-y-auto">
+                  <table className="w-full border border-gray-200 table-fixed">
                   <thead className="sticky top-0 bg-white z-10">
                     <tr key="header" className="text-left border-b border-gray-200">
                       {/* <th className="w-[5%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-center">#</th> */}
@@ -900,51 +815,60 @@ function LeadManagementPanel() {
                       <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 text-left">Actions</th>
                     </tr>
                   </thead>
-                </table>
-                <div className="max-h-[400px] overflow-y-auto">
-                  <table className="w-full border border-gray-200 table-fixed">
                     <tbody className="divide-y divide-gray-200">
                       {getCurrentPageLeads().length > 0 ? (
                         getCurrentPageLeads().map((lead, index) => (
                           <tr 
                             key={lead.id} 
-                            className="hover:bg-gray-50 cursor-pointer border-b border-gray-200 align-middle"
+                            className="hover:bg-gray-50 cursor-pointer border-b border-gray-200"
                             onClick={() => handleLeadClick(lead)}
                           >
-                            {/* <td className="min-w-[40px] text-center">{(currentPage - 1) * leadsPerPage + index + 1}</td> */}
-                            <td className="min-w-[200px] py-2">
-                              <div className="font-bold text-base">{lead.Lead_Name || lead.Deal_Name || "—"}</div>
-                              <div className="text-xs text-gray-500 italic mb-1">{lead.Pipeline || "—"}</div>
-                              <div className="mb-1">
-                                <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded">
-                                  {lead.Stage || "—"}
-                                </span>
-                              </div>
-                              {/* <div className="text-xs text-gray-600 flex items-center gap-1 mb-1">
-                                <MapPin className="w-3 h-3" />
-                                {lead.Contact_Name?.name || lead.Lead_Name || "—"}
-                              </div> */}
-                              <div className="text-xs text-gray-600 flex items-center gap-1">
-                                <span className="font-bold">📞</span>
-                                {lead.Phone || "—"}
+                            <td className="w-[18%] px-4 py-4 border-r border-gray-200 text-left">
+                              <div>
+                                <div className="font-medium">{lead.Lead_Name}</div>
+                                <div className="text-sm text-gray-500 flex items-center gap-1">
+                                  <Building2 className="w-4 h-4" />
+                                  {lead.Contact_Name?.name || "N/A"}
+                                </div>
+                                {/* <div className="text-sm text-gray-500 flex items-center gap-1">
+                                  <MapPin className="w-4 h-4" />
+                                  {lead.Contact_Name?.name || "N/A"}
+                                </div> */}
+                                <div className="text-sm text-gray-500 flex items-center gap-1">
+                                  <Phone className="w-4 h-4" />
+                                  {lead.Phone || "N/A"}
+                                </div>
+                                <div className="text-sm text-gray-500 flex items-center gap-1">
+                                  <Mail className="w-4 h-4" />
+                                  {lead.Email_1 || "N/A"}
+                                </div>
+                                <div className="text-sm text-gray-500 flex items-center gap-1">
+                                  <p>
+                                    {/* <b>Source :</b> {lead.Source || "N/A"}
+                                    <br /> */}
+                                    <b>Pipeline :</b> {lead.Pipeline || "N/A"}
+                                    <br />
+                                    <b>Stage :</b> {lead.Stage || "N/A"}
+                                  </p>
+                                </div>
                               </div>
                             </td>
-                            {/* <td className="min-w-[120px] text-left">
+                            {/* <td className="w-[13%] px-4 py-4 border-r border-gray-200 text-left">
                               <span className="text-black text-xs font-bold">
-                                {lead.Stage || "—"}
+                                {lead.Stage}
                               </span>
                             </td> */}
-                            <td className="min-w-[120px] text-left">
+                            <td className="w-[13%] px-4 py-4 border-r border-gray-200 text-left">
                               <div>
                                 <div className="font-medium">
-                                  {lead.$currency_symbol || "$"}{lead.Amount?.toLocaleString() || "—"}
+                                  {lead.$currency_symbol || "$"}{lead.Amount?.toLocaleString()}
                                 </div>
-                                <div className="text-xs text-gray-500">
-                                  {lead.Probability ? `${lead.Probability}% probability` : "—"}
+                                <div className="text-sm text-gray-500">
+                                  {lead.Probability}% probability
                                 </div>
                               </div>
                             </td>
-                            <td className="min-w-[13%] px-4 py-4 border-r border-gray-200 text-left">
+                            <td className="w-[13%] px-4 py-4 border-r border-gray-200 text-left">
                               <div className="space-y-1">
                                 <div className="flex items-center gap-1">
                                   <Brain className="w-4 h-4 text-purple-600" />
@@ -960,7 +884,7 @@ function LeadManagementPanel() {
                                 </div>
                               </div>
                             </td>
-                            <td className="min-w-[13%] px-4 py-4 border-r border-gray-200 text-left">
+                            <td className="w-[13%] px-4 py-4 border-r border-gray-200 text-left">
                               <div>
                                 <div className="text-sm">
                                   {lead.Modified_Time ? new Date(lead.Modified_Time).toLocaleDateString() : "N/A"}
@@ -968,11 +892,11 @@ function LeadManagementPanel() {
                                 <div className="text-sm text-gray-500">{lead.Owner?.name || "N/A"}</div>
                               </div>
                             </td>
-                            <td className="min-w-[12%] px-4 py-4 border-r border-gray-200 text-left">
+                            <td className="w-[12%] px-4 py-4 border-r border-gray-200 text-left">
                               <div className="text-sm">Follow-up</div>
                               <div className="text-sm text-gray-500">Tomorrow</div>
                             </td>
-                            <td className="min-w-[13%] px-4 py-4 text-left">
+                            <td className="w-[13%] px-4 py-4 text-left">
                               <div className="flex items-center gap-2">
                                 <button
                                   className="p-2 hover:bg-gray-100 rounded-lg text-purple-600"
@@ -1026,20 +950,13 @@ function LeadManagementPanel() {
           </button>
 
           <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2">
-            <span className="text-gray-600">
-              Page {currentPage} sur {totalPages}
-            </span>
             <input
               type="number"
               min="1"
-              max={totalPages}
               value={currentPage}
               onChange={handlePageInput}
               className="w-20 px-2 py-1 bg-gray-50 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
             />
-            <span className="text-gray-600">
-              ({filteredLeads.length} leads au total)
-            </span>
           </div>
 
           <button
