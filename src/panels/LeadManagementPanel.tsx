@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Users,
   Search,
@@ -24,6 +24,23 @@ import { ZohoTokenService } from '../services/zohoService';
 import { useNavigate } from 'react-router-dom';
 
 const zohoApiUrl = import.meta.env.VITE_ZOHO_API_URL;
+
+// Add this custom hook at the top of the file, after imports
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 function LeadManagementPanel() {
   const navigate = useNavigate();
@@ -117,6 +134,7 @@ function LeadManagementPanel() {
   // Modify these new states to handle advanced filters
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const debouncedSearchText = useDebounce(searchText, 300); // 300ms delay
   // Reset the view index when changing page
   useEffect(() => {
     setCurrentViewIndex(0);
@@ -141,32 +159,32 @@ function LeadManagementPanel() {
 
     // Then filter by stage if a stage is selected
     if (selectedStage !== 'all') {
-      console.log('=== Stage Filter Debug ===');
-      console.log('Selected Stage:', selectedStage);
-      console.log('Before stage filter count:', filtered.length);
       filtered = filtered.filter((lead: Lead) => {
         const matches = lead && lead.Stage && lead.Stage.trim() === selectedStage.trim();
-        console.log('Lead:', lead.Lead_Name, 'Stage:', lead.Stage, 'Matches:', matches);
         return matches;
       });
-      console.log('After stage filter count:', filtered.length);
     }
 
-    // Finally apply search text filter
-    if (searchText) {
+    // Finally apply search text filter with improved search logic
+    if (debouncedSearchText) {
+      const searchLower = debouncedSearchText.toLowerCase();
       filtered = filtered.filter((lead: Lead) => 
         lead && (
-          (lead.Lead_Name && lead.Lead_Name.toLowerCase().includes(searchText.toLowerCase())) ||
-          (lead.Account_Name?.name && lead.Account_Name.name.toLowerCase().includes(searchText.toLowerCase())) ||
-          (lead.Contact_Name?.name && lead.Contact_Name.name.toLowerCase().includes(searchText.toLowerCase()))
+          (lead.Lead_Name && lead.Lead_Name.toLowerCase().includes(searchLower)) ||
+          (lead.Account_Name?.name && lead.Account_Name.name.toLowerCase().includes(searchLower)) ||
+          (lead.Contact_Name?.name && lead.Contact_Name.name.toLowerCase().includes(searchLower)) ||
+          (lead.Email_1 && lead.Email_1.toLowerCase().includes(searchLower)) ||
+          (lead.Phone && lead.Phone.toLowerCase().includes(searchLower)) ||
+          (lead.Stage && lead.Stage.toLowerCase().includes(searchLower)) ||
+          (lead.Pipeline && lead.Pipeline.toLowerCase().includes(searchLower)) ||
+          (lead.Source && lead.Source.toLowerCase().includes(searchLower))
         )
       );
     }
 
-    console.log('Final filtered leads count:', filtered.length);
     setFilteredLeads(filtered);
     setTotalLeads(filtered.length);
-  }, [allLeads, selectedPipeline, selectedStage, searchText, pipelines]);
+  }, [allLeads, selectedPipeline, selectedStage, debouncedSearchText, pipelines]);
 
   // Calculate the leads to display for the current page
   const getCurrentPageLeads = () => {
@@ -679,9 +697,17 @@ function LeadManagementPanel() {
                       type="text"
                       value={searchText}
                       onChange={(e) => setSearchText(e.target.value)}
-                      placeholder="Search by name, company, amount..."
+                      placeholder="Search by name, company, email, phone, stage..."
                       className="pl-10 pr-4 py-2 border rounded-lg w-96 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
+                    {searchText && (
+                      <button
+                        onClick={() => setSearchText('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        ×
+                      </button>
+                    )}
                   </div>
                   <button 
                     onClick={() => setShowFilterPanel(!showFilterPanel)}
@@ -690,6 +716,15 @@ function LeadManagementPanel() {
                     <Filter className="w-5 h-5 text-gray-600" />
                     <span className="text-gray-600">Advanced Filters</span>
                   </button>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <span className="font-medium">{filteredLeads.length}</span>
+                  <span>leads found</span>
+                  {filteredLeads.length !== allLeads.length && (
+                    <span className="text-gray-400">
+                      (filtered from {allLeads.length} total leads)
+                    </span>
+                  )}
                 </div>
               </div>
 
