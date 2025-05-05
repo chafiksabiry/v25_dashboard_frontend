@@ -35,6 +35,7 @@ function LeadManagementPanel() {
   const retryDelay = 5000; // 5 seconds
 
   interface Lead {
+    Pipeline: string | undefined;
     Pipeline_Id: string;
     id: string;
     Lead_Name: string;
@@ -64,6 +65,8 @@ function LeadManagementPanel() {
         score?: string;
       };
     };
+    Deal_Name?: string;
+    Phone?: string;
   }
 
   interface Stage {
@@ -154,36 +157,127 @@ function LeadManagementPanel() {
       return;
     }
 
+    console.log('=== Filtering Process ===');
+    console.log('Total leads before filtering:', allLeads.length);
+    console.log('Current filters:', {
+      pipeline: selectedPipeline,
+      stage: filterStage,
+      searchText: searchText
+    });
+
+    // Log the first lead to check its structure
+    if (allLeads.length > 0) {
+      console.log('Sample lead structure:', allLeads[0]);
+    }
+
     const filtered = allLeads.filter(lead => {
-      // Filter by pipeline
+      // Filter by pipeline name
       const pipelineMatch = selectedPipeline === 'all' || 
-        pipelines.find(p => p.id === lead.Pipeline_Id)?.display_value === selectedPipeline;
+        lead.Pipeline === selectedPipeline;
       
       // Filter by stage
       const stageMatch = filterStage === 'all' || lead.Stage === filterStage;
+      
       // Filter by search text
       const searchMatch = !searchText || 
-        lead.Lead_Name.toLowerCase().includes(searchText.toLowerCase()) ||
+        lead.Lead_Name?.toLowerCase().includes(searchText.toLowerCase()) ||
         lead.Account_Name?.name?.toLowerCase().includes(searchText.toLowerCase()) ||
         lead.Contact_Name?.name?.toLowerCase().includes(searchText.toLowerCase());
+      
+      if (!pipelineMatch) {
+        console.log(`Lead ${lead.Lead_Name || 'Unnamed'} filtered out by pipeline:`, {
+          leadPipeline: lead.Pipeline,
+          selectedPipeline: selectedPipeline
+        });
+      }
+      if (!stageMatch) {
+        console.log(`Lead ${lead.Lead_Name || 'Unnamed'} filtered out by stage:`, {
+          leadStage: lead.Stage,
+          selectedStage: filterStage
+        });
+      }
+      if (!searchMatch) {
+        console.log(`Lead ${lead.Lead_Name || 'Unnamed'} filtered out by search:`, {
+          searchText: searchText,
+          leadName: lead.Lead_Name,
+          accountName: lead.Account_Name?.name,
+          contactName: lead.Contact_Name?.name
+        });
+      }
       
       return pipelineMatch && stageMatch && searchMatch;
     });
 
+    console.log('Filtered leads count:', filtered.length);
+    console.log('First few filtered leads:', filtered.slice(0, 3));
+    console.log('=== End Filtering Process ===');
+
     setFilteredLeads(filtered);
     setTotalLeads(filtered.length);
-  }, [allLeads, selectedPipeline, filterStage, searchText, pipelines]);
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [allLeads, selectedPipeline, filterStage, searchText]);
+
+  // Reset the current page when changing filter
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedPipeline, filterStage, searchText]);
 
   // Calculate the leads to display for the current page
   const getCurrentPageLeads = () => {
-    return leads;
+    const startIndex = (currentPage - 1) * leadsPerPage;
+    const endIndex = startIndex + leadsPerPage;
+    const pageLeads = filteredLeads.slice(startIndex, endIndex);
+    
+    console.log('=== Current Page Info ===');
+    console.log('Current page:', currentPage);
+    console.log('Start index:', startIndex);
+    console.log('End index:', endIndex);
+    console.log('Leads on current page:', pageLeads.length);
+    console.log('Total filtered leads:', filteredLeads.length);
+    console.log('=== End Page Info ===');
+    
+    return pageLeads;
   };
 
   const handlePageChange = (pageNumber: number) => {
     if (pageNumber < 1) return;
+    const maxPage = Math.ceil(filteredLeads.length / leadsPerPage);
+    if (pageNumber > maxPage) return;
+    
+    // Mettre à jour la page courante
     setCurrentPage(pageNumber);
-    fetchLeads(pageNumber);
+    
+    // Calculer les indices de début et de fin pour la nouvelle page
+    const startIndex = (pageNumber - 1) * leadsPerPage;
+    const endIndex = startIndex + leadsPerPage;
+    
+    // Mettre à jour les leads affichés
+    const newPageLeads = filteredLeads.slice(startIndex, endIndex);
+    setLeads(newPageLeads);
+    
+    console.log('=== Page Change ===');
+    console.log('New page:', pageNumber);
+    console.log('Start index:', startIndex);
+    console.log('End index:', endIndex);
+    console.log('Leads on new page:', newPageLeads.length);
+    console.log('=== End Page Change ===');
   };
+
+  // Mettre à jour l'affichage des leads lorsque la page change
+  useEffect(() => {
+    const startIndex = (currentPage - 1) * leadsPerPage;
+    const endIndex = startIndex + leadsPerPage;
+    const pageLeads = filteredLeads.slice(startIndex, endIndex);
+    setLeads(pageLeads);
+  }, [currentPage, filteredLeads]);
+
+  // Calculer le nombre total de pages basé sur les leads filtrés
+  const totalPages = Math.ceil(filteredLeads.length / leadsPerPage);
+
+  // Mettre à jour hasMoreRecords basé sur les leads filtrés
+  useEffect(() => {
+    setHasMoreRecords(currentPage < totalPages);
+  }, [currentPage, totalPages, filteredLeads.length]);
 
   const handlePageInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
@@ -295,18 +389,19 @@ function LeadManagementPanel() {
     }
   }, []);
 
-  // Reset the current page when changing filter
-  useEffect(() => {
-    // Don't reset the page, but retrieve data from the current page
-    fetchLeads(currentPage);
-  }, [selectedPipeline]);
-
   const handlePipelineChange = (pipelineId: string) => {
-    setSelectedPipeline(pipelineId);
+    const selectedPipelineData = pipelines.find(p => p.id === pipelineId);
+    const pipelineName = selectedPipelineData?.display_value || 'all';
+    
+    console.log('Pipeline change:', {
+      pipelineId,
+      pipelineName,
+      selectedPipelineData
+    });
+    
+    setSelectedPipeline(pipelineName);
     setSelectedStage('all'); // Reset selected stage
     
-    // Find and log stages of the selected pipeline
-    const selectedPipelineData = pipelines.find(p => p.id === pipelineId);
     if (selectedPipelineData) {
       console.log('Selected pipeline:', selectedPipelineData.display_value);
       console.log('Available stages:', selectedPipelineData.maps);
@@ -492,15 +587,32 @@ function LeadManagementPanel() {
     }
   }, []);
 
-
   // Get stages of the selected pipeline
   const getSelectedPipelineStages = () => {
     if (selectedPipeline === 'all') {
       return [];
     }
-    return pipelines.find(p => p.id === selectedPipeline)?.maps || [];
+    const selectedPipelineData = pipelines.find(p => p.display_value === selectedPipeline);
+    console.log('Getting stages for pipeline:', {
+      selectedPipeline,
+      selectedPipelineData,
+      stages: selectedPipelineData?.maps || []
+    });
+    return selectedPipelineData?.maps || [];
   };
 
+  const handleStageChange = (stageId: string) => {
+    const selectedStageData = getSelectedPipelineStages().find(s => s.id === stageId);
+    const stageName = selectedStageData?.display_value || 'all';
+    
+    console.log('Stage change:', {
+      stageId,
+      stageName,
+      selectedStageData
+    });
+    
+    setFilterStage(stageName);
+  };
 
   if (isLoading) {
     return (
@@ -711,14 +823,14 @@ function LeadManagementPanel() {
                       </h3>
                       <div className="w-full relative">
                         <select
-                          value={selectedStage}
-                          onChange={(e) => setSelectedStage(e.target.value)}
+                          value={filterStage}
+                          onChange={(e) => handleStageChange(e.target.value)}
                           className="w-full p-2.5 text-gray-700 bg-white border border-purple-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none"
                         >
                           <option value="all">All Stages</option>
                           {getSelectedPipelineStages().map((stage) => (
                             <option key={stage.id} value={stage.id}>
-                              {stage.display_value} ({stage.forecast_type})
+                              {stage.display_value}
                             </option>
                           ))}
                         </select>
@@ -730,7 +842,7 @@ function LeadManagementPanel() {
                     <button
                       onClick={() => {
                         setSearchText('');
-                        setSelectedStage('all');
+                        setFilterStage('all');
                         handlePipelineChange('all');
                       }}
                       className="px-4 py-2 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-lg hover:from-gray-200 hover:to-gray-300 transition-colors flex items-center gap-2"
@@ -752,15 +864,15 @@ function LeadManagementPanel() {
               <div className="flex flex-wrap gap-2">
                 {selectedPipeline !== 'all' && (
                   <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
-                    Pipeline: {selectedPipeline}
+                    Pipeline: {pipelines.find(p => p.id === selectedPipeline)?.display_value || selectedPipeline}
                     <button onClick={() => handlePipelineChange('all')} className="ml-1 hover:text-blue-900">×</button>
                   </div>
                 )}
                 
-                {selectedStage !== 'all' && (
+                {filterStage !== 'all' && (
                   <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
-                    Stage: {selectedStage}
-                    <button onClick={() => setSelectedStage('all')} className="ml-1 hover:text-green-900">×</button>
+                    Stage: {filterStage}
+                    <button onClick={() => setFilterStage('all')} className="ml-1 hover:text-green-900">×</button>
                   </div>
                 )}
                 
@@ -778,9 +890,9 @@ function LeadManagementPanel() {
                 <table className="w-full border border-gray-200 rounded-xl shadow-sm table-fixed">
                   <thead className="sticky top-0 bg-white z-10">
                     <tr key="header" className="text-left border-b border-gray-200">
-                      <th className="w-[5%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-center">#</th>
+                      {/* <th className="w-[5%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-center">#</th> */}
                       <th className="w-[18%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Lead Details</th>
-                      <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Stage</th>
+                      {/* <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Stage</th> */}
                       <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Value</th>
                       <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">AI Insights</th>
                       <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Last Contact</th>
@@ -796,43 +908,43 @@ function LeadManagementPanel() {
                         getCurrentPageLeads().map((lead, index) => (
                           <tr 
                             key={lead.id} 
-                            className="hover:bg-gray-50 cursor-pointer border-b border-gray-200"
+                            className="hover:bg-gray-50 cursor-pointer border-b border-gray-200 align-middle"
                             onClick={() => handleLeadClick(lead)}
                           >
-                            <td className="w-[5%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-center">
-                              <div className="text-gray-600 font-medium">
-                                {index + 1}
+                            {/* <td className="min-w-[40px] text-center">{(currentPage - 1) * leadsPerPage + index + 1}</td> */}
+                            <td className="min-w-[200px] py-2">
+                              <div className="font-bold text-base">{lead.Lead_Name || lead.Deal_Name || "—"}</div>
+                              <div className="text-xs text-gray-500 italic mb-1">{lead.Pipeline || "—"}</div>
+                              <div className="mb-1">
+                                <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded">
+                                  {lead.Stage || "—"}
+                                </span>
+                              </div>
+                              {/* <div className="text-xs text-gray-600 flex items-center gap-1 mb-1">
+                                <MapPin className="w-3 h-3" />
+                                {lead.Contact_Name?.name || lead.Lead_Name || "—"}
+                              </div> */}
+                              <div className="text-xs text-gray-600 flex items-center gap-1">
+                                <span className="font-bold">📞</span>
+                                {lead.Phone || "—"}
                               </div>
                             </td>
-                            <td className="w-[18%] px-4 py-4 border-r border-gray-200 text-left">
-                              <div>
-                                <div className="font-medium">{lead.Lead_Name}</div>
-                                <div className="text-sm text-gray-500 flex items-center gap-1">
-                                  <Building2 className="w-4 h-4" />
-                                  {lead.Account_Name?.name || "N/A"}
-                                </div>
-                                <div className="text-sm text-gray-500 flex items-center gap-1">
-                                  <MapPin className="w-4 h-4" />
-                                  {lead.Contact_Name?.name || "N/A"}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="w-[13%] px-4 py-4 border-r border-gray-200 text-left">
+                            {/* <td className="min-w-[120px] text-left">
                               <span className="text-black text-xs font-bold">
-                                {lead.Stage}
+                                {lead.Stage || "—"}
                               </span>
-                            </td>
-                            <td className="w-[13%] px-4 py-4 border-r border-gray-200 text-left">
+                            </td> */}
+                            <td className="min-w-[120px] text-left">
                               <div>
                                 <div className="font-medium">
-                                  {lead.$currency_symbol || "$"}{lead.Amount?.toLocaleString()}
+                                  {lead.$currency_symbol || "$"}{lead.Amount?.toLocaleString() || "—"}
                                 </div>
-                                <div className="text-sm text-gray-500">
-                                  {lead.Probability}% probability
+                                <div className="text-xs text-gray-500">
+                                  {lead.Probability ? `${lead.Probability}% probability` : "—"}
                                 </div>
                               </div>
                             </td>
-                            <td className="w-[13%] px-4 py-4 border-r border-gray-200 text-left">
+                            <td className="min-w-[13%] px-4 py-4 border-r border-gray-200 text-left">
                               <div className="space-y-1">
                                 <div className="flex items-center gap-1">
                                   <Brain className="w-4 h-4 text-purple-600" />
@@ -848,7 +960,7 @@ function LeadManagementPanel() {
                                 </div>
                               </div>
                             </td>
-                            <td className="w-[13%] px-4 py-4 border-r border-gray-200 text-left">
+                            <td className="min-w-[13%] px-4 py-4 border-r border-gray-200 text-left">
                               <div>
                                 <div className="text-sm">
                                   {lead.Modified_Time ? new Date(lead.Modified_Time).toLocaleDateString() : "N/A"}
@@ -856,11 +968,11 @@ function LeadManagementPanel() {
                                 <div className="text-sm text-gray-500">{lead.Owner?.name || "N/A"}</div>
                               </div>
                             </td>
-                            <td className="w-[12%] px-4 py-4 border-r border-gray-200 text-left">
+                            <td className="min-w-[12%] px-4 py-4 border-r border-gray-200 text-left">
                               <div className="text-sm">Follow-up</div>
                               <div className="text-sm text-gray-500">Tomorrow</div>
                             </td>
-                            <td className="w-[13%] px-4 py-4 text-left">
+                            <td className="min-w-[13%] px-4 py-4 text-left">
                               <div className="flex items-center gap-2">
                                 <button
                                   className="p-2 hover:bg-gray-100 rounded-lg text-purple-600"
@@ -914,13 +1026,20 @@ function LeadManagementPanel() {
           </button>
 
           <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2">
+            <span className="text-gray-600">
+              Page {currentPage} sur {totalPages}
+            </span>
             <input
               type="number"
               min="1"
+              max={totalPages}
               value={currentPage}
               onChange={handlePageInput}
               className="w-20 px-2 py-1 bg-gray-50 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
             />
+            <span className="text-gray-600">
+              ({filteredLeads.length} leads au total)
+            </span>
           </div>
 
           <button
