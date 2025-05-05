@@ -775,36 +775,36 @@ function LeadManagementPanel() {
 
             <div className="overflow-x-auto">
               <div className="relative">
-                <table className="w-full">
+                <table className="w-full border border-gray-200 rounded-xl shadow-sm table-fixed">
                   <thead className="sticky top-0 bg-white z-10">
-                    <tr key="header" className="text-left border-b">
-                      <th className="pb-3 px-4 py-3 text-sm font-semibold text-gray-600 bg-gray-50">#</th>
-                      <th className="pb-3 px-4 py-3 text-sm font-semibold text-gray-600 bg-gray-50">Lead Details</th>
-                      <th className="pb-3 px-4 py-3 text-sm font-semibold text-gray-600 bg-gray-50">Stage</th>
-                      <th className="pb-3 px-4 py-3 text-sm font-semibold text-gray-600 bg-gray-50">Value</th>
-                      <th className="pb-3 px-4 py-3 text-sm font-semibold text-gray-600 bg-gray-50">AI Insights</th>
-                      <th className="pb-3 px-4 py-3 text-sm font-semibold text-gray-600 bg-gray-50">Last Contact</th>
-                      <th className="pb-3 px-4 py-3 text-sm font-semibold text-gray-600 bg-gray-50">Next Action</th>
-                      <th className="pb-3 px-4 py-3 text-sm font-semibold text-gray-600 bg-gray-50">Actions</th>
+                    <tr key="header" className="text-left border-b border-gray-200">
+                      <th className="w-[5%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-center">#</th>
+                      <th className="w-[18%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Lead Details</th>
+                      <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Stage</th>
+                      <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Value</th>
+                      <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">AI Insights</th>
+                      <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Last Contact</th>
+                      <th className="w-[12%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Next Action</th>
+                      <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 text-left">Actions</th>
                     </tr>
                   </thead>
                 </table>
                 <div className="max-h-[400px] overflow-y-auto">
-                  <table className="w-full">
-                    <tbody className="divide-y">
+                  <table className="w-full border border-gray-200 table-fixed">
+                    <tbody className="divide-y divide-gray-200">
                       {getCurrentPageLeads().length > 0 ? (
                         getCurrentPageLeads().map((lead, index) => (
                           <tr 
                             key={lead.id} 
-                            className="hover:bg-gray-50 cursor-pointer"
+                            className="hover:bg-gray-50 cursor-pointer border-b border-gray-200"
                             onClick={() => handleLeadClick(lead)}
                           >
-                            <td className="py-3">
+                            <td className="w-[5%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-center">
                               <div className="text-gray-600 font-medium">
                                 {index + 1}
                               </div>
                             </td>
-                            <td className="py-3">
+                            <td className="w-[18%] px-4 py-4 border-r border-gray-200 text-left">
                               <div>
                                 <div className="font-medium">{lead.Lead_Name}</div>
                                 <div className="text-sm text-gray-500 flex items-center gap-1">
@@ -817,12 +817,12 @@ function LeadManagementPanel() {
                                 </div>
                               </div>
                             </td>
-                            <td className="py-3">
+                            <td className="w-[13%] px-4 py-4 border-r border-gray-200 text-left">
                               <span className="text-black text-xs font-bold">
                                 {lead.Stage}
                               </span>
                             </td>
-                            <td className="py-3">
+                            <td className="w-[13%] px-4 py-4 border-r border-gray-200 text-left">
                               <div>
                                 <div className="font-medium">
                                   {lead.$currency_symbol || "$"}{lead.Amount?.toLocaleString()}
@@ -832,7 +832,7 @@ function LeadManagementPanel() {
                                 </div>
                               </div>
                             </td>
-                            <td className="py-3">
+                            <td className="w-[13%] px-4 py-4 border-r border-gray-200 text-left">
                               <div className="space-y-1">
                                 <div className="flex items-center gap-1">
                                   <Brain className="w-4 h-4 text-purple-600" />
@@ -848,7 +848,7 @@ function LeadManagementPanel() {
                                 </div>
                               </div>
                             </td>
-                            <td className="py-3">
+                            <td className="w-[13%] px-4 py-4 border-r border-gray-200 text-left">
                               <div>
                                 <div className="text-sm">
                                   {lead.Modified_Time ? new Date(lead.Modified_Time).toLocaleDateString() : "N/A"}
@@ -856,11 +856,11 @@ function LeadManagementPanel() {
                                 <div className="text-sm text-gray-500">{lead.Owner?.name || "N/A"}</div>
                               </div>
                             </td>
-                            <td className="py-3">
+                            <td className="w-[12%] px-4 py-4 border-r border-gray-200 text-left">
                               <div className="text-sm">Follow-up</div>
                               <div className="text-sm text-gray-500">Tomorrow</div>
                             </td>
-                            <td className="py-3">
+                            <td className="w-[13%] px-4 py-4 text-left">
                               <div className="flex items-center gap-2">
                                 <button
                                   className="p-2 hover:bg-gray-100 rounded-lg text-purple-600"
@@ -887,7 +887,7 @@ function LeadManagementPanel() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={7} className="py-4 text-center text-gray-500">
+                          <td colSpan={8} className="py-4 text-center text-gray-500 border-b border-gray-200">
                             {isLoading ? "Loading..." : "No leads found"}
                           </td>
                         </tr>
@@ -1056,196 +1056,6 @@ function LeadManagementPanel() {
                   <span className="font-medium">14/02/2025</span>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showEditForm && editableLead && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold flex items-center gap-2">
-                  <Edit className="w-5 h-5 text-blue-600" />
-                  Edit Lead
-                </h2>
-                <button 
-                  onClick={closeEditForm}
-                  className="p-1.5 hover:bg-gray-100 rounded-full text-gray-600"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                  </svg>
-                </button>
-              </div>
-              
-              <form onSubmit={(e) => handleEditFormSubmit(e, editableLead)}>
-                <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-                  <div className="flex justify-between mb-4">
-                    <div>
-                      <h3 className="text-gray-500 text-sm uppercase">START</h3>
-                      <p className="font-medium">11/02/2025</p>
-                    </div>
-                    <div className="text-right">
-                      <h3 className="text-gray-500 text-sm uppercase">CLOSING</h3>
-                      <p className="font-medium">14/02/2025</p>
-                    </div>
-                  </div>
-
-                  <div className="flex">
-                    <div 
-                      className={`${editableLead.Stage === "Qualification" ? "bg-blue-500 text-white" : "bg-blue-100 text-gray-800"} py-1 px-4 rounded-l-md flex items-center cursor-pointer`}
-                      onClick={() => setEditableLead({...editableLead, Stage: "Qualification"})}
-                    >
-                      <span className="text-sm">Qualification</span>
-                    </div>
-                    <div 
-                      className={`${editableLead.Stage === "Analyze Needs" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
-                      onClick={() => setEditableLead({...editableLead, Stage: "Analyze Needs"})}
-                    >
-                      <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableLead.Stage === "Qualification" ? "border-t-blue-500 border-b-blue-500" : "border-t-blue-100 border-b-blue-100"} -ml-[12px]`}></div>
-                      <span className="text-sm">Analyze Needs</span>
-                      <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableLead.Stage === "Analyze Needs" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
-                    </div>
-                    <div 
-                      className={`${editableLead.Stage === "Negotiation" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
-                      onClick={() => setEditableLead({...editableLead, Stage: "Negotiation"})}
-                    >
-                      <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableLead.Stage === "Analyze Needs" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
-                      <span className="text-sm">Negotiation</span>
-                      <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableLead.Stage === "Negotiation" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
-                    </div>
-                    <div 
-                      className={`${editableLead.Stage === "Proposal/Pricing" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
-                      onClick={() => setEditableLead({...editableLead, Stage: "Proposal/Pricing"})}
-                    >
-                      <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableLead.Stage === "Negotiation" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
-                      <span className="text-sm">Proposal/Pricing</span>
-                      <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableLead.Stage === "Proposal/Pricing" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
-                    </div>
-                    <div 
-                      className={`${editableLead.Stage === "Proposal Commercial" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
-                      onClick={() => setEditableLead({...editableLead, Stage: "Proposal Commercial"})}
-                    >
-                      <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableLead.Stage === "Proposal/Pricing" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
-                      <span className="text-sm">Proposal Commercial</span>
-                      <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableLead.Stage === "Proposal Commercial" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
-                    </div>
-                    <div 
-                      className={`${editableLead.Stage === "Identify Decision Makers" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 rounded-r-md flex items-center relative cursor-pointer`}
-                      onClick={() => setEditableLead({...editableLead, Stage: "Identify Decision Makers"})}
-                    >
-                      <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${editableLead.Stage === "Proposal Commercial" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
-                      <span className="text-sm">Identify Decision Makers</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Lead Name</label>
-                      <input
-                        type="text"
-                        value={editableLead.Lead_Name}
-                        onChange={(e) => setEditableLead({...editableLead, Lead_Name: e.target.value})}
-                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                          {editableLead.$currency_symbol || "$"}
-                        </span>
-                        <input
-                          type="number"
-                          value={editableLead.Amount}
-                          onChange={(e) => setEditableLead({...editableLead, Amount: Number(e.target.value)})}
-                          className="w-full p-2.5 pl-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          required
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                      <input
-                        type="date"
-                        defaultValue="2025-02-11"
-                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Probability (%)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={editableLead.Probability}
-                        onChange={(e) => setEditableLead({...editableLead, Probability: Number(e.target.value)})}
-                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Account</label>
-                      <input
-                        type="text"
-                        value={editableLead.Account_Name?.name || ""}
-                        onChange={(e) => setEditableLead({
-                          ...editableLead,
-                          Account_Name: {
-                            id: editableLead.Account_Name?.id || '',
-                            name: e.target.value
-                          }
-                        })}
-                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Closing Date</label>
-                      <input
-                        type="date"
-                        defaultValue="2025-02-14"
-                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="mt-6 flex justify-end space-x-4">
-                  <button
-                    type="button"
-                    onClick={closeEditForm}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isUpdating}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    {isUpdating ? (
-                      <>
-                        <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                        Updating...
-                      </>
-                    ) : (
-                      <>Save Changes</>
-                    )}
-                  </button>
-                </div>
-              </form>
             </div>
           </div>
         </div>
