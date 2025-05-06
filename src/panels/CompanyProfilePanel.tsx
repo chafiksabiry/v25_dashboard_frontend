@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
-import { useNavigate } from "react-router-dom";
 
 import {
   Building2,
@@ -33,13 +32,11 @@ import {
   Facebook,
   Instagram,
   ArrowRight,
-  FileText
 } from "lucide-react";
 import Cookies from 'js-cookie';
 
 
 function CompanyProfilePanel() {
-  const navigate = useNavigate();
   const [company, setCompany] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,29 +47,10 @@ function CompanyProfilePanel() {
   const [editMode, setEditMode] = useState(false);
   const [logoUrl, setLogoUrl] = useState("");
   const [showUniquenessPanel, setShowUniquenessPanel] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentField, setCurrentField] = useState<any>(null);
 
-  // Récupérer l'ID de l'entreprise depuis localStorage
- /*  const userConfig = localStorage.getItem('user_config');
-  const companyId = userConfig ? JSON.parse(userConfig).clientId : null;
-  console.log('Stored user config:', userConfig);
-
-  useEffect(() => {
-    if (!userConfig) {
-      // Rediriger vers la page de connexion si l'utilisateur n'est pas authentifié
-      navigate('/login');
-      return;
-    }
-
-    if (companyId) {
-      fetchCompanyDetails();
-    }
-  }, [companyId, userConfig, navigate]); */
-const companyId = import.meta.env.VITE_ENV === 'test' 
-  ? '681a448d2c1ca099fe2b17a4'
-  : Cookies.get('userId');
-console.log('Stored userId:', companyId);
+  
+  const companyId = Cookies.get('userId');
+  console.log('Stored userId from cookie:', companyId);
 
   // Helper functions for the new UI
   const hasContactInfo = company.contact && (
