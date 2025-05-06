@@ -70,7 +70,7 @@ function CompanyProfilePanel() {
     }
   }, [companyId, userConfig, navigate]); */
 const companyId = import.meta.env.VITE_ENV === 'test' 
-  ? '6807abfc2c1ca099fe2b13c5'
+  ? '681a448d2c1ca099fe2b17a4'
   : Cookies.get('userId');
 console.log('Stored userId:', companyId);
 

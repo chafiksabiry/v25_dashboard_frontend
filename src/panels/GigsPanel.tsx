@@ -21,6 +21,8 @@ import {
   Tags,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import Cookies from 'js-cookie';
+import axios from 'axios';
 
 interface Gig {
   _id: string;
@@ -53,6 +55,7 @@ function GigsPanel() {
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
+  const [companyName, setCompanyName] = useState<string>("");
 
   const [gigs, setGigs] = useState<Gig[]>([]);
   const [data, setData] = useState<any[]>([]);
@@ -88,8 +91,29 @@ function GigsPanel() {
     }
   };
 
+  const companyId = import.meta.env.VITE_ENV === 'test' 
+    ? '681a448d2c1ca099fe2b17a4'
+    : Cookies.get('userId');
+console.log('Stored userId:', companyId);
+
+  const fetchCompanyDetails = async () => {
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL_COMPANY}/companies/${companyId}`
+      );
+      setCompanyName(response.data.data.name);
+    } catch (err) {
+      setError("Erreur lors du chargement des détails de l'entreprise.");
+    }
+  };
+
+  useEffect(() => {
+    fetchCompanyDetails();
+  }, [companyId]);
+
   useEffect(() => {
     const fetchGigs = async () => {
+
       try {
         const response = await fetch(`${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs`);
         if (!response.ok)
@@ -189,7 +213,12 @@ function GigsPanel() {
             <div className="p-3 bg-indigo-100 rounded-lg">
               <Briefcase className="w-6 h-6 text-indigo-600" />
             </div>
-            <h2 className="text-xl font-semibold">Gig Management</h2>
+            <div>
+              <h2 className="text-xl font-semibold">Gig Management</h2>
+              {companyName && (
+                <p className="text-sm text-gray-500">Company: {companyName}</p>
+              )}
+            </div>
           </div>
           <button
             onClick={() => (window.location.href = "/app6")}
