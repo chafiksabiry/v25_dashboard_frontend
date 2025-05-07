@@ -78,18 +78,6 @@ function GigsPanel() {
     }
   };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "remote":
-        return <Building2 className="w-4 h-4" />;
-      case "onsite":
-        return <MapPin className="w-4 h-4" />;
-      case "hybrid":
-        return <Users className="w-4 h-4" />;
-      default:
-        return null;
-    }
-  };
 
   const companyId = import.meta.env.VITE_ENV === 'test' 
     ? '681a448d2c1ca099fe2b17a4'
@@ -107,41 +95,36 @@ console.log('Stored userId:', companyId);
     }
   };
 
+  const fetchGigsByUserId = async () => {
+    try {
+      const userId = Cookies.get('userId');
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL_GIGS}/user/${userId}`);
+      if (!response.ok) {
+        throw new Error("Error fetching user gigs");
+      }
+      const data = await response.json();
+      console.log("Data", data);
+      
+      const validGigs = data.data
+
+      setGigs(validGigs);
+    } catch (error) {
+      setError("Impossible de récupérer les gigs de l'utilisateur.");
+      console.error("Erreur complète:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchCompanyDetails();
   }, [companyId]);
 
   useEffect(() => {
-    const fetchGigs = async () => {
-
-      try {
-        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs`);
-        if (!response.ok)
-          throw new Error("Erreur lors de la récupération des gigs");
-        const data = await response.json();
-
-        console.log("Données reçues:", data);
-        console.log("Premier gig:", data.data?.[0]);
-        
-        const validGigs = data.data?.map((gig: { title: any; companyName: any; description: any; }) => ({
-          ...gig,
-          title: gig.title || 'Sans titre',
-          companyName: gig.companyName || 'Entreprise inconnue',
-          description: gig.description || 'Aucune description'
-        })) || [];
-
-        console.log("Gigs transformés:", validGigs);
-        setGigs(validGigs);
-      } catch (error) {
-        setError("Impossible de récupérer les gigs.");
-        console.error("Erreur complète:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchGigs();
-  }, []);
+    if (companyId) {
+      fetchGigsByUserId();
+    }
+  }, [companyId]);
 
   const handleEdit = (gig: Gig) => {
     console.log("Édition du gig:", gig);
