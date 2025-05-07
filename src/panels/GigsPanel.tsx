@@ -591,7 +591,7 @@ function GigsPanel() {
                             {gig?.seniority?.level || 'Level not specified'}
                           </span>
                           <div className="text-xs text-gray-500">
-                            {(gig?.seniority?.yearsExperience  + ' years') || 'level not specified'}
+                            {gig?.seniority?.yearsExperience ? `${gig.seniority.yearsExperience} years` : 'Years not specified'}
                           </div>
                         </div>
                       </td>
