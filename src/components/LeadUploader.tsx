@@ -12,24 +12,26 @@ export function LeadUploader({ onComplete, onClose }: LeadUploaderProps) {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [zohoConnected, setZohoConnected] = useState(false);
+
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile?.type === "text/csv") {
+    if (droppedFile?.type === "text/csv" || droppedFile?.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") {
       setFile(droppedFile);
       setError(null);
     } else {
-      setError("Please upload a CSV file");
+      setError("Please upload a CSV or Excel file");
     }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
-    if (selectedFile?.type === "text/csv") {
+    if (selectedFile?.type === "text/csv" || selectedFile?.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") {
       setFile(selectedFile);
       setError(null);
     } else {
-      setError("Please upload a CSV file");
+      setError("Please upload a CSV or Excel file");
     }
   };
 
@@ -82,6 +84,9 @@ export function LeadUploader({ onComplete, onClose }: LeadUploaderProps) {
       localStorage.setItem("zoho_access_token", token);
       window.history.replaceState({}, document.title, "/leads");
     }
+    // Vérifie la connexion Zoho
+    const zohoToken = localStorage.getItem("zoho_access_token");
+    setZohoConnected(!!zohoToken);
   }, []);
 
   const refreshAccessToken = async () => {
@@ -212,18 +217,18 @@ export function LeadUploader({ onComplete, onClose }: LeadUploaderProps) {
         <div className="mb-4">
           <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-600 mb-2">
-            Drag and drop your CSV file here, or{" "}
+            Drag and drop your CSV or Excel file here, or{" "}
             <label className="text-blue-600 hover:text-blue-700 cursor-pointer">
               browse
               <input
                 type="file"
-                accept=".csv"
+                accept=".csv,.xlsx"
                 onChange={handleFileSelect}
                 className="hidden"
               />
             </label>
           </p>
-          <p className="text-sm text-gray-500">Supported format: CSV</p>
+          <p className="text-sm text-gray-500">Supported formats: CSV, Excel (.xlsx)</p>
         </div>
 
         {file && (
@@ -246,13 +251,15 @@ export function LeadUploader({ onComplete, onClose }: LeadUploaderProps) {
               Import leads from Salesforce CRM
             </p>
           </button>
-          <button
-            className="p-4 border rounded-lg text-left hover:border-blue-500 hover:bg-blue-50"
-            onClick={checkZohoConnection}
-          >
-            <h5 className="font-medium mb-1">Zoho CRM</h5>
-            <p className="text-sm text-gray-500">Import leads from Zoho CRM</p>
-          </button>
+          {!zohoConnected && (
+            <button
+              className="p-4 border rounded-lg text-left hover:border-blue-500 hover:bg-blue-50"
+              onClick={checkZohoConnection}
+            >
+              <h5 className="font-medium mb-1">Zoho CRM</h5>
+              <p className="text-sm text-gray-500">Import leads from Zoho CRM</p>
+            </button>
+          )}
         </div>
       </div>
 
