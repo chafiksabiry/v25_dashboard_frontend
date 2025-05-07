@@ -356,7 +356,7 @@ function GigsPanel() {
 
     if (result.isConfirmed) {
       try {
-        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL_GIGS}/gigs/${gigId}`, {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL_GIGS}/${gigId}`, {
           method: 'DELETE',
         });
 
