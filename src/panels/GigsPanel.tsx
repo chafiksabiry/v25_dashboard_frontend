@@ -591,7 +591,7 @@ function GigsPanel() {
                             {gig?.seniority?.level || 'Level not specified'}
                           </span>
                           <div className="text-xs text-gray-500">
-                            {gig?.schedule?.timeZones?.join(', ') || 'Time zones not specified'}
+                            {gig?.seniority?.level || 'level not specified'}
                           </div>
                         </div>
                       </td>
