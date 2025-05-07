@@ -98,6 +98,7 @@ console.log('Stored userId:', companyId);
   const fetchGigsByUserId = async () => {
     try {
       const userId = Cookies.get('userId');
+      console.log("UserId :", userId);
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL_GIGS}/user/${userId}`);
       if (!response.ok) {
         throw new Error("Error fetching user gigs");
@@ -121,9 +122,7 @@ console.log('Stored userId:', companyId);
   }, [companyId]);
 
   useEffect(() => {
-    if (companyId) {
       fetchGigsByUserId();
-    }
   }, [companyId]);
 
   const handleEdit = (gig: Gig) => {
