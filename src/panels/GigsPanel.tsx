@@ -79,10 +79,7 @@ function GigsPanel() {
   };
 
 
-  const companyId = import.meta.env.VITE_ENV === 'test' 
-    ? '681a448d2c1ca099fe2b17a4'
-    : Cookies.get('userId');
-console.log('Stored userId:', companyId);
+  const companyId = Cookies.get('userId');
 
   const fetchCompanyDetails = async () => {
     try {
