@@ -110,16 +110,16 @@ function GigsPanel() {
 
   const companyId = Cookies.get('userId');
 
-  const fetchCompanyDetails = async () => {
-    try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL_COMPANY}/companies/${companyId}`
-      );
-      setCompanyName(response.data.data.name);
-    } catch (err) {
-      console.error("Error loading company details:", err);
-    }
-  };
+  // const fetchCompanyDetails = async () => {
+  //   try {
+  //     const response = await axios.get(
+  //       `${import.meta.env.VITE_BACKEND_URL_COMPANY}/companies/${companyId}`
+  //     );
+  //     setCompanyName(response.data.data.name);
+  //   } catch (err) {
+  //     console.error("Error loading company details:", err);
+  //   }
+  // };
 
   const fetchGigsByUserId = async () => {
     try {
@@ -160,9 +160,9 @@ function GigsPanel() {
     }
   };
 
-  useEffect(() => {
-    fetchCompanyDetails();
-  }, [companyId]);
+  // useEffect(() => {
+  //   fetchCompanyDetails();
+  // }, [companyId]);
 
   useEffect(() => {
       fetchGigsByUserId();
