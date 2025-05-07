@@ -529,7 +529,7 @@ function GigsPanel() {
                   <th className="pb-4 pt-4 px-4 font-semibold text-gray-700">Rate</th>
                   <th className="pb-4 pt-4 px-4 font-semibold text-gray-700">Schedule</th>
                   <th className="pb-4 pt-4 px-4 font-semibold text-gray-700">Seniority</th>
-                  <th className="pb-4 pt-4 px-4 font-semibold text-gray-700">Skills</th>
+                  {/* <th className="pb-4 pt-4 px-4 font-semibold text-gray-700">Skills</th> */}
                   <th className="pb-4 pt-4 px-4 font-semibold text-gray-700">Actions</th>
                 </tr>
               </thead>
@@ -595,7 +595,7 @@ function GigsPanel() {
                           </div>
                         </div>
                       </td>
-                      <td className="py-4 px-4 align-middle">
+                      {/* <td className="py-4 px-4 align-middle">
                         <div className="flex flex-wrap gap-1">
                           {gig?.skills?.professional?.length > 0 ? (
                             gig.skills.professional.map((skill: string) => (
@@ -607,7 +607,7 @@ function GigsPanel() {
                             <span className="text-xs text-gray-400">No skills specified</span>
                           )}
                         </div>
-                      </td>
+                      </td> */}
                       <td className="py-4 px-4 align-middle">
                         <div className="flex items-center gap-2">
                           <button
