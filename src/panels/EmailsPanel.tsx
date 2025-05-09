@@ -7,7 +7,8 @@ import {
   Archive,
   Filter,
   Calendar,
-  Share2
+  Share2,
+  AlertCircle
 } from 'lucide-react';
 import axios from 'axios';
 import { ZohoTokenService } from '../services/zohoService';
@@ -254,11 +255,7 @@ Date: ${formatDate(email.receivedTime)}
 
   const checkZohoConnection = () => {
     const token = localStorage.getItem('zoho_access_token');
-    if (!token) {
-      setIsZohoConnected(false);
-      return false;
-    }
-    return true;
+    return !!token;
   };
 
   const fetchAllCounts = async () => {
@@ -334,62 +331,45 @@ Date: ${formatDate(email.receivedTime)}
       console.log("Aucun token trouvé - Configuration de Zoho");
       setIsZohoConnected(false);
       setIsLoading(false);
-      handleZohoConnect();
     }
   }, []);
 
   useEffect(() => {
-    fetchEmails();
-  }, [activeFilter]);
-
-  useEffect(() => {
-    console.log("Emails actuels:", emails);
-    console.log("Loading state:", loading);
-    console.log("Error state:", error);
-  }, [emails, loading, error]);
-
-  useEffect(() => {
-    if (!checkZohoConnection()) {
-      navigate('/integrations');
-    } else {
-      fetchAllCounts();
+    if (isZohoConnected) {
+      fetchEmails();
     }
-  }, [navigate]);
+  }, [activeFilter, isZohoConnected]);
 
-  // if (isLoading) {
-  //   return (
-  //     <div className="flex items-center justify-center h-64">
-  //       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-  //     </div>
-  //   );
-  // }
-
-  if (!checkZohoConnection()) {
+  if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center gap-2 text-amber-600">
-              <AlertCircle className="w-6 h-6" />
-              <h2 className="text-xl font-semibold">Connexion requise</h2>
-            </div>
-            <p className="text-gray-600">
-              Vous devez vous connecter à Zoho CRM pour accéder aux emails.
-            </p>
-            <button
-              onClick={() => navigate('/integrations')}
-              className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700"
-            >
-              Se connecter à Zoho CRM
-            </button>
-          </div>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {!isZohoConnected && (
+        <div className="bg-amber-50 border-l-4 border-amber-400 p-4 mb-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <AlertCircle className="h-5 w-5 text-amber-400" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-amber-700">
+                Vous devez vous connecter à Zoho CRM pour accéder aux emails. 
+                <button
+                  onClick={() => navigate('/integrations')}
+                  className="ml-2 text-amber-700 underline hover:text-amber-800"
+                >
+                  Se connecter maintenant
+                </button>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">

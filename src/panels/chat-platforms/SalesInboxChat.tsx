@@ -53,6 +53,7 @@ const SalesInboxChat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingMessages, setLoadingMessages] = useState(false);
   const [isZohoConnected, setIsZohoConnected] = useState(false);
 
   const styles = {
@@ -61,7 +62,7 @@ const SalesInboxChat: React.FC = () => {
     chatBg: "bg-gray-50",
     headerBg: "bg-white",
     headerText: "text-gray-800",
-    messageSenderBg: "bg-blue-500",
+    messageSenderBg: "bg-blue-600",
     messageReceiverBg: "bg-white",
     messageReceiverText: "text-gray-800",
     messageSenderText: "text-white",
@@ -144,7 +145,7 @@ const SalesInboxChat: React.FC = () => {
   };
 
   const loadMessages = async (chatId: string) => {
-    setLoading(true);
+    setLoadingMessages(true);
     const token = ZohoTokenService.getToken();
     
     if (!token) {
@@ -188,7 +189,7 @@ const SalesInboxChat: React.FC = () => {
         setMessages([]);
       }
     } finally {
-      setLoading(false);
+      setLoadingMessages(false);
     }
   };
 
@@ -311,6 +312,25 @@ const SalesInboxChat: React.FC = () => {
     if (isNaN(parsedTime)) return "Date invalide";
     return new Date(parsedTime).toLocaleString();
   };
+
+  // Ajout d'une fonction utilitaire pour le jour abrégé en français
+  const getDayShortFr = (date: Date) => {
+    const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+    return days[date.getDay()];
+  };
+
+  // Ajout d'une fonction utilitaire pour le mois en français
+  const getMonthFr = (date: Date) => {
+    const months = ['Jan', 'Fév', 'Mars', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+    return months[date.getMonth()];
+  };
+
+  // Fonction utilitaire pour décoder les entités HTML
+  function decodeHtmlEntities(text: string) {
+    const txt = document.createElement('textarea');
+    txt.innerHTML = text;
+    return txt.value;
+  }
 
   useEffect(() => {
     const token = ZohoTokenService.getToken();
@@ -462,55 +482,74 @@ const SalesInboxChat: React.FC = () => {
             )}
           </div>
           <div className={`h-[600px] p-6 overflow-y-auto ${styles.chatBg}`}>
-            {loading ? (
+            {loadingMessages ? (
               <div className="flex justify-center items-center h-32">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
               </div>
             ) : activeChat ? (
               messages.length > 0 ? (
                 messages.map((msg, index) => {
-                  const isOperator = msg.sender && msg.sender.type === "operator";
+                  if (!msg.message.text || !msg.message.text.trim()) return null;
+                  const isOperator = msg.sender?.type === "operator" || msg.sender?.type === "bot";
+                  const currentTime = Number(msg.time);
+                  let showTimestamp = false;
+                  if (index === 0) {
+                    showTimestamp = true;
+                  } else {
+                    const prevMsg = messages[index - 1];
+                    const prevTime = Number(prevMsg.time);
+                    if (!isNaN(currentTime) && !isNaN(prevTime) && currentTime - prevTime > 900000) {
+                      showTimestamp = true;
+                    }
+                  }
+                  // Formatage du timestamp selon l'ancienneté
+                  let timestampLabel = '';
+                  if (showTimestamp && !isNaN(currentTime)) {
+                    const dateObj = new Date(currentTime);
+                    const now = new Date();
+                    const diff = now.getTime() - dateObj.getTime();
+                    const oneWeek = 7 * 24 * 60 * 60 * 1000;
+                    const oneYear = 365 * 24 * 60 * 60 * 1000;
+                    const day = getDayShortFr(dateObj);
+                    const hour = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    if (diff < oneWeek) {
+                      timestampLabel = `${day} ${hour}`;
+                    } else if (diff < oneYear) {
+                      const dayNum = dateObj.getDate();
+                      const month = getMonthFr(dateObj);
+                      timestampLabel = `${day} ${dayNum} ${month} ${hour}`;
+                    } else {
+                      const dayNum = dateObj.getDate();
+                      const month = getMonthFr(dateObj);
+                      const year = dateObj.getFullYear();
+                      timestampLabel = `${day} ${dayNum} ${month} ${year} ${hour}`;
+                    }
+                  }
                   return (
-                    <div
-                      key={index}
-                      className={`mb-4 p-4 rounded-xl flex w-full max-w-[70%] ${
-                        isOperator
-                          ? `${styles.messageSenderBg} ml-auto`
-                          : `${styles.messageReceiverBg} mr-auto shadow-sm border`
-                      }`}
-                    >
-                      <div className="flex items-start gap-2">
-                        <img
-                          src={isOperator
-                            ? "https://app.harx.ai/favicon.png"
-                            : "https://ui-avatars.com/api/?name=User&background=random"
-                          }
-                          alt={msg.sender.type === "visitor" ? "Visitor" : "Operator"}
-                          className="w-8 h-8 rounded-full"
-                        />
-                        <div className="flex flex-col">
-                          <div className={`text-sm ${isOperator ? styles.messageSenderName : styles.messageReceiverName}`}>
-                            {msg.sender.name}
-                          </div>
-                          {msg.type === "file" && msg.message.file?.type === "audio" ? (
-                            <audio controls>
-                              <source
-                                src={msg.message.file.url}
-                                type={msg.message.file.type}
-                              />
-                              Your browser does not support the audio element.
-                            </audio>
-                          ) : (
-                            <div className={`text-md ${isOperator ? styles.messageSenderText : styles.messageReceiverText}`}>
-                              {msg.message.text}
-                            </div>
-                          )}
-                          <div className={`text-xs ${isOperator ? "text-gray-200" : "text-gray-500"}`}>
-                            {formatDate(msg.time)}
+                    <React.Fragment key={index}>
+                      {showTimestamp && timestampLabel && (
+                        <div className="w-full flex justify-center my-2">
+                          <span className="text-xs text-gray-300 bg-transparent px-2 rounded-full">
+                            {timestampLabel}
+                          </span>
+                        </div>
+                      )}
+                      <div
+                        className={`mb-3 flex w-full ${isOperator ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`p-4 rounded-2xl shadow max-w-[70%] break-words ${
+                            isOperator
+                              ? "bg-blue-600 text-white"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          <div className="text-md">
+                            {decodeHtmlEntities(msg.message.text)}
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </React.Fragment>
                   );
                 })
               ) : (

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Users,
   Clock,
@@ -9,6 +9,25 @@ import {
   Video,
   Share2
 } from "lucide-react";
+
+interface Message {
+  id: string;
+  time: string;
+  sender: {
+    name: string;
+    type: string;
+    id: string;
+  };
+  type: string;
+  message: {
+    text?: string;
+    file?: {
+      name: string;
+      url: string;
+      type: string;
+    };
+  };
+}
 
 interface BaseChatProps {
   channelType: string;
@@ -23,6 +42,35 @@ const BaseChatComponent: React.FC<BaseChatProps> = ({
   actionButtons,
   inputButtons
 }) => {
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  const sendMessage = () => {
+    if (!message.trim()) return;
+
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      time: new Date().toISOString(),
+      sender: {
+        type: "operator",
+        name: "Vous",
+        id: "operator-1"
+      },
+      type: "text",
+      message: {
+        text: message
+      }
+    };
+
+    setMessages(prev => [...prev, newMessage]);
+    setMessage("");
+  };
+
+  const formatDate = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   return (
     <>
       <div className="mb-4 px-2">
@@ -108,9 +156,55 @@ const BaseChatComponent: React.FC<BaseChatProps> = ({
             </div>
           </div>
           <div className={`h-[600px] p-6 overflow-y-auto ${styles.chatBg}`}>
-            <div className="text-center text-gray-500 mt-32">
-              Sélectionnez une conversation pour afficher les messages
-            </div>
+            {messages.length > 0 ? (
+              messages.map((msg, index) => {
+                const isOperator = msg.sender?.type === "operator";
+                return (
+                  <div
+                    key={index}
+                    className={`mb-4 p-4 rounded-xl flex w-full max-w-[70%] ${
+                      isOperator
+                        ? `${styles.messageSenderBg} ml-auto rounded-tr-none shadow-md`
+                        : `${styles.messageReceiverBg} mr-auto rounded-tl-none shadow-sm border border-gray-100`
+                    }`}
+                  >
+                    <img
+                      src={isOperator
+                        ? "https://app.harx.ai/favicon.png"
+                        : "https://ui-avatars.com/api/?name=User&background=random"
+                      }
+                      alt={msg.sender?.type === "visitor" ? "Visitor" : "Operator"}
+                      className="w-8 h-8 rounded-full"
+                    />
+                    <div className={`flex flex-col ${isOperator ? 'items-end' : ''}`}>
+                      <div className={`text-sm ${isOperator ? styles.messageSenderName : styles.messageReceiverName}`}>
+                        {msg.sender?.name || "Unknown"}
+                      </div>
+                      {msg.type === "file" && msg.message.file?.type === "audio" ? (
+                        <audio controls>
+                          <source
+                            src={msg.message.file.url}
+                            type={msg.message.file.type}
+                          />
+                          Your browser does not support the audio element.
+                        </audio>
+                      ) : (
+                        <div className={`text-md ${isOperator ? styles.messageSenderText : styles.messageReceiverText}`}>
+                          {msg.message.text}
+                        </div>
+                      )}
+                      <div className={`text-xs ${isOperator ? "text-blue-100" : "text-gray-500"}`}>
+                        {formatDate(msg.time)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center text-gray-500 mt-32">
+                Sélectionnez une conversation pour afficher les messages
+              </div>
+            )}
           </div>
 
           <div className="p-4 border-t bg-white flex items-center gap-3">
@@ -120,9 +214,17 @@ const BaseChatComponent: React.FC<BaseChatProps> = ({
               type="text"
               className={`flex-1 p-3 border rounded-xl focus:outline-none focus:ring-2 ${styles.ringColor} focus:border-transparent`}
               placeholder={`Type your message on ${styles.label}...`}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  sendMessage();
+                }
+              }}
             />
             <button
               className={`px-6 py-3 text-white rounded-xl transition-all font-medium ${styles.buttonColor} flex items-center`}
+              onClick={sendMessage}
             >
               <Send className="w-4 h-4 mr-2" /> Send
             </button>

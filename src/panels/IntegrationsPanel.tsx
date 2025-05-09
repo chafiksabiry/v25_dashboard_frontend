@@ -28,6 +28,9 @@ import {
   disconnectZoho,
   configureZoho
 } from '../services/zohoService';
+import Cookies from 'js-cookie';
+
+const API_BASE_URL_ZOHO = import.meta.env.VITE_ZOHO_API_URL;
 
 interface UserConfig {
   clientId: string;
@@ -116,7 +119,9 @@ const saveZohoConfigToDB = async (config: ZohoDBConfig): Promise<ZohoResponse> =
       };
     }
 
-    const response = await fetch('https://api-dashboard.harx.ai/api/zoho/db/save', {
+    let response;
+    let data;
+    response = await fetch(`${API_BASE_URL_ZOHO}/db/save`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -125,7 +130,7 @@ const saveZohoConfigToDB = async (config: ZohoDBConfig): Promise<ZohoResponse> =
       body: JSON.stringify(config),
     });
 
-    const data = await response.json();
+    data = await response.json();
     return {
       success: response.ok,
       message: data.message || 'Zoho configuration saved to database successfully',
@@ -147,7 +152,7 @@ const getZohoConfigFromDB = async (): Promise<ZohoDBConfig | null> => {
       return null;
     }
 
-    const response = await fetch('https://api-dashboard.harx.ai/api/zoho/db/config', {
+    const response = await fetch(`${API_BASE_URL_ZOHO}/db/config`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -171,7 +176,7 @@ const deleteZohoConfigFromDB = async (): Promise<ZohoResponse> => {
     // Pour la suppression, on permet de continuer même sans token
     // car on veut pouvoir nettoyer même si le token est invalide
 
-    const response = await fetch('https://api-dashboard.harx.ai/api/zoho/db/config', {
+    const response = await fetch(`${API_BASE_URL_ZOHO}/db/config`, {
       method: 'DELETE',
       headers: token ? {
         'Authorization': `Bearer ${token}`
@@ -203,7 +208,7 @@ const getZohoData = async (endpoint: string): Promise<ZohoResponse> => {
       };
     }
 
-    const response = await fetch(`https://api-dashboard.harx.ai/api/zoho/data/${endpoint}`, {
+    const response = await fetch(`${API_BASE_URL_ZOHO}/${endpoint}`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -904,24 +909,13 @@ export function IntegrationsPanel() {
 
       if (integration.id === 'zoho-crm') {
         const token = ZohoTokenService.getToken();
-        const response = await fetch('https://api-dashboard.harx.ai/api/zoho/disconnect', {
-          method: 'POST',
-          headers: token ? {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          } : {
-            'Content-Type': 'application/json'
-          }
-        });
-
-        const data = await response.json();
         
-        if (data.success) {
-          // Supprimer le token local
+        // Check if token exists and is valid
+        if (!token) {
+          // If no token exists, just clear local state
           ZohoTokenService.removeToken();
           setZohoDBConfig(null);
           setIsZohoTokenValid(false);
-          
           setIntegrationStates(prev => ({
             ...prev,
             'zoho-crm': {
@@ -929,20 +923,96 @@ export function IntegrationsPanel() {
               status: 'pending' as const
             }
           }));
+          return;
+        }
 
-          console.log(`Successfully disconnected ${integration.name}`);
-        } else {
-          throw new Error(data.message || 'Failed to disconnect from Zoho');
+        // Verify token validity before attempting disconnect
+        const isTokenValid = await ZohoTokenService.isTokenValid();
+        if (!isTokenValid) {
+          // If token is invalid, clear local state
+          ZohoTokenService.removeToken();
+          setZohoDBConfig(null);
+          setIsZohoTokenValid(false);
+          setIntegrationStates(prev => ({
+            ...prev,
+            'zoho-crm': {
+              ...prev['zoho-crm'],
+              status: 'pending' as const
+            }
+          }));
+          return;
+        }
+
+        try {
+          const response = await fetch(`${API_BASE_URL_ZOHO}/disconnect`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          const data = await response.json();
+          
+          if (!response.ok) {
+            // If we get a 401, treat it as a successful disconnect
+            if (response.status === 401) {
+              ZohoTokenService.removeToken();
+              setZohoDBConfig(null);
+              setIsZohoTokenValid(false);
+              setIntegrationStates(prev => ({
+                ...prev,
+                'zoho-crm': {
+                  ...prev['zoho-crm'],
+                  status: 'pending' as const
+                }
+              }));
+              return;
+            }
+            throw new Error(data.message || 'Failed to disconnect from Zoho');
+          }
+          
+          if (data.success) {
+            // Remove local token
+            ZohoTokenService.removeToken();
+            setZohoDBConfig(null);
+            setIsZohoTokenValid(false);
+            
+            // Update integration status
+            setIntegrationStates(prev => ({
+              ...prev,
+              'zoho-crm': {
+                ...prev['zoho-crm'],
+                status: 'pending' as const
+              }
+            }));
+
+            console.log(`Successfully disconnected ${integration.name}`);
+          } else {
+            throw new Error(data.message || 'Failed to disconnect from Zoho');
+          }
+        } catch (error) {
+          // If we get a network error or other error, still clear local state
+          ZohoTokenService.removeToken();
+          setZohoDBConfig(null);
+          setIsZohoTokenValid(false);
+          setIntegrationStates(prev => ({
+            ...prev,
+            'zoho-crm': {
+              ...prev['zoho-crm'],
+              status: 'pending' as const
+            }
+          }));
+          throw error;
         }
       }
     } catch (error) {
       console.error('Disconnect error:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.message || 
-                          'Failed to disconnect integration';
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Failed to disconnect integration';
       setError(errorMessage);
       
-      // Mise à jour du statut en cas d'erreur
       setIntegrationStates(prev => ({
         ...prev,
         [integration.id]: {
@@ -1035,61 +1105,111 @@ export function IntegrationsPanel() {
           const configData = {
             refreshToken: configValues.refresh_token.trim(),
             clientId: configValues.client_id.trim(),
-            clientSecret: clientSecret.trim()
+            clientSecret: clientSecret.trim(),
+            userId: Cookies.get("userId") || "67a22959828197bb180caa59"
           };
 
           console.log('Sending configuration to server:', {
             refreshToken: configData.refreshToken,
             clientId: configData.clientId,
-            clientSecret: '***hidden***'
+            clientSecret: '***hidden***',
+            userId: configData.userId
           });
 
           // Appel à l'API pour configurer Zoho
-          const response = await fetch('https://api-dashboard.harx.ai/api/zoho/configure', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify(configData)
-          });
+          const maxRetries = 3;
+          const baseDelay = 2000; // Augmenté à 2 secondes
+          let retryCount = 0;
+          let lastError = null;
 
-          // Vérifier d'abord si la réponse est JSON
-          const contentType = response.headers.get('content-type');
-          if (!contentType || !contentType.includes('application/json')) {
-            throw new Error('Réponse invalide du serveur');
-          }
+          while (retryCount < maxRetries) {
+            try {
+              const response = await fetch(`${API_BASE_URL_ZOHO}/configure`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json'
+                },
+                body: JSON.stringify(configData)
+              });
 
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.message || `Erreur ${response.status}: ${data.error || 'Erreur inconnue'}`);
-          }
-
-          if (data.success) {
-            // Stocker le token d'accès
-            if (data.accessToken) {
-              ZohoTokenService.setToken(data.accessToken);
-            }
-
-            // Mise à jour du statut de l'intégration
-            setIntegrationStates(prev => ({
-              ...prev,
-              'zoho-crm': {
-                ...prev['zoho-crm'],
-                status: 'connected' as const
+              // Vérifier d'abord si la réponse est JSON
+              const contentType = response.headers.get('content-type');
+              if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Réponse invalide du serveur');
               }
-            }));
 
-            setIsZohoTokenValid(true);
-            setSelectedIntegration(null);
-            setConfigValues({});
-            setErrors({});
+              const data = await response.json();
 
-            console.log('Zoho CRM configured successfully');
-          } else {
-            throw new Error(data.message || 'La configuration a échoué');
+              if (!response.ok) {
+                if (data.error === 'Access Denied' && data.error_description?.includes('too many requests')) {
+                  // Rate limit error - wait and retry
+                  const delay = baseDelay * Math.pow(2, retryCount);
+                  const retryMessage = `Trop de requêtes. Nouvelle tentative dans ${delay/1000} secondes... (${retryCount + 1}/${maxRetries})`;
+                  setError(retryMessage);
+                  await new Promise(resolve => setTimeout(resolve, delay));
+                  retryCount++;
+                  lastError = new Error(`Rate limit exceeded. Retry ${retryCount}/${maxRetries}`);
+                  continue;
+                }
+                throw new Error(data.message || `Erreur ${response.status}: ${data.error || 'Erreur inconnue'}`);
+              }
+
+              if (data.success) {
+                // Stocker le token d'accès
+                if (data.accessToken) {
+                  ZohoTokenService.setToken(data.accessToken);
+                }
+
+                // Mise à jour du statut de l'intégration
+                setIntegrationStates(prev => ({
+                  ...prev,
+                  'zoho-crm': {
+                    ...prev['zoho-crm'],
+                    status: 'connected' as const
+                  }
+                }));
+
+                setIsZohoTokenValid(true);
+                setSelectedIntegration(null);
+                setConfigValues({});
+                setErrors({});
+
+                // Afficher les données des leads après la configuration
+                const leadsData = await fetch(`${API_BASE_URL_ZOHO}/leads`);
+                const leadsResponse = await leadsData.json();
+                console.log('Leads data after configuration:', leadsResponse);
+
+                console.log('Zoho CRM configured successfully');
+                return;
+              } else {
+                throw new Error(data.message || 'La configuration a échoué');
+              }
+            } catch (error) {
+              lastError = error;
+              retryCount++;
+              if (retryCount >= maxRetries) {
+                break;
+              }
+              const delay = baseDelay * Math.pow(2, retryCount);
+              await new Promise(resolve => setTimeout(resolve, delay));
+            }
           }
+
+          // If we get here, all retries failed
+          console.error('Configuration error after retries:', lastError);
+          const errorMessage = lastError instanceof Error && lastError.message.includes('Rate limit exceeded')
+            ? 'Trop de tentatives de connexion. Veuillez patienter quelques minutes avant de réessayer.'
+            : 'Échec de la configuration de Zoho CRM après plusieurs tentatives';
+          setError(errorMessage);
+          
+          setIntegrationStates(prev => ({
+            ...prev,
+            'zoho-crm': {
+              ...prev['zoho-crm'],
+              status: 'error' as const
+            }
+          }));
         } catch (error) {
           console.error('Configuration error:', error);
           const errorMessage = error instanceof Error ? error.message : 'Échec de la configuration de Zoho CRM';
@@ -1128,6 +1248,33 @@ export function IntegrationsPanel() {
   const [isZohoTokenValid, setIsZohoTokenValid] = useState<boolean>(() => {
     return ZohoTokenService.getToken() !== null;
   });
+
+  // Ajouter une fonction pour récupérer et afficher les données des leads
+  const fetchAndDisplayLeads = async () => {
+    try {
+      const token = ZohoTokenService.getToken();
+      if (!token) {
+        console.log('No token available to fetch leads');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL_ZOHO}/leads`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      console.log('Current leads data:', data);
+    } catch (error) {
+      console.error('Error fetching leads:', error);
+    }
+  };
+
+  // Appeler fetchAndDisplayLeads au chargement du composant
+  useEffect(() => {
+    fetchAndDisplayLeads();
+  }, []);
 
   return (
     <div className="space-y-6">
