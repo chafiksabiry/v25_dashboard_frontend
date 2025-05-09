@@ -72,7 +72,10 @@ interface Lead {
   Email_1: string;
   Phone: string | null;
   Telephony: string | null;
-  Pipeline: string;
+  Pipeline: {
+    name: string;
+    id: string;
+  } | string;
   Stage: string;
   Created_Time: string;
   Modified_Time: string;
@@ -137,11 +140,14 @@ function LeadManagementPanel() {
   const [selectedPipeline, setSelectedPipeline] = useState<string>('all');
   const [selectedStage, setSelectedStage] = useState<string>('all');
   const [hasMoreRecords, setHasMoreRecords] = useState(false);
-  const LEADS_PER_PAGE = 100; // Augmenter à 100 leads par page
+  const LEADS_PER_PAGE = 20; // Réduire à 20 leads par page pour une meilleure performance
   const [totalLeads, setTotalLeads] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [currentViewIndex, setCurrentViewIndex] = useState(0);
   const [allLeads, setAllLeads] = useState<Lead[]>([]);
+  const [displayedLeads, setDisplayedLeads] = useState<Lead[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Modify these new states to handle advanced filters
   const [showFilterPanel, setShowFilterPanel] = useState(false);
@@ -152,122 +158,23 @@ function LeadManagementPanel() {
     setCurrentViewIndex(0);
   }, [currentPage]);
 
-  // useEffect pour charger les leads à chaque changement de filtre
-  useEffect(() => {
-    if (!isZohoConnected) return;
-    const userId = Cookies.get("userId") || "6807abfc2c1ca099fe2b13c5";
-    const queryParams = new URLSearchParams({
-      page: currentPage.toString(),
-      limit: LEADS_PER_PAGE.toString(),
-    });
-    if (selectedPipeline !== 'all') {
-      const selectedPipelineData = pipelines.find(p => p.id === selectedPipeline);
-      queryParams.append('pipeline', selectedPipelineData?.display_value || selectedPipeline);
-    }
-    if (selectedStage !== 'all') {
-      queryParams.append('stage', selectedStage);
-    }
-    if (debouncedSearchText) {
-      queryParams.append('search', debouncedSearchText);
-    }
-    setIsLoadingMore(true);
-    fetch(`${apiUrl}/leads/user/${userId}?${queryParams.toString()}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json"
-      }
-    })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error("Error retrieving leads");
-        }
-        return response.json();
-      })
-      .then(result => {
-        if (result.success && result.data) {
-          setLeads(result.data);
-          setTotalLeads(result.count || result.data.length);
-          setTotalPages(Math.ceil((result.count || result.data.length) / LEADS_PER_PAGE));
-        } else {
-          setLeads([]);
-          setTotalLeads(0);
-        }
-      })
-      .catch(error => {
-        console.error("Error retrieving leads:", error);
-        setLeads([]);
-        setTotalLeads(0);
-      })
-      .finally(() => {
-        setIsLoadingMore(false);
-      });
-  }, [isZohoConnected, currentPage, selectedPipeline, selectedStage, debouncedSearchText, pipelines]);
-
   // Calculate the leads to display for the current page
   const getCurrentPageLeads = () => {
-    return leads;
+    const startIndex = (currentPage - 1) * LEADS_PER_PAGE;
+    const endIndex = startIndex + LEADS_PER_PAGE;
+    return allLeads.slice(startIndex, endIndex);
   };
+
+  // Update displayed leads when page changes
+  useEffect(() => {
+    const currentPageLeads = getCurrentPageLeads();
+    setDisplayedLeads(currentPageLeads);
+    setTotalPages(Math.ceil(allLeads.length / LEADS_PER_PAGE));
+  }, [currentPage, allLeads]);
 
   const handlePageChange = (newPage: number) => {
-    if (newPage < 1 || newPage > Math.ceil(totalLeads / LEADS_PER_PAGE)) return;
-    
+    if (newPage < 1 || newPage > totalPages) return;
     setCurrentPage(newPage);
-    setIsLoadingMore(true);
-
-    const userId = Cookies.get("userId") || "6807abfc2c1ca099fe2b13c5";
-    
-    // Build query parameters
-    const queryParams = new URLSearchParams({
-      page: newPage.toString(),
-      limit: LEADS_PER_PAGE.toString()
-    });
-
-    // Ajouter les filtres pipeline et stage aux paramètres de requête
-    if (selectedPipeline !== 'all') {
-      const selectedPipelineData = pipelines.find(p => p.id === selectedPipeline);
-      queryParams.append('pipeline', selectedPipelineData?.display_value || selectedPipeline);
-    }
-    if (selectedStage !== 'all') {
-      queryParams.append('stage', selectedStage);
-    }
-    if (debouncedSearchText) {
-      queryParams.append('search', debouncedSearchText);
-    }
-
-    fetch(`${apiUrl}/leads/user/${userId}?${queryParams.toString()}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json"
-      }
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error("Error retrieving leads");
-      }
-      return response.json();
-    })
-    .then(result => {
-      if (result.success && result.data) {
-        const fetchedLeads = result.data;
-        setLeads(fetchedLeads);
-        setAllLeads(fetchedLeads);
-        setTotalLeads(result.count || fetchedLeads.length);
-        setTotalPages(Math.ceil((result.count || fetchedLeads.length) / LEADS_PER_PAGE));
-      }
-    })
-    .catch(error => {
-      console.error("Error retrieving leads:", error);
-    })
-    .finally(() => {
-      setIsLoadingMore(false);
-    });
-  };
-
-  const handlePageInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    if (!isNaN(value) && value > 0) {
-      handlePageChange(value);
-    }
   };
 
   const fetchPipelines = async () => {
@@ -299,51 +206,21 @@ function LeadManagementPanel() {
     }
   };
 
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [displayedLeads, setDisplayedLeads] = useState<Lead[]>([]);
-  const batchSize = 20; // Nombre de leads à charger par lot
-
-  const loadLeadsInBatches = async (allLeads: Lead[]) => {
-    setIsLoadingMore(true);
-    let currentIndex = 0;
-
-    while (currentIndex < allLeads.length) {
-      const batch = allLeads.slice(currentIndex, currentIndex + batchSize);
-      setDisplayedLeads(prev => [...prev, ...batch]);
-      currentIndex += batchSize;
-      
-      // Attendre un court instant pour permettre le rendu
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    
-    setIsLoadingMore(false);
-  };
-
   const fetchLeads = async (page: number = 1) => {
     try {
       setIsLoadingMore(true);
       const userId = Cookies.get("userId") || "6807abfc2c1ca099fe2b13c5";
       
-      // Mettre à jour la page courante immédiatement
-      setCurrentPage(page);
-
-      // Si nous avons déjà des leads, afficher les 100 premiers immédiatement
-      if (allLeads.length > 0) {
-        const startIndex = (page - 1) * LEADS_PER_PAGE;
-        const endIndex = startIndex + LEADS_PER_PAGE;
-        const currentPageLeads = allLeads.slice(startIndex, endIndex);
-        setDisplayedLeads(currentPageLeads);
-      }
-      
       const queryParams = new URLSearchParams({
-        page: page.toString(),
-        limit: LEADS_PER_PAGE.toString()
+        page: "1", // Always fetch first page
+        limit: "1000" // Fetch a larger number of leads
       });
 
-      // Ajouter les filtres pipeline et stage aux paramètres de requête
       if (selectedPipeline !== 'all') {
-        const selectedPipelineData = pipelines.find(p => p.id === selectedPipeline);
-        queryParams.append('pipeline', selectedPipelineData?.display_value || selectedPipeline);
+        const selectedPipelineData = pipelines.find(p => p.display_value === selectedPipeline);
+        if (selectedPipelineData) {
+          queryParams.append('pipeline', selectedPipelineData.actual_value);
+        }
       }
       if (selectedStage !== 'all') {
         queryParams.append('stage', selectedStage);
@@ -352,44 +229,42 @@ function LeadManagementPanel() {
         queryParams.append('search', debouncedSearchText);
       }
 
-      const apiResponse = await fetch(`${apiUrl}/leads/user/${userId}?${queryParams.toString()}`, {
+      const response = await fetch(`${apiUrl}/leads/user/${userId}?${queryParams.toString()}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json"
         }
       });
 
-      if (!apiResponse.ok) {
+      if (!response.ok) {
         throw new Error("Error retrieving leads");
       }
 
-      const result = await apiResponse.json();
+      const result = await response.json();
       
       if (result.success && result.data) {
-        const fetchedLeads = result.data;
+        let filteredData = result.data;
+        if (selectedPipeline !== 'all') {
+          const selectedPipelineData = pipelines.find(p => p.display_value === selectedPipeline);
+          if (selectedPipelineData) {
+            filteredData = result.data.filter((lead: Lead) => {
+              const leadPipeline = typeof lead.Pipeline === 'object' ? lead.Pipeline.name : lead.Pipeline;
+              return leadPipeline === selectedPipelineData.display_value;
+            });
+          }
+        }
         
-        // Mettre à jour les états
-        setLeads(fetchedLeads);
-        setAllLeads(fetchedLeads);
-        setTotalLeads(result.count || fetchedLeads.length);
-        setTotalPages(Math.ceil((result.count || fetchedLeads.length) / LEADS_PER_PAGE));
-        
-        // Mettre à jour les leads affichés avec les données complètes
-        const startIndex = (page - 1) * LEADS_PER_PAGE;
-        const endIndex = startIndex + LEADS_PER_PAGE;
-        const currentPageLeads = fetchedLeads.slice(startIndex, endIndex);
-        setDisplayedLeads(currentPageLeads);
+        setAllLeads(filteredData);
+        setTotalLeads(filteredData.length);
+        setCurrentPage(1); // Reset to first page when new data is loaded
       } else {
-        setLeads([]);
         setAllLeads([]);
-        setDisplayedLeads([]);
+        setTotalLeads(0);
       }
-      
     } catch (error) {
       console.error("Error retrieving leads:", error);
-      setLeads([]);
       setAllLeads([]);
-      setDisplayedLeads([]);
+      setTotalLeads(0);
     } finally {
       setIsLoadingMore(false);
     }
@@ -410,8 +285,11 @@ function LeadManagementPanel() {
   }, []);
 
   // Optimize pipeline change handler
-  const handlePipelineChange = async (pipelineId: string) => {
-    setSelectedPipeline(pipelineId);
+  const handlePipelineChange = async (pipelineName: string) => {
+    console.log('Pipeline sélectionné:', pipelineName);
+    const selectedPipelineData = pipelines.find(p => p.display_value === pipelineName);
+    console.log('Données du pipeline sélectionné:', selectedPipelineData);
+    setSelectedPipeline(pipelineName);
     setSelectedStage('all');
     setCurrentPage(1);
     await fetchLeads(1);
@@ -544,7 +422,7 @@ function LeadManagementPanel() {
     if (selectedPipeline === 'all' || !pipelines) {
       return [];
     }
-    const selectedPipelineData = pipelines.find(p => p.id === selectedPipeline);
+    const selectedPipelineData = pipelines.find(p => p.display_value === selectedPipeline);
     console.log('Pipeline Stages:', selectedPipelineData?.maps); // Debug log
     return selectedPipelineData?.maps || [];
   };
@@ -616,8 +494,6 @@ function LeadManagementPanel() {
       setIsImporting(false);
     }
   };
-
-  const [totalPages, setTotalPages] = useState(1);
 
   // Modifier le composant PaginationControls pour permettre la navigation pendant le chargement
   const PaginationControls = () => {
@@ -943,7 +819,7 @@ function LeadManagementPanel() {
                         >
                           <option value="all">All Pipelines</option>
                           {pipelines.map((pipeline) => (
-                            <option key={pipeline.id} value={pipeline.id}>
+                            <option key={pipeline.id} value={pipeline.display_value}>
                               {pipeline.display_value}
                             </option>
                           ))}
@@ -999,14 +875,14 @@ function LeadManagementPanel() {
               <div className="flex flex-wrap gap-2">
                 {selectedPipeline !== 'all' && (
                   <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
-                    Pipeline: {pipelines.find(p => p.id === selectedPipeline)?.display_value || selectedPipeline}
+                    Pipeline: {selectedPipeline}
                     <button onClick={() => handlePipelineChange('all')} className="ml-1 hover:text-blue-900">×</button>
                   </div>
                 )}
                 
                 {selectedStage !== 'all' && (
                   <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
-                    Stage: {getSelectedPipelineStages().find(s => s.id === selectedStage)?.display_value || selectedStage}
+                    Stage: {getSelectedPipelineStages().find(s => s.display_value === selectedStage)?.display_value || selectedStage}
                     <button onClick={() => setSelectedStage('all')} className="ml-1 hover:text-green-900">×</button>
                   </div>
                 )}
@@ -1062,13 +938,13 @@ function LeadManagementPanel() {
                                   <Phone className="w-4 h-4" />
                                   {lead.Telephony || lead.Phone || "N/A"}
                                 </div>
-                                <div className="text-sm text-gray-500 flex items-center gap-1">
+                                {/* <div className="text-sm text-gray-500 flex items-center gap-1">
                                   <Mail className="w-4 h-4" />
                                   {lead.Email_1 || "N/A"}
-                                </div>
+                                </div> */}
                                 <div className="text-sm text-gray-500 flex items-center gap-1">
                                   <p>
-                                    <b>Pipeline :</b> {lead.Pipeline || "N/A"}
+                                    <b>Pipeline :</b> {typeof lead.Pipeline === 'object' ? lead.Pipeline.name : lead.Pipeline || "N/A"}
                                     <br />
                                     <b>Stage :</b> {lead.Stage || "N/A"}
                                   </p>
