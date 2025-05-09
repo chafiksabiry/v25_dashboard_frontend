@@ -184,7 +184,7 @@ function AICoachingSection() {
 function LeadManagementSection() {
   const [deals, setDeals] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const dealsPerPage = 3;
+  const dealsPerPage = 5;
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState(false);
   const [authAttempted, setAuthAttempted] = useState(false);
@@ -316,13 +316,12 @@ function LeadManagementSection() {
     }
   };
 
-  // Calculer les indices pour la pagination
+  // Calculate pagination
   const indexOfLastDeal = currentPage * dealsPerPage;
   const indexOfFirstDeal = indexOfLastDeal - dealsPerPage;
-  const currentDeals = deals.slice(indexOfFirstDeal, indexOfLastDeal);
-  const totalPages = Math.ceil(deals.length / dealsPerPage);
+  const currentDeals = Array.isArray(deals) ? deals.slice(indexOfFirstDeal, indexOfLastDeal) : [];
+  const totalPages = Array.isArray(deals) ? Math.ceil(deals.length / dealsPerPage) : 0;
 
-  // Fonctions pour la pagination
   const goToNextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);

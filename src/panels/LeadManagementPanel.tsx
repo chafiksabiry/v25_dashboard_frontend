@@ -22,8 +22,10 @@ import {
 import { LeadUploader } from "../components/LeadUploader";
 import { ZohoTokenService } from '../services/zohoService';
 import { useNavigate } from 'react-router-dom';
+import Cookies from 'js-cookie';
 
 const zohoApiUrl = import.meta.env.VITE_ZOHO_API_URL;
+const apiUrl = import.meta.env.VITE_API_URL;
 
 // Add this custom hook at the top of the file, after imports
 function useDebounce<T>(value: T, delay: number): T {
@@ -42,6 +44,52 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
+// Update the Lead interface at the top of the file, after imports
+interface Lead {
+  _id: string;
+  id: string;
+  userId: string;
+  Owner: {
+    name: string;
+    id: string;
+    email: string;
+  };
+  Created_By: {
+    name: string;
+    id: string;
+    email: string;
+  };
+  Modified_By: {
+    name: string;
+    id: string;
+    email: string;
+  };
+  Contact_Name: {
+    name: string;
+    id: string;
+  };
+  Deal_Name: string;
+  Email_1: string;
+  Phone: string | null;
+  Telephony: string | null;
+  Pipeline: string;
+  Stage: string;
+  Created_Time: string;
+  Modified_Time: string;
+  Last_Activity_Time: string;
+  Description: string | null;
+  Tag: string[];
+  Amount?: number;
+  Probability?: number;
+  Type?: string;
+  $currency_symbol?: string;
+  metadata?: {
+    ai_analysis?: {
+      score?: string;
+    };
+  };
+}
+
 function LeadManagementPanel() {
   const navigate = useNavigate();
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -52,42 +100,6 @@ function LeadManagementPanel() {
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 3;
   const retryDelay = 5000; // 5 seconds
-
-  interface Lead {
-    Source: string;
-    Pipeline_Id: string;
-    id: string;
-    Lead_Name: string;
-    Amount: number;
-    Probability: number;
-    Stage: string;
-    Pipeline: string;
-    Closing_Date?: string;
-    Account_Name?: {
-      name: string;
-      id: string;
-    };
-    Contact_Name?: {
-      name: string;
-      id: string;
-    };
-    Owner?: {
-      name: string;
-      email: string;
-      id: string;
-    };
-    Email_1?: string;
-    Phone?: string;
-    Created_Time?: string;
-    Modified_Time?: string;
-    Type?: string;
-    $currency_symbol?: string;
-    metadata?: {
-      ai_analysis?: {
-        score?: string;
-      };
-    };
-  }
 
   interface Stage {
     display_value: string;
@@ -125,10 +137,10 @@ function LeadManagementPanel() {
   const [selectedPipeline, setSelectedPipeline] = useState<string>('all');
   const [selectedStage, setSelectedStage] = useState<string>('all');
   const [hasMoreRecords, setHasMoreRecords] = useState(false);
-  const leadsPerPage = 200;
+  const LEADS_PER_PAGE = 100; // Augmenter à 100 leads par page
   const [totalLeads, setTotalLeads] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [currentViewIndex, setCurrentViewIndex] = useState(0); // Index for horizontal scrolling
+  const [currentViewIndex, setCurrentViewIndex] = useState(0);
   const [allLeads, setAllLeads] = useState<Lead[]>([]);
 
   // Modify these new states to handle advanced filters
@@ -140,61 +152,115 @@ function LeadManagementPanel() {
     setCurrentViewIndex(0);
   }, [currentPage]);
 
-  // Modify the filtering logic to incorporate new filters
+  // useEffect pour charger les leads à chaque changement de filtre
   useEffect(() => {
-    if (!Array.isArray(allLeads)) {
-      setFilteredLeads([]);
-      setTotalLeads(0);
-      return;
-    }
-
-    let filtered = allLeads.filter(lead => lead !== null && lead !== undefined);
-
-    // First filter by pipeline
+    if (!isZohoConnected) return;
+    const userId = Cookies.get("userId") || "6807abfc2c1ca099fe2b13c5";
+    const queryParams = new URLSearchParams({
+      page: currentPage.toString(),
+      limit: LEADS_PER_PAGE.toString(),
+    });
     if (selectedPipeline !== 'all') {
       const selectedPipelineData = pipelines.find(p => p.id === selectedPipeline);
-      const selectedPipelineName = selectedPipelineData?.display_value;
-      filtered = filtered.filter((lead: Lead) => lead && lead.Pipeline === selectedPipelineName);
+      queryParams.append('pipeline', selectedPipelineData?.display_value || selectedPipeline);
     }
-
-    // Then filter by stage if a stage is selected
     if (selectedStage !== 'all') {
-      filtered = filtered.filter((lead: Lead) => {
-        const matches = lead && lead.Stage && lead.Stage.trim() === selectedStage.trim();
-        return matches;
-      });
+      queryParams.append('stage', selectedStage);
     }
-
-    // Finally apply search text filter with improved search logic
     if (debouncedSearchText) {
-      const searchLower = debouncedSearchText.toLowerCase();
-      filtered = filtered.filter((lead: Lead) => 
-        lead && (
-          (lead.Lead_Name && lead.Lead_Name.toLowerCase().includes(searchLower)) ||
-          (lead.Account_Name?.name && lead.Account_Name.name.toLowerCase().includes(searchLower)) ||
-          (lead.Contact_Name?.name && lead.Contact_Name.name.toLowerCase().includes(searchLower)) ||
-          (lead.Email_1 && lead.Email_1.toLowerCase().includes(searchLower)) ||
-          (lead.Phone && lead.Phone.toLowerCase().includes(searchLower)) ||
-          (lead.Stage && lead.Stage.toLowerCase().includes(searchLower)) ||
-          (lead.Pipeline && lead.Pipeline.toLowerCase().includes(searchLower)) ||
-          (lead.Source && lead.Source.toLowerCase().includes(searchLower))
-        )
-      );
+      queryParams.append('search', debouncedSearchText);
     }
-
-    setFilteredLeads(filtered);
-    setTotalLeads(filtered.length);
-  }, [allLeads, selectedPipeline, selectedStage, debouncedSearchText, pipelines]);
+    setIsLoadingMore(true);
+    fetch(`${apiUrl}/leads/user/${userId}?${queryParams.toString()}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Error retrieving leads");
+        }
+        return response.json();
+      })
+      .then(result => {
+        if (result.success && result.data) {
+          setLeads(result.data);
+          setTotalLeads(result.count || result.data.length);
+          setTotalPages(Math.ceil((result.count || result.data.length) / LEADS_PER_PAGE));
+        } else {
+          setLeads([]);
+          setTotalLeads(0);
+        }
+      })
+      .catch(error => {
+        console.error("Error retrieving leads:", error);
+        setLeads([]);
+        setTotalLeads(0);
+      })
+      .finally(() => {
+        setIsLoadingMore(false);
+      });
+  }, [isZohoConnected, currentPage, selectedPipeline, selectedStage, debouncedSearchText, pipelines]);
 
   // Calculate the leads to display for the current page
   const getCurrentPageLeads = () => {
-    return filteredLeads;
+    return leads;
   };
 
-  const handlePageChange = (pageNumber: number) => {
-    if (pageNumber < 1) return;
-    setCurrentPage(pageNumber);
-    fetchLeads(pageNumber);
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > Math.ceil(totalLeads / LEADS_PER_PAGE)) return;
+    
+    setCurrentPage(newPage);
+    setIsLoadingMore(true);
+
+    const userId = Cookies.get("userId") || "6807abfc2c1ca099fe2b13c5";
+    
+    // Build query parameters
+    const queryParams = new URLSearchParams({
+      page: newPage.toString(),
+      limit: LEADS_PER_PAGE.toString()
+    });
+
+    // Ajouter les filtres pipeline et stage aux paramètres de requête
+    if (selectedPipeline !== 'all') {
+      const selectedPipelineData = pipelines.find(p => p.id === selectedPipeline);
+      queryParams.append('pipeline', selectedPipelineData?.display_value || selectedPipeline);
+    }
+    if (selectedStage !== 'all') {
+      queryParams.append('stage', selectedStage);
+    }
+    if (debouncedSearchText) {
+      queryParams.append('search', debouncedSearchText);
+    }
+
+    fetch(`${apiUrl}/leads/user/${userId}?${queryParams.toString()}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Error retrieving leads");
+      }
+      return response.json();
+    })
+    .then(result => {
+      if (result.success && result.data) {
+        const fetchedLeads = result.data;
+        setLeads(fetchedLeads);
+        setAllLeads(fetchedLeads);
+        setTotalLeads(result.count || fetchedLeads.length);
+        setTotalPages(Math.ceil((result.count || fetchedLeads.length) / LEADS_PER_PAGE));
+      }
+    })
+    .catch(error => {
+      console.error("Error retrieving leads:", error);
+    })
+    .finally(() => {
+      setIsLoadingMore(false);
+    });
   };
 
   const handlePageInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -233,74 +299,99 @@ function LeadManagementPanel() {
     }
   };
 
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [displayedLeads, setDisplayedLeads] = useState<Lead[]>([]);
+  const batchSize = 20; // Nombre de leads à charger par lot
+
+  const loadLeadsInBatches = async (allLeads: Lead[]) => {
+    setIsLoadingMore(true);
+    let currentIndex = 0;
+
+    while (currentIndex < allLeads.length) {
+      const batch = allLeads.slice(currentIndex, currentIndex + batchSize);
+      setDisplayedLeads(prev => [...prev, ...batch]);
+      currentIndex += batchSize;
+      
+      // Attendre un court instant pour permettre le rendu
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    setIsLoadingMore(false);
+  };
+
   const fetchLeads = async (page: number = 1) => {
     try {
-      const accessToken = localStorage.getItem('zoho_access_token');
-      console.log("=== Fetch Leads ===");
-      console.log("Token available:", accessToken ? "Yes" : "No");
+      setIsLoadingMore(true);
+      const userId = Cookies.get("userId") || "6807abfc2c1ca099fe2b13c5";
       
-      if (!accessToken) {
-        setIsZohoConnected(false);
-        return;
+      // Mettre à jour la page courante immédiatement
+      setCurrentPage(page);
+
+      // Si nous avons déjà des leads, afficher les 100 premiers immédiatement
+      if (allLeads.length > 0) {
+        const startIndex = (page - 1) * LEADS_PER_PAGE;
+        const endIndex = startIndex + LEADS_PER_PAGE;
+        const currentPageLeads = allLeads.slice(startIndex, endIndex);
+        setDisplayedLeads(currentPageLeads);
+      }
+      
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: LEADS_PER_PAGE.toString()
+      });
+
+      // Ajouter les filtres pipeline et stage aux paramètres de requête
+      if (selectedPipeline !== 'all') {
+        const selectedPipelineData = pipelines.find(p => p.id === selectedPipeline);
+        queryParams.append('pipeline', selectedPipelineData?.display_value || selectedPipeline);
+      }
+      if (selectedStage !== 'all') {
+        queryParams.append('stage', selectedStage);
+      }
+      if (debouncedSearchText) {
+        queryParams.append('search', debouncedSearchText);
       }
 
-      const apiResponse = await fetch(`${zohoApiUrl}/leads?page=${page}`, {
+      const apiResponse = await fetch(`${apiUrl}/leads/user/${userId}?${queryParams.toString()}`, {
         method: "GET",
         headers: {
-          "Authorization": `Zoho-oauthtoken ${accessToken}`,
           "Content-Type": "application/json"
         }
       });
 
       if (!apiResponse.ok) {
-        const errorData = JSON.parse(await apiResponse.text());
-        throw new Error(errorData.message || "Error retrieving leads");
+        throw new Error("Error retrieving leads");
       }
 
-      const result = JSON.parse(await apiResponse.text());
+      const result = await apiResponse.json();
       
-      console.log("Result leads : ", result.data.data.data);
-      console.log("Result info : ", result.data.data.info);
-      if (result.data?.data?.data) {
-        const fetchedLeads = result.data.data.data;
+      if (result.success && result.data) {
+        const fetchedLeads = result.data;
         
-        // Apply pipeline filter if needed
-        const selectedPipelineData = pipelines.find(p => p.id === selectedPipeline);
-        const selectedPipelineName = selectedPipelineData?.display_value;
-        const filteredLeads = selectedPipeline === 'all' 
-          ? fetchedLeads 
-          : fetchedLeads.filter((lead: Lead) => lead && lead.Pipeline === selectedPipelineName);
+        // Mettre à jour les états
+        setLeads(fetchedLeads);
+        setAllLeads(fetchedLeads);
+        setTotalLeads(result.count || fetchedLeads.length);
+        setTotalPages(Math.ceil((result.count || fetchedLeads.length) / LEADS_PER_PAGE));
         
-        setLeads(filteredLeads);
-        setIsZohoConnected(true);
-        
-        if (result.data.data.info) {
-          setHasMoreRecords(result.data.data.info.more_records || false);
-          setCurrentPage(result.data.data.info.page || 1);
-        }
-
-        // Update allLeads with new leads
-        setAllLeads(prevLeads => {
-          const newLeads = [...prevLeads];
-          const startIndex = (page - 1) * leadsPerPage;
-          fetchedLeads.forEach((lead: Lead, index: number) => {
-            if (lead) {
-              newLeads[startIndex + index] = lead;
-            }
-          });
-          return newLeads;
-        });
+        // Mettre à jour les leads affichés avec les données complètes
+        const startIndex = (page - 1) * LEADS_PER_PAGE;
+        const endIndex = startIndex + LEADS_PER_PAGE;
+        const currentPageLeads = fetchedLeads.slice(startIndex, endIndex);
+        setDisplayedLeads(currentPageLeads);
       } else {
         setLeads([]);
         setAllLeads([]);
+        setDisplayedLeads([]);
       }
       
     } catch (error) {
       console.error("Error retrieving leads:", error);
       setLeads([]);
       setAllLeads([]);
+      setDisplayedLeads([]);
     } finally {
-      setIsLoading(false);
+      setIsLoadingMore(false);
     }
   };
 
@@ -318,34 +409,12 @@ function LeadManagementPanel() {
     }
   }, []);
 
-  // Reset the current page when changing filter
-  useEffect(() => {
-    // Don't reset the page, but retrieve data from the current page
-    fetchLeads(currentPage);
-  }, [selectedPipeline]);
-
+  // Optimize pipeline change handler
   const handlePipelineChange = async (pipelineId: string) => {
     setSelectedPipeline(pipelineId);
-    setSelectedStage('all'); // Reset selected stage
-    
-    // Find and log stages of the selected pipeline
-    const selectedPipelineData = pipelines.find(p => p.id === pipelineId);
-    if (selectedPipelineData) {
-      console.log('Selected pipeline:', selectedPipelineData.display_value);
-      console.log('Available stages:', selectedPipelineData.maps);
-    }
-
-    // Update leads based on selected pipeline
-    if (pipelineId === 'all') {
-      await fetchLeads(currentPage);
-    } else {
-      // First ensure we have the latest data
-      await fetchLeads(currentPage);
-      // Then filter the leads using pipeline name
-      const selectedPipelineName = selectedPipelineData?.display_value;
-      const filteredLeads = leads.filter((lead: Lead) => lead && lead.Pipeline === selectedPipelineName);
-      setLeads(filteredLeads);
-    }
+    setSelectedStage('all');
+    setCurrentPage(1);
+    await fetchLeads(1);
   };
 
   console.log("Leads:", leads);
@@ -444,64 +513,6 @@ function LeadManagementPanel() {
     setShowEditForm(true);
   };
 
-  const closeEditForm = () => {
-    setShowEditForm(false);
-    setEditableLead(null);
-  };
-
-  const handleEditFormSubmit = async (e: React.FormEvent, updatedLead: Lead) => {
-    e.preventDefault();
-    setIsUpdating(true);
-    
-    try {
-      const accessToken = localStorage.getItem('zoho_access_token');
-      if (!accessToken) {
-        throw new Error("Access token not found");
-      }
-      
-      const updateData = {
-        Lead_Name: updatedLead.Lead_Name,
-        Amount: updatedLead.Amount,
-        Probability: updatedLead.Probability,
-        Stage: updatedLead.Stage,
-      };
-      
-      const response = await fetch(`${zohoApiUrl}/leads/${updatedLead.id}`, {
-        method: "PUT",
-        headers: {
-          "Authorization": `Zoho-oauthtoken ${accessToken}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(updateData)
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to update lead");
-      }
-      
-      // Update leads list
-      setLeads(prevLeads => 
-        prevLeads.map(lead => 
-          lead.id === updatedLead.id ? updatedLead : lead
-        )
-      );
-      
-      // Refresh leads from the server
-      refreshLeads();
-      
-      closeEditForm();
-      console.log("Lead updated successfully");
-      
-    } catch (error: unknown) {
-      console.error("Error updating lead:", error);
-      if (error instanceof Error && error.message === "Access token not found") {
-        setIsZohoConnected(false);
-      }
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
   // Add a logout function
   const handleZohoDisconnect = () => {
     localStorage.removeItem('zoho_access_token');
@@ -538,12 +549,11 @@ function LeadManagementPanel() {
     return selectedPipelineData?.maps || [];
   };
 
+  // Optimize stage change handler
   const handleStageChange = async (stageName: string) => {
-    console.log('Changing stage to:', stageName);
     setSelectedStage(stageName);
-    
-    // Pas besoin de refetch les leads, le useEffect s'en chargera
-    // Le filtrage sera appliqué automatiquement via le useEffect
+    setCurrentPage(1);
+    await fetchLeads(1);
   };
 
   const [isImporting, setIsImporting] = useState(false);
@@ -605,6 +615,102 @@ function LeadManagementPanel() {
     } finally {
       setIsImporting(false);
     }
+  };
+
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Modifier le composant PaginationControls pour permettre la navigation pendant le chargement
+  const PaginationControls = () => {
+    const pageNumbers = [];
+    const maxVisiblePages = 7;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+
+    return (
+      <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+        <div className="flex justify-between flex-1 sm:hidden">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Previous
+          </button>
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="relative inline-flex items-center px-4 py-2 ml-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
+        </div>
+        <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm text-gray-700">
+              {/* {isLoadingMore ? (
+                <span className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
+                  Loading more data...
+                </span>
+              ) : ( */}
+                <>
+                  Showing <span className="font-medium">{(currentPage - 1) * LEADS_PER_PAGE + 1}</span> to{" "}
+                  <span className="font-medium">
+                    {Math.min(currentPage * LEADS_PER_PAGE, totalLeads)}
+                  </span>{" "}
+                  of <span className="font-medium">{totalLeads}</span> results
+                </>
+              {/* )} */}
+            </p>
+          </div>
+          <div>
+            <nav className="inline-flex -space-x-px rounded-md shadow-sm isolate" aria-label="Pagination">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="relative inline-flex items-center px-2 py-2 text-gray-400 rounded-l-md border border-gray-300 bg-white text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="sr-only">Previous</span>
+                <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
+                </svg>
+              </button>
+              {pageNumbers.map((number) => (
+                <button
+                  key={number}
+                  onClick={() => handlePageChange(number)}
+                  className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                    currentPage === number
+                      ? "z-10 bg-blue-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                      : "text-gray-900 border border-gray-300 bg-white hover:bg-gray-50"
+                  }`}
+                >
+                  {number}
+                </button>
+              ))}
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="relative inline-flex items-center px-2 py-2 text-gray-400 rounded-r-md border border-gray-300 bg-white text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="sr-only">Next</span>
+                <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </nav>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (isLoading) {
@@ -918,40 +1024,43 @@ function LeadManagementPanel() {
               <div className="relative">
                 <div className="max-h-[400px] overflow-y-auto">
                   <table className="w-full border border-gray-200 table-fixed">
-                  <thead className="sticky top-0 bg-white z-10">
-                    <tr key="header" className="text-left border-b border-gray-200">
-                      {/* <th className="w-[5%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-center">#</th> */}
-                      <th className="w-[18%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Lead Details</th>
-                      {/* <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Stage</th> */}
-                      <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Value</th>
-                      <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">AI Insights</th>
-                      <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Last Contact</th>
-                      <th className="w-[12%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Next Action</th>
-                      <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 text-left">Actions</th>
-                    </tr>
-                  </thead>
+                    <thead className="sticky top-0 bg-white z-10">
+                      <tr key="header" className="text-left border-b border-gray-200">
+                        <th className="w-[18%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Lead Details</th>
+                        <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Value</th>
+                        <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">AI Insights</th>
+                        <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Last Contact</th>
+                        <th className="w-[12%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Next Action</th>
+                        <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 text-left">Actions</th>
+                      </tr>
+                    </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {getCurrentPageLeads().length > 0 ? (
-                        getCurrentPageLeads().map((lead, index) => (
+                      {isLoadingMore ? (
+                        <tr>
+                          <td colSpan={6} className="py-8 text-center">
+                            <div className="flex flex-col items-center justify-center space-y-3">
+                              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                              <p className="text-gray-600 font-medium">Loading leads...</p>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : displayedLeads.length > 0 ? (
+                        displayedLeads.map((lead, index) => (
                           <tr 
-                            key={lead.id} 
+                            key={`${lead._id}-${lead.id}-${index}`}
                             className="hover:bg-gray-50 cursor-pointer border-b border-gray-200"
                             onClick={() => handleLeadClick(lead)}
                           >
                             <td className="w-[18%] px-4 py-4 border-r border-gray-200 text-left">
                               <div>
-                                <div className="font-medium">{lead.Lead_Name}</div>
+                                <div className="font-medium">{lead.Deal_Name}</div>
                                 <div className="text-sm text-gray-500 flex items-center gap-1">
                                   <Building2 className="w-4 h-4" />
                                   {lead.Contact_Name?.name || "N/A"}
                                 </div>
-                                {/* <div className="text-sm text-gray-500 flex items-center gap-1">
-                                  <MapPin className="w-4 h-4" />
-                                  {lead.Contact_Name?.name || "N/A"}
-                                </div> */}
                                 <div className="text-sm text-gray-500 flex items-center gap-1">
                                   <Phone className="w-4 h-4" />
-                                  {lead.Phone || "N/A"}
+                                  {lead.Telephony || lead.Phone || "N/A"}
                                 </div>
                                 <div className="text-sm text-gray-500 flex items-center gap-1">
                                   <Mail className="w-4 h-4" />
@@ -959,8 +1068,6 @@ function LeadManagementPanel() {
                                 </div>
                                 <div className="text-sm text-gray-500 flex items-center gap-1">
                                   <p>
-                                    {/* <b>Source :</b> {lead.Source || "N/A"}
-                                    <br /> */}
                                     <b>Pipeline :</b> {lead.Pipeline || "N/A"}
                                     <br />
                                     <b>Stage :</b> {lead.Stage || "N/A"}
@@ -968,18 +1075,13 @@ function LeadManagementPanel() {
                                 </div>
                               </div>
                             </td>
-                            {/* <td className="w-[13%] px-4 py-4 border-r border-gray-200 text-left">
-                              <span className="text-black text-xs font-bold">
-                                {lead.Stage}
-                              </span>
-                            </td> */}
                             <td className="w-[13%] px-4 py-4 border-r border-gray-200 text-left">
                               <div>
                                 <div className="font-medium">
-                                  {lead.$currency_symbol || "$"}{lead.Amount?.toLocaleString()}
+                                  {lead.$currency_symbol || "$"}{lead.Amount ? lead.Amount.toLocaleString() : "0"}
                                 </div>
                                 <div className="text-sm text-gray-500">
-                                  {lead.Probability}% probability
+                                  {lead.Probability ? `${lead.Probability}%` : "0%"} probability
                                 </div>
                               </div>
                             </td>
@@ -1038,8 +1140,8 @@ function LeadManagementPanel() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={8} className="py-4 text-center text-gray-500 border-b border-gray-200">
-                            {isLoading ? "Loading..." : "No leads found"}
+                          <td colSpan={6} className="py-4 text-center text-gray-500 border-b border-gray-200">
+                            No leads found
                           </td>
                         </tr>
                       )}
@@ -1224,6 +1326,9 @@ function LeadManagementPanel() {
           </div>
         </div>
       )}
+
+      {/* Add pagination controls */}
+      <PaginationControls />
     </div>
   );
 }
