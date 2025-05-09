@@ -134,5 +134,10 @@ getCallDetails:async (callSid: string, ) => {
     console.log("response from storeCallInDBAtEndCall:", response);
     return response.data;
   },
+  generateLoginToken: async () => {
+    const response = await apiCall.post('/api/calls/get-login-token');
+    console.log("response from generateLoginToken:", response);
+    return response.data;
+  },
 
 }
