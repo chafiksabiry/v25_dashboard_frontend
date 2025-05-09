@@ -23,8 +23,7 @@ import SettingsPanel from './panels/SettingsPanel';
 import DealManagementPanel from './panels/DealManagementPanel';
 import ContactManagementPanel from './panels/ContactManagementPanel';
 import DashboardPanel from './panels/DashboardPanel';
-// ... existing imports ...
-import TelnyxCallTest from './panels/TelnyxCallTest';
+
 function App() {
   return (
     <AuthProvider>
@@ -43,7 +42,6 @@ function App() {
                   <Route path="/rep-matching" element={<RepMatchingPanel />} />
                   <Route path="/scheduler" element={<SchedulerPanel />} />
                   <Route path="/calls" element={<CallsPanel />} />
-                  <Route path="/telnyx-call-test" element={<TelnyxCallTest />} />
                   <Route path="/call-report" element={<CallReportCard />} />
                   <Route path="/emails" element={<EmailsPanel />} />
                   <Route path="/chat" element={<ChatPanel />} />

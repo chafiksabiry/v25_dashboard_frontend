@@ -36,7 +36,6 @@ export function Sidebar() {
     // { icon: <ContactIcon size={20} />, label: 'Contacts', path: '/contacts' },
     { icon: <Calendar size={20} />, label: 'Scheduler', path: '/scheduler' },
     { icon: <Phone size={20} />, label: 'Calls', path: '/calls' },
-    { icon: <Phone size={20} />, label: 'Telnyx Call Test', path: '/telnyx-call-test' },
     { icon: <Mail size={20} />, label: 'Emails', path: '/emails' },
     { icon: <MessageSquare size={20} />, label: 'Live Chat', path: '/chat' },
     { icon: <Briefcase size={20} />, label: 'Gigs', path: '/gigs' },

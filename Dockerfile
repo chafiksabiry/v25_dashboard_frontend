@@ -40,10 +40,7 @@ ENV VITE_BACKEND_URL_GIGS=https://api-gigsmanual.harx.ai/api/gigs
 ENV VITE_WS_URL=wss://api-calls.harx.ai/speech-to-text
 ENV VITE_API_URL_AI_MESSAGES=https://api-messages-service.harx.ai/api
 ENV VITE_ENV=test
-ENV VITE_TELNYX_LOGIN_TOKEN=your_login_token_here
-ENV VITE_TELNYX_CALLER_ID=your_caller_id_here
-ENV VITE_TELNYX_USERNAME=oumaimakarouma82533
-ENV VITE_TELNYX_PASSWORD=TnPun5Hd
+
 RUN npm run build
 
 RUN npm install -g serve
