@@ -546,6 +546,67 @@ function LeadManagementPanel() {
     // Le filtrage sera appliqué automatiquement via le useEffect
   };
 
+  const [isImporting, setIsImporting] = useState(false);
+  const [importedCount, setImportedCount] = useState(0);
+  const [showImportModal, setShowImportModal] = useState(false);
+
+  const handleImportFromZoho = async () => {
+    if (!isZohoConnected) {
+      setShowImportModal(true);
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const accessToken = localStorage.getItem('zoho_access_token');
+      if (!accessToken) {
+        throw new Error("Access token not found");
+      }
+
+      // Récupérer les leads depuis Zoho
+      const response = await fetch(`${zohoApiUrl}/leads?page=${currentPage}`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Zoho-oauthtoken ${accessToken}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch leads from Zoho");
+      }
+
+      const result = await response.json();
+      const zohoLeads = result.data?.data?.data || [];
+
+      // Sauvegarder les leads dans la base de données
+      const saveResponse = await fetch('/api/leads/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ leads: zohoLeads }),
+      });
+
+      if (!saveResponse.ok) {
+        throw new Error("Failed to save leads");
+      }
+
+      const saveResult = await saveResponse.json();
+      setImportedCount(saveResult.data.length);
+      
+      // Rafraîchir la liste des leads
+      await fetchLeads(currentPage);
+      
+      // Afficher une notification de succès
+      console.log(`Successfully imported ${saveResult.data.length} leads`);
+    } catch (error) {
+      console.error("Error importing leads:", error);
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -595,12 +656,31 @@ function LeadManagementPanel() {
           </div>
           <div className="flex gap-2">
             {isZohoConnected && (
-              <button
-                onClick={handleZohoDisconnect}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-              >
-                Disconnect Zoho
-              </button>
+              <>
+                <button
+                  onClick={handleImportFromZoho}
+                  disabled={isImporting}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isImporting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                      Importing...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-5 h-5" />
+                      Import from Zoho
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleZohoDisconnect}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                >
+                  Disconnect Zoho
+                </button>
+              </>
             )}
             <button
               onClick={() => setShowUploadModal(true)}
@@ -972,35 +1052,15 @@ function LeadManagementPanel() {
         )}
       </div>
       
-      {isZohoConnected && (
-        <div className="flex justify-center items-center gap-2 mt-6">
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-          >
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-
-          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2">
-            <input
-              type="number"
-              min="1"
-              value={currentPage}
-              onChange={handlePageInput}
-              className="w-20 px-2 py-1 bg-gray-50 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
-            />
-          </div>
-
+      {isZohoConnected && hasMoreRecords && (
+        <div className="flex justify-center items-center mt-6">
           <button
             onClick={() => handlePageChange(currentPage + 1)}
-            disabled={!hasMoreRecords}
-            className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            className="px-6 py-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
           >
+            <span className="text-gray-700">Afficher plus</span>
             <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
         </div>
@@ -1126,6 +1186,39 @@ function LeadManagementPanel() {
                   <span className="text-gray-500">Closing Date</span>
                   <span className="font-medium">14/02/2025</span>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="text-center space-y-4">
+              <div className="flex items-center justify-center gap-2 text-amber-600">
+                <AlertCircle className="w-8 h-8" />
+              </div>
+              <h2 className="text-xl font-semibold text-gray-800">Connection Required</h2>
+              <p className="text-gray-600">
+                You need to connect to Zoho CRM to import leads. Please configure your Zoho CRM integration first.
+              </p>
+              <div className="flex justify-center gap-3 mt-6">
+                <button
+                  onClick={() => setShowImportModal(false)}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setShowImportModal(false);
+                    navigate('/integrations');
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Configure Zoho Integration
+                </button>
               </div>
             </div>
           </div>

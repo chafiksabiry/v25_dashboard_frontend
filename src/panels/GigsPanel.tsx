@@ -123,7 +123,11 @@ function GigsPanel() {
 
   const fetchGigsByUserId = async () => {
     try {
-      const userId = Cookies.get('userId');
+      // const userId = Cookies.get('userId');
+      const userId = import.meta.env.VITE_ENV === 'test' 
+      ? '680a27ffefa3d29d628d0016'
+      : Cookies.get('userId');
+    console.log('Stored userId:', userId);
       if (!userId) {
         console.error("No user ID found");
         setLoading(false);
