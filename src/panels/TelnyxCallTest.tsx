@@ -11,7 +11,7 @@ import {
   MicOff as MicOffIcon
 } from '@mui/icons-material';
 import { callsApi } from '../services/api/calls';
-
+//use credentials instead of env variables
 interface AudioDevice {
   deviceId: string;
   label: string;
