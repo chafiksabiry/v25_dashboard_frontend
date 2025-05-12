@@ -615,7 +615,7 @@ function LeadManagementPanel() {
               </div>
             )}
             <button
-              onClick={() => window.location.href = '/integrations'}
+              onClick={() => navigate('/integrations')}
               className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700"
             >
               Configure Zoho CRM Integration
