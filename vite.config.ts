@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
-    base: mode === 'production' ? 'https://dashboard.harx.ai/' : '/',
+    base: 'https://dashboard.harx.ai/',
     plugins: [
       react({
         jsxRuntime: 'classic',
