@@ -29,6 +29,7 @@ import {
   configureZoho
 } from '../services/zohoService';
 import Cookies from 'js-cookie';
+import { useNavigate } from 'react-router-dom';
 
 const API_BASE_URL_ZOHO = import.meta.env.VITE_ZOHO_API_URL;
 
@@ -668,6 +669,8 @@ export function IntegrationsPanel() {
       }
     }
   ];
+
+  const navigate = useNavigate();
 
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
