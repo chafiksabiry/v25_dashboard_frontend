@@ -35,7 +35,6 @@ import {
 } from "lucide-react";
 import Cookies from 'js-cookie';
 
-const deploymentMode = import.meta.env.VITE_DEPLOYMENT_MODE;
 
 function CompanyProfilePanel() {
   const [company, setCompany] = useState<Record<string, any>>({});
@@ -50,8 +49,7 @@ function CompanyProfilePanel() {
   const [showUniquenessPanel, setShowUniquenessPanel] = useState(false);
 
   
-  const companyId = deploymentMode === 'standalone' ? '6807ac72a15da643118b01e5' : Cookies.get('userId');
-  
+  const companyId = Cookies.get('userId');
   console.log('Stored userId from cookie:', companyId);
 
   // Helper functions for the new UI
