@@ -41,6 +41,18 @@ registerMicroApps([
       actions,
     },
   },
+  {
+    name: 'repdashboard',
+    entry: 'https://rep-dashboard.harx.ai/',
+    container: '#container-app8',
+    activeRule: '/repdashboard/*',
+    props: {
+      sandbox: {
+        experimentalStyleIsolation: true,
+      },
+      actions,
+    },
+  },
   // ... autres apps ...
 ]);
 

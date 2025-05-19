@@ -203,13 +203,6 @@ function CompanyProfilePanel() {
     }
   };
 
-  const handleEdit = (field: string) => {
-    setEditingField(field);
-    setTempValues((prev) => ({
-      ...prev,
-      [field]: getNestedValue(company, field) || "",
-    }));
-  };
 
   const handleCancel = () => {
     setEditingField(null);
