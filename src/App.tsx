@@ -24,6 +24,7 @@ import DealManagementPanel from './panels/DealManagementPanel';
 import ContactManagementPanel from './panels/ContactManagementPanel';
 import DashboardPanel from './panels/DashboardPanel';
 import TelnyxCallTest from './panels/TelnyxCallTest';
+
 function App() {
   return (
     <AuthProvider>
@@ -52,6 +53,8 @@ function App() {
                   <Route path="/analytics" element={<AnalyticsPanel />} />
                   <Route path="/integrations" element={<IntegrationsPanel />} />
                   <Route path="/settings" element={<SettingsPanel />} />
+                  <Route path="/app6" element={<div id="container-app6"></div>} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </div>
             </div>
