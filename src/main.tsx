@@ -42,21 +42,25 @@ function render(props: RenderProps) {
     ? container.querySelector('#root')
     : document.getElementById('root');
 
-  if (rootElement) {
-    console.log('[App] Rendering in container:', rootElement);
-    if (!root) {
-      root = createRoot(rootElement);
-    }
+  if (!rootElement) {
+    console.error('[App] Root element not found! Please ensure #root element exists in the DOM');
+    return;
+  }
+
+  console.log('[App] Rendering in container:', rootElement);
+  if (!root) {
+    root = createRoot(rootElement);
+  }
+  
+  try {
     root.render(
-     // <StrictMode>
-        <Provider store={store}>
-          <App />
-          <ToastContainer />
-        </Provider>
-     // </StrictMode>
+      <Provider store={store}>
+        <App />
+        <ToastContainer />
+      </Provider>
     );
-  } else {
-    console.warn('[App] Root element not found!');
+  } catch (error) {
+    console.error('[App] Error rendering application:', error);
   }
 }
 
