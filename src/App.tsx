@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
-import { Toaster } from 'react-hot-toast';
+import { ToastContainer } from 'react-toastify';
 import { store } from './store';
 import { AuthProvider } from './contexts/AuthContext';
 import Sidebar from './components/Sidebar';
@@ -20,30 +20,34 @@ import OperationsPanel from './panels/OperationsPanel';
 import AnalyticsPanel from './panels/AnalyticsPanel';
 import IntegrationsPanel from './panels/IntegrationsPanel';
 import SettingsPanel from './panels/SettingsPanel';
-import DealManagementPanel from './panels/DealManagementPanel';
-import ContactManagementPanel from './panels/ContactManagementPanel';
-import DashboardPanel from './panels/DashboardPanel';
-import TelnyxCallTest from './panels/TelnyxCallTest';
+import KnowledgeBase from './panels/KnowledgeBase';
+import KnowledgeInsights from './panels/KnowledgeInsights';
+import MatchingDashboard from './panels/MatchingDashboard';
+import OverviewPanel from './panels/OverviewPanel'
+import GigDetail from './pages/GigDetail';
+
+import { setUserId } from "./store/slices/userSlice"; // Import Redux action
+import { useDispatch } from "react-redux";
+import { useEffect } from "react";
 
 function App() {
   return (
-    <AuthProvider>
-      <Provider store={store}>
+    <Provider store={store}>
+      <AuthProvider>
         <Router>
-          <div className="flex min-h-screen" style={{ backgroundColor: 'rgb(243, 244, 246)' }}>
+          <div className="flex min-h-screen bg-gray-100">
             <Sidebar />
             <div className="flex-1 pl-64">
               <div className="p-8">
                 <Routes>
-                  <Route path="/" element={<DashboardPanel />} />
+                  <Route path="/app7" element={<OverviewPanel />} />
+                  <Route path="/" element={<Navigate to="/app7" replace />} />
+                  {/*<Route path="/dashboardcompany" element={<Navigate to="/dashboardcompany" replace />} />*/}
                   <Route path="/company" element={<CompanyProfilePanel />} />
                   <Route path="/leads" element={<LeadManagementPanel />} />
-                  {/* <Route path="/deals" element={<DealManagementPanel />} /> */}
-                  {/* <Route path="/contacts" element={<ContactManagementPanel />} /> */}
                   <Route path="/rep-matching" element={<RepMatchingPanel />} />
                   <Route path="/scheduler" element={<SchedulerPanel />} />
                   <Route path="/calls" element={<CallsPanel />} />
-                  <Route path="/telnyx-call-test" element={<TelnyxCallTest />} />
                   <Route path="/call-report" element={<CallReportCard />} />
                   <Route path="/emails" element={<EmailsPanel />} />
                   <Route path="/chat" element={<ChatPanel />} />
@@ -53,16 +57,18 @@ function App() {
                   <Route path="/analytics" element={<AnalyticsPanel />} />
                   <Route path="/integrations" element={<IntegrationsPanel />} />
                   <Route path="/settings" element={<SettingsPanel />} />
-                  <Route path="/app6" element={<div id="container-app6"></div>} />
-                  <Route path="*" element={<Navigate to="/" replace />} />
+                  <Route path="/knowledge-base" element={<KnowledgeBase />} />
+                <Route path="/kb-insight" element={<KnowledgeInsights />} />
+                <Route path="/matching" element={<MatchingDashboard />} />
+                <Route path="/gigs/:id" element={<GigDetail />} />
                 </Routes>
               </div>
             </div>
           </div>
-          <Toaster position="top-right" />
+          <ToastContainer />
         </Router>
-      </Provider>
-    </AuthProvider>
+      </AuthProvider>
+    </Provider>
   );
 }
 
