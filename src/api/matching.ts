@@ -220,6 +220,23 @@ export const getGigAgentsForGig = async (gigId: string): Promise<any[]> => {
   }
 };
 
+export const getInvitedAgentsForCompany = async (companyId: string): Promise<any[]> => {
+  try {
+    const response = await fetch(`${MATCHING_API_URL}/gig-agents/invited/company/${companyId}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('📧 Invited agents for company:', data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching invited agents for company:', error);
+    throw error;
+  }
+};
+
 // ===== SKILLS & LANGUAGES API =====
 export interface Skill {
   _id: string;
@@ -401,25 +418,5 @@ export const resetGigWeights = async (gigId: string): Promise<void> => {
   } catch (error) {
     console.error('❌ Error resetting gig weights:', error);
     throw error;
-  }
-};
-
-// Get invited agents for a company
-export const getInvitedAgentsForCompany = async (companyId: string): Promise<any[]> => {
-  console.log('getInvitedAgentsForCompany called with:', companyId);
-  try {
-    const response = await fetch(`${MATCHING_API_URL}/gig-agents/invited/company/${companyId}`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch invited agents for company');
-    }
-    
-    const data = await response.json();
-    console.log('Parsed getInvitedAgentsForCompany response:', data);
-    
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching invited agents for company:', error);
-    return [];
   }
 };
