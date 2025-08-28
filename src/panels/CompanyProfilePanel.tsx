@@ -132,12 +132,14 @@ function CompanyProfile() {
     value, 
     field, 
     icon: Icon, 
-    className = ""
+    className = "",
+    isTextArea = false
   }: { 
     value: any; 
     field: string; 
     icon?: React.ElementType; 
     className?: string;
+    isTextArea?: boolean;
   }) => {
     const isEditing = editingField === field && editMode;
     
@@ -164,34 +166,50 @@ function CompanyProfile() {
     };
     
     return (
-      <div className={`relative ${className}`} onClick={handleFieldEdit}>
+      <div className={`relative group ${className}`} onClick={handleFieldEdit}>
         {Icon && !isEditing && <Icon size={18} className="flex-shrink-0" />}
         
         {isEditing ? (
-          <div className="mt-2 w-full">
-            <input
-              type="text"
-              value={tempValues[field] || ""}
-              onChange={(e) =>
-                setTempValues((prev) => ({
-                  ...prev,
-                  [field]: e.target.value,
-                }))
-              }
-              className="w-full px-3 py-2 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-gray-900 bg-white"
-            />
-            <div className="absolute right-0 top-full mt-2 flex gap-2">
+          <div className="w-full bg-white p-3 rounded-lg border border-indigo-300 shadow-lg relative z-10">
+            {isTextArea ? (
+              <textarea
+                value={tempValues[field] || ""}
+                onChange={(e) =>
+                  setTempValues((prev) => ({
+                    ...prev,
+                    [field]: e.target.value,
+                  }))
+                }
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-gray-900 bg-white resize-none"
+              />
+            ) : (
+              <input
+                type="text"
+                value={tempValues[field] || ""}
+                onChange={(e) =>
+                  setTempValues((prev) => ({
+                    ...prev,
+                    [field]: e.target.value,
+                  }))
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-gray-900 bg-white"
+              />
+            )}
+            <div className="flex justify-end gap-2 mt-2">
               <button
                 onClick={handleFieldSave}
-                className="p-1.5 bg-green-500 text-white rounded-md hover:bg-green-600"
+                className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 flex items-center gap-1"
               >
                 <CheckCircle2 size={14} />
+                Save
               </button>
               <button
                 onClick={handleFieldCancel}
-                className="p-1.5 bg-red-500 text-white rounded-md hover:bg-red-600"
+                className="px-3 py-1 bg-gray-500 text-white rounded-md hover:bg-gray-600 flex items-center gap-1"
               >
                 <X size={14} />
+                Cancel
               </button>
             </div>
           </div>
@@ -200,8 +218,11 @@ function CompanyProfile() {
             <span>{value || "Not set"}</span>
             {editMode && (
               <button
-                className="absolute -right-3 -top-3 opacity-0 group-hover:opacity-100 p-1 bg-white rounded-full shadow-md text-gray-600 hover:text-indigo-600 transition-all"
-                onClick={() => handleFieldEdit()}
+                className="absolute -right-3 -top-3 opacity-0 group-hover:opacity-100 p-1 bg-white rounded-full shadow-md text-gray-600 hover:text-indigo-600 transition-all z-10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleFieldEdit();
+                }}
               >
                 <Pencil size={12} />
               </button>
@@ -740,6 +761,7 @@ function CompanyProfile() {
                         value={profile.overview}
                         field="overview"
                         className="text-gray-700 leading-relaxed text-lg"
+                        isTextArea={true}
                       />
                     </div>
                   </div>
@@ -758,6 +780,7 @@ function CompanyProfile() {
                             value={profile.mission}
                             field="mission"
                             className="text-gray-700"
+                            isTextArea={true}
                           />
                         </div>
                       </div>
@@ -843,6 +866,7 @@ function CompanyProfile() {
                       value={profile.culture.workEnvironment}
                       field="culture.workEnvironment"
                       className="text-gray-700 leading-relaxed"
+                      isTextArea={true}
                     />
                   </div>
                 </div>
@@ -888,6 +912,7 @@ function CompanyProfile() {
                             value={profile.opportunities.growthPotential}
                             field="opportunities.growthPotential"
                             className="text-gray-700"
+                            isTextArea={true}
                           />
                         </div>
                         <div className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border border-indigo-100/50">
@@ -902,6 +927,7 @@ function CompanyProfile() {
                             value={profile.opportunities.training}
                             field="opportunities.training"
                             className="text-gray-700"
+                            isTextArea={true}
                           />
                         </div>
                       </div>
@@ -949,6 +975,7 @@ function CompanyProfile() {
                           value={profile.technology.innovation}
                           field="technology.innovation"
                           className="text-gray-700"
+                          isTextArea={true}
                         />
                       </div>
                     </div>
