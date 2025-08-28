@@ -32,6 +32,7 @@ ENV VITE_QALQUL_USERNAME=Agent.1
 ENV VITE_QALQUL_PASSWORD=ewyaHtvzDPRdXrZL
 ENV VITE_BACKEND_KNOWLEDGEBASE_BACKEND=https://api-knowledge-base.harx.ai
 ENV VITE_MATCHING_API_URL=https://api-matching.harx.ai/api
+ENV VITE_API_URL_GIGS=https://api-gigsmanual.harx.ai/api
 ENV VITE_ZOHO_API_URL=https://api-dashboard.harx.ai/api/zoho
 ENV VITE_BACKEND_URL_GIGS=https://api-gigsmanual.harx.ai/api/gigs
 
