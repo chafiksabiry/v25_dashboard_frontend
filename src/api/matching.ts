@@ -254,6 +254,54 @@ export const getActiveAgentsForCompany = async (companyId: string): Promise<any[
   }
 };
 
+// Accept enrollment request
+export const acceptEnrollmentRequest = async (gigAgentId: string, notes?: string): Promise<any> => {
+  try {
+    const response = await fetch(`${MATCHING_API_URL}/gig-agents/enrollment-requests/${gigAgentId}/accept`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ notes }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('✅ Enrollment request accepted:', data);
+    return data;
+  } catch (error) {
+    console.error('Error accepting enrollment request:', error);
+    throw error;
+  }
+};
+
+// Reject enrollment request
+export const rejectEnrollmentRequest = async (gigAgentId: string, notes?: string): Promise<any> => {
+  try {
+    const response = await fetch(`${MATCHING_API_URL}/gig-agents/enrollment-requests/${gigAgentId}/reject`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ notes }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('❌ Enrollment request rejected:', data);
+    return data;
+  } catch (error) {
+    console.error('Error rejecting enrollment request:', error);
+    throw error;
+  }
+};
+
 export const getEnrollmentRequestsForCompany = async (companyId: string): Promise<any[]> => {
   try {
     const response = await fetch(`${MATCHING_API_URL}/gig-agents/enrollment-requests/company/${companyId}`);

@@ -26,6 +26,8 @@ import {
   getInvitedAgentsForCompany,
   getEnrollmentRequestsForCompany,
   getActiveAgentsForCompany,
+  acceptEnrollmentRequest,
+  rejectEnrollmentRequest,
   getAllSkills,
   getLanguages,
   saveGigWeights,
@@ -933,10 +935,50 @@ function RepMatchingPanel() {
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
-                              <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 text-sm font-medium">
+                              <button 
+                                onClick={async () => {
+                                  try {
+                                    await acceptEnrollmentRequest(agent._id, "Bienvenue dans l'équipe ! Nous sommes ravis de vous avoir.");
+                                    // Refresh data
+                                    const companyId = Cookies.get('companyId') || '';
+                                    const [invitedAgentsData, enrollmentRequestsData, activeAgentsData] = await Promise.all([
+                                      getInvitedAgentsForCompany(companyId),
+                                      getEnrollmentRequestsForCompany(companyId),
+                                      getActiveAgentsForCompany(companyId)
+                                    ]);
+                                    setCompanyInvitedAgents(invitedAgentsData);
+                                    setEnrollmentRequests(enrollmentRequestsData);
+                                    setActiveAgentsList(activeAgentsData);
+                                  } catch (error) {
+                                    console.error('Error accepting enrollment request:', error);
+                                    // TODO: Show error toast
+                                  }
+                                }}
+                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 text-sm font-medium"
+                              >
                                 ✅ Approve
                               </button>
-                              <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 text-sm font-medium">
+                              <button 
+                                onClick={async () => {
+                                  try {
+                                    await rejectEnrollmentRequest(agent._id, "Désolé, nous ne pouvons pas donner suite à votre candidature pour le moment.");
+                                    // Refresh data
+                                    const companyId = Cookies.get('companyId') || '';
+                                    const [invitedAgentsData, enrollmentRequestsData, activeAgentsData] = await Promise.all([
+                                      getInvitedAgentsForCompany(companyId),
+                                      getEnrollmentRequestsForCompany(companyId),
+                                      getActiveAgentsForCompany(companyId)
+                                    ]);
+                                    setCompanyInvitedAgents(invitedAgentsData);
+                                    setEnrollmentRequests(enrollmentRequestsData);
+                                    setActiveAgentsList(activeAgentsData);
+                                  } catch (error) {
+                                    console.error('Error rejecting enrollment request:', error);
+                                    // TODO: Show error toast
+                                  }
+                                }}
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 text-sm font-medium"
+                              >
                                 ❌ Reject
                               </button>
                             </div>
