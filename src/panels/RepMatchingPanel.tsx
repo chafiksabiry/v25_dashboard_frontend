@@ -338,10 +338,9 @@ function RepMatchingPanel() {
     
     // Use company invited agents from API endpoint
     const invited = companyInvitedAgents.filter(agent => {
-      // Filter agents who are still pending or in draft status
+      // Show all agents who are not yet active, regardless of their status
       const isInvited = !agent.isActive && 
-                       !agent.hasCompletedOnboarding && 
-                       (agent.status === 'draft' || agent.status === 'pending');
+                       !agent.hasCompletedOnboarding;
       
       console.log(`🔍 Company Invited Agent ${agent.personalInfo?.name}:`, {
         status: agent.status,
