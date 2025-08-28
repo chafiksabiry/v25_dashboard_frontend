@@ -293,6 +293,35 @@ function RepMatchingPanel() {
         setGigAgentSuccess(null);
       }, 3000);
 
+      // Refresh all data immediately
+      const companyId = Cookies.get('companyId') || '685abf28641398dc582f4c95';
+      
+      // Fetch all data in parallel
+      const [repsData, gigsData, skillsData, languagesData, invitedAgentsData] = await Promise.all([
+        getReps(),
+        companyId ? getGigsByCompanyId(companyId) : getGigs(),
+        getAllSkills(),
+        getLanguages(),
+        getInvitedAgentsForCompany(companyId)
+      ]);
+      
+      // Update all state
+      setReps(repsData);
+      setGigs(gigsData);
+      setSkills(skillsData);
+      setLanguages(languagesData);
+      setCompanyInvitedAgents(invitedAgentsData);
+      
+      // If a gig is selected, refresh its matches
+      if (selectedGig) {
+        const matchesData = await findMatchesForGig(selectedGig._id || '', weights);
+        setMatches(matchesData.preferedmatches || matchesData.matches || []);
+        setMatchStats(matchesData);
+      }
+
+      // Organize agents by status
+      setTimeout(() => organizeAgentsByStatus(), 100);
+
     } catch (error) {
       console.error('Error creating gig-agent:', error);
       setGigAgentError('Failed to invite agent to gig. Please try again.');
@@ -309,16 +338,20 @@ function RepMatchingPanel() {
     
     // Use company invited agents from API endpoint
     const invited = companyInvitedAgents.filter(agent => {
-      // Filter agents who are still in draft status
-      const isStillPending = agent.status === 'draft';
+      // Filter agents who are still pending or in draft status
+      const isInvited = !agent.isActive && 
+                       !agent.hasCompletedOnboarding && 
+                       (agent.status === 'draft' || agent.status === 'pending');
       
       console.log(`🔍 Company Invited Agent ${agent.personalInfo?.name}:`, {
         status: agent.status,
-        isStillPending,
+        isActive: agent.isActive,
+        hasCompletedOnboarding: agent.hasCompletedOnboarding,
+        isInvited,
         fullData: agent
       });
       
-      return isStillPending;
+      return isInvited;
     });
     
     // Agents who have completed onboarding but are waiting for company approval
