@@ -714,52 +714,17 @@ function RepMatchingPanel() {
                   return (
                     <div 
                       key={`match-${match.agentId}-${index}`} 
-                      className={`bg-white rounded-lg p-4 shadow-md border transition-all duration-200 hover:shadow-lg ${
-                        matchPercentage >= 90 ? 'border-green-200 bg-green-50' :
-                        matchPercentage >= 75 ? 'border-orange-200 bg-orange-50' :
-                        'border-gray-200 hover:border-orange-300'
-                      }`}
+                      className="bg-white rounded-lg p-3 shadow border border-gray-200 hover:shadow-md transition-all duration-200"
                     >
-                      {/* Compact Header */}
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-3">
-                          {/* Smaller Avatar */}
-                          <div className="relative">
-                            {match.agentInfo?.photo ? (
-                              <img 
-                                src={match.agentInfo.photo} 
-                                alt="avatar" 
-                                className="w-12 h-12 rounded-lg border-2 border-white shadow object-cover" 
-                              />
-                            ) : (
-                              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-bold shadow">
-                                {match.agentInfo?.name?.[0] || "?"}
-                              </div>
-                            )}
-                            {/* Smaller Score Badge */}
-                            <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-md flex items-center justify-center text-white font-bold text-xs shadow ${
-                              matchPercentage >= 90 ? 'bg-green-500' :
-                              matchPercentage >= 75 ? 'bg-orange-500' :
-                              'bg-gray-500'
-                            }`}>
-                              {matchPercentage}%
-                            </div>
-                          </div>
-                          
-                          {/* Compact Rep Details */}
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-bold text-gray-900 truncate">{match.agentInfo?.name}</h3>
-                            <p className="text-sm text-gray-600 truncate">{match.agentInfo?.email}</p>
-                            {match.agentInfo?.timezone && (
-                              <p className="text-xs text-gray-500 truncate">
-                                {match.agentInfo.timezone.timezoneName}
-                              </p>
-                            )}
-                          </div>
+                      {/* Simple Rep Info */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base font-bold text-gray-900 truncate">{match.agentInfo?.name}</h3>
+                          <p className="text-sm text-gray-600 truncate">{match.agentInfo?.email}</p>
                         </div>
 
-                        {/* Compact Action Button */}
-                        <div className="flex-shrink-0">
+                        {/* Status Button */}
+                        <div className="flex-shrink-0 ml-4">
                           {isInvited ? (
                             <div className="inline-flex items-center px-3 py-2 bg-green-500 text-white rounded-lg text-sm font-medium gap-1">
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -777,101 +742,6 @@ function RepMatchingPanel() {
                               <Zap className="w-4 h-4" />
                               {creatingGigAgent ? 'Inviting...' : 'Invite'}
                             </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Compact Details Grid */}
-                      <div className="grid grid-cols-3 gap-3 text-sm">
-                        {/* Experience */}
-                        <div className="bg-gray-50 rounded-lg p-3">
-                          <div className="flex items-center gap-1 mb-1">
-                            <svg className="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span className="text-xs font-bold text-gray-600 uppercase">Experience</span>
-                          </div>
-                          {match.experienceMatch ? (
-                            <div>
-                              <div className="text-lg font-bold text-gray-900">
-                                {match.experienceMatch.details.agentExperience}y
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                Req: {match.experienceMatch.details.gigRequiredExperience}y
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="text-xs text-gray-400">No data</div>
-                          )}
-                        </div>
-
-                        {/* Languages */}
-                        <div className="bg-gray-50 rounded-lg p-3">
-                          <div className="flex items-center gap-1 mb-1">
-                            <svg className="w-3 h-3 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-                            </svg>
-                            <span className="text-xs font-bold text-gray-600 uppercase">Languages</span>
-                          </div>
-                          {match.agentInfo?.languages?.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {match.agentInfo.languages.slice(0, 2).map((lang: { language: string; proficiency?: string }, i: number) => {
-                                const languageName = getLanguageNameByCode(lang.language);
-                                return (
-                                  <span key={i} className="px-1 py-0.5 rounded text-xs bg-purple-100 text-purple-700">
-                                    {languageName}
-                                  </span>
-                                );
-                              })}
-                              {match.agentInfo.languages.length > 2 && (
-                                <span className="px-1 py-0.5 rounded text-xs bg-gray-100 text-gray-600">
-                                  +{match.agentInfo.languages.length - 2}
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="text-xs text-gray-400">None</div>
-                          )}
-                        </div>
-
-                        {/* Skills */}
-                        <div className="bg-gray-50 rounded-lg p-3">
-                          <div className="flex items-center gap-1 mb-1">
-                            <svg className="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                            </svg>
-                            <span className="text-xs font-bold text-gray-600 uppercase">Skills</span>
-                          </div>
-                          {match.skillsMatch?.details?.matchingSkills?.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {match.skillsMatch.details.matchingSkills.slice(0, 2).map((skill: { skill: string; skillName: string; type: string }, i: number) => {
-                                const skillName = skill.type && skill.skill ? 
-                                  getSkillNameById(skill.skill, skill.type as 'professional' | 'technical' | 'soft') : 
-                                  skill.skillName || skill.skill;
-                                
-                                let bgColor = 'bg-gray-100', textColor = 'text-gray-700';
-                                if (skill.type === 'professional') {
-                                  bgColor = 'bg-blue-100'; textColor = 'text-blue-700';
-                                } else if (skill.type === 'technical') {
-                                  bgColor = 'bg-green-100'; textColor = 'text-green-700';
-                                } else if (skill.type === 'soft') {
-                                  bgColor = 'bg-purple-100'; textColor = 'text-purple-700';
-                                }
-                                
-                                return (
-                                  <span key={i} className={`px-1 py-0.5 rounded text-xs ${bgColor} ${textColor} truncate max-w-16`}>
-                                    {skillName}
-                                  </span>
-                                );
-                              })}
-                              {match.skillsMatch.details.matchingSkills.length > 2 && (
-                                <span className="px-1 py-0.5 rounded text-xs bg-gray-100 text-gray-600">
-                                  +{match.skillsMatch.details.matchingSkills.length - 2}
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="text-xs text-gray-400">None</div>
                           )}
                         </div>
                       </div>
