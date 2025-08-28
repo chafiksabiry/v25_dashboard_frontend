@@ -25,8 +25,12 @@ import {
   getGigAgentsForGig,
   getAllSkills,
   getLanguages,
+  saveGigWeights,
+  getGigWeights,
+  resetGigWeights,
   Skill,
-  Language
+  Language,
+  GigWeights
 } from '../api/matching';
 import Cookies from 'js-cookie';
 
@@ -60,6 +64,7 @@ function RepMatchingPanel() {
     soft: Skill[];
   }>({ professional: [], technical: [], soft: [] });
   const [languages, setLanguages] = useState<Language[]>([]);
+  const [gigHasWeights, setGigHasWeights] = useState(false);
 
   // Fetch data from real backend
   useEffect(() => {
@@ -108,16 +113,34 @@ function RepMatchingPanel() {
     setMatches([]);
     setMatchStats(null);
     
+    // Reset weights state
+    setGigHasWeights(false);
+    
+    let currentWeights = weights;
+    
     try {
+      // Try to load saved weights for this gig
+      try {
+        const savedWeights = await getGigWeights(gig._id || '');
+        setWeights(savedWeights.matchingWeights);
+        setGigHasWeights(true);
+        currentWeights = savedWeights.matchingWeights;
+        console.log('✅ Gig has saved weights, loaded:', savedWeights.matchingWeights);
+      } catch (error) {
+        console.log('❌ No saved weights found for gig:', gig._id);
+        setGigHasWeights(false);
+        // Keep current weights
+      }
+      
       // Fetch invited agents for this gig
       const gigAgents = await getGigAgentsForGig(gig._id || '');
       const invitedAgentIds = new Set<string>(gigAgents.map((ga: any) => ga.agentId as string));
       setInvitedAgents(invitedAgentIds);
       console.log('📧 Invited agents for gig:', invitedAgentIds);
       
-      // Find matches for the selected gig
+      // Find matches for the selected gig using current or loaded weights
       console.log("Searching for reps matching gig:", gig.title);
-      const matchesData = await findMatchesForGig(gig._id || '', weights);
+      const matchesData = await findMatchesForGig(gig._id || '', currentWeights);
       console.log("=== MATCHES DATA ===", matchesData);
       
       setMatches(matchesData.preferedmatches || matchesData.matches || []);
@@ -161,6 +184,47 @@ function RepMatchingPanel() {
     // Auto-search when weights are reset if a gig is selected
     if (selectedGig) {
       handleGigSelect(selectedGig);
+    }
+  };
+
+  // Save weights for selected gig and search
+  const saveWeightsForGig = async () => {
+    console.log('🚨 SAVE WEIGHTS FOR GIG CALLED');
+    
+    if (!selectedGig) {
+      console.error('No gig selected');
+      setError('No gig selected');
+      return;
+    }
+
+    console.log('🔄 MANUAL SAVE TRIGGERED - User clicked save button');
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Save weights to backend
+      await saveGigWeights(selectedGig._id || '', weights);
+      console.log('✅ Weights saved successfully for gig:', selectedGig._id);
+      setGigHasWeights(true);
+      
+      // Trigger new search with saved weights
+      console.log("Searching for reps with saved weights:", selectedGig.title);
+      const matchesData = await findMatchesForGig(selectedGig._id || '', weights);
+      console.log("=== MATCHES DATA AFTER SAVE ===", matchesData);
+      
+      setMatches(matchesData.preferedmatches || matchesData.matches || []);
+      setMatchStats(matchesData);
+      
+      // Fetch invited agents
+      const gigAgents = await getGigAgentsForGig(selectedGig._id || '');
+      const invitedAgentIds = new Set<string>(gigAgents.map((ga: any) => ga.agentId as string));
+      setInvitedAgents(invitedAgentIds);
+      
+    } catch (error) {
+      console.error('❌ Error saving weights or searching:', error);
+      setError('Failed to save weights or search. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -303,13 +367,40 @@ function RepMatchingPanel() {
               <div className="flex items-center space-x-3">
                 <button
                   onClick={resetWeights}
-                  className="text-sm bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2"
+                  disabled={loading}
+                  className="text-sm bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                   <span>Reset to Default</span>
                 </button>
+                {selectedGig && gigHasWeights && (
+                  <button
+                    onClick={async () => {
+                      if (!selectedGig) return;
+                      try {
+                        setLoading(true);
+                        await resetGigWeights(selectedGig._id || '');
+                        setGigHasWeights(false);
+                        resetWeights(); // Reset UI weights to default
+                        console.log('✅ Gig weights reset successfully');
+                      } catch (error) {
+                        console.error('❌ Error resetting gig weights:', error);
+                        setError('Failed to reset gig weights');
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    disabled={loading}
+                    className="text-sm bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    <span>Delete Saved Weights</span>
+                  </button>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -344,15 +435,22 @@ function RepMatchingPanel() {
               <div className="mt-4 flex justify-center">
                 <button
                   onClick={() => {
-                    console.log('Applying weights for gig:', selectedGig.title);
-                    // Here you could trigger a new search with updated weights
+                    console.log('🎯 BUTTON CLICKED - User manually clicked save button');
+                    saveWeightsForGig();
                   }}
-                  className="text-sm px-6 py-3 rounded-lg transition-all duration-200 flex items-center space-x-2 shadow-lg bg-orange-600 hover:bg-orange-700 text-white"
+                  disabled={loading}
+                  className={`text-sm px-6 py-3 rounded-lg transition-all duration-200 flex items-center space-x-2 shadow-lg ${
+                    gigHasWeights 
+                      ? 'bg-green-600 hover:bg-green-700 text-white' 
+                      : 'bg-orange-600 hover:bg-orange-700 text-white'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Apply weights for {selectedGig.title}</span>
+                  <span>
+                    {loading ? 'Saving...' : (gigHasWeights ? `Update weights for ${selectedGig.title}` : `Save weights for ${selectedGig.title}`)}
+                  </span>
                 </button>
               </div>
             )}
@@ -411,6 +509,29 @@ function RepMatchingPanel() {
             <Briefcase size={24} className="text-orange-600" />
             <span>Select a Gig to Find Matching Representatives</span>
           </h2>
+          
+          {/* Instructions */}
+          {selectedGig && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className={`text-sm font-medium ${
+                    gigHasWeights ? 'text-green-800' : 'text-blue-800'
+                  }`}>
+                    {gigHasWeights 
+                      ? `✅ This gig has saved matching weights. Click "Adjust Weights" to modify them, then "Update weights" to save changes and re-search.`
+                      : `📋 This gig has no saved weights yet. Click "Adjust Weights" to configure custom weights, then "Save weights" to save and search.`
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {gigs.map((gig) => (

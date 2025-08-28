@@ -323,3 +323,83 @@ export const getLanguages = async (): Promise<Language[]> => {
   }
   */
 };
+
+// ===== GIG WEIGHTS API =====
+export interface GigWeights {
+  _id?: string;
+  gigId: string;
+  matchingWeights: MatchingWeights;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+// Save matching weights for a gig
+export const saveGigWeights = async (gigId: string, matchingWeights: MatchingWeights): Promise<GigWeights> => {
+  console.log('🚨 SAVE GIG WEIGHTS CALLED:', { gigId, matchingWeights });
+  try {
+    const response = await fetch(`${MATCHING_API_URL}/gig-matching-weights/${gigId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        matchingWeights
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to save gig weights');
+    }
+    
+    const data = await response.json();
+    console.log('✅ SAVE GIG WEIGHTS SUCCESS:', data);
+    return data.data || data;
+  } catch (error) {
+    console.error('❌ Error saving gig weights:', error);
+    throw error;
+  }
+};
+
+// Get matching weights for a gig
+export const getGigWeights = async (gigId: string): Promise<GigWeights> => {
+  console.log('🔄 GET GIG WEIGHTS CALLED:', gigId);
+  try {
+    const response = await fetch(`${MATCHING_API_URL}/gig-matching-weights/${gigId}`);
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error('No saved weights found for this gig');
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to get gig weights');
+    }
+    
+    const data = await response.json();
+    console.log('✅ GET GIG WEIGHTS SUCCESS:', data);
+    return data.data || data;
+  } catch (error) {
+    console.error('❌ Error getting gig weights:', error);
+    throw error;
+  }
+};
+
+// Reset weights to defaults for a gig
+export const resetGigWeights = async (gigId: string): Promise<void> => {
+  console.log('🔄 RESET GIG WEIGHTS CALLED:', gigId);
+  try {
+    const response = await fetch(`${MATCHING_API_URL}/gig-matching-weights/${gigId}`, {
+      method: 'DELETE',
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to reset gig weights');
+    }
+    
+    console.log('✅ RESET GIG WEIGHTS SUCCESS');
+  } catch (error) {
+    console.error('❌ Error resetting gig weights:', error);
+    throw error;
+  }
+};
