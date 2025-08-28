@@ -300,23 +300,32 @@ function RepMatchingPanel() {
   const organizeAgentsByStatus = () => {
     const invited = matches.filter(match => 
       (match.isInvited || invitedAgents.has(match.agentId)) && 
-      !match.isEnrolled && 
-      match.status !== 'accepted' && 
       match.agentResponse !== 'accepted' && 
-      match.enrollmentStatus !== 'accepted'
+      match.enrollmentStatus !== 'accepted' &&
+      match.status !== 'accepted'
     );
     
+    // Agents who have accepted and are requesting enrollment (waiting company approval)
     const enrollmentReqs = matches.filter(match => 
-      match.agentResponse === 'accepted' || 
-      match.enrollmentStatus === 'accepted' || 
-      match.status === 'accepted'
+      (match.agentResponse === 'accepted' || match.status === 'accepted') &&
+      match.enrollmentStatus !== 'accepted' &&
+      match.companyApproved !== true &&
+      match.finalStatus !== 'active'
     );
     
+    // Agents who are fully approved and active (agent accepted + company approved)
     const active = matches.filter(match => 
       match.isEnrolled || 
       match.companyApproved === true ||
-      match.finalStatus === 'active'
+      match.finalStatus === 'active' ||
+      match.enrollmentStatus === 'accepted' || // If enrollment is accepted, they're active
+      (match.agentResponse === 'accepted' && match.status === 'accepted') // Both agent and system accepted
     );
+
+    console.log('🔄 Organizing agents by status:');
+    console.log('📧 Invited:', invited.length, invited);
+    console.log('📋 Enrollment Requests:', enrollmentReqs.length, enrollmentReqs);
+    console.log('✅ Active:', active.length, active);
 
     setInvitedAgentsList(invited);
     setEnrollmentRequests(enrollmentReqs);
