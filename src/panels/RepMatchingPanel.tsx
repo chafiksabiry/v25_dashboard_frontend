@@ -323,17 +323,20 @@ function RepMatchingPanel() {
       return isInvited && !hasAccepted;
     });
     
-    // Agents who have accepted but are waiting for company approval
+    // Agents who have responded positively (accepted, pending, or requested) but are waiting for company approval
     const enrollmentReqs = matches.filter(match => {
-      const hasAccepted = match.agentResponse === 'accepted' || 
-                         match.status === 'accepted';
+      const hasResponded = match.agentResponse === 'accepted' || 
+                          match.agentResponse === 'pending' ||
+                          match.status === 'accepted' ||
+                          match.status === 'pending' ||
+                          match.enrollmentStatus === 'requested';
       const isFullyApproved = match.enrollmentStatus === 'accepted' || 
                               match.companyApproved === true || 
                               match.finalStatus === 'active';
       
-      console.log(`🔍 Agent ${match.agentInfo?.name}: hasAccepted=${hasAccepted}, isFullyApproved=${isFullyApproved}`);
+      console.log(`🔍 Agent ${match.agentInfo?.name}: hasResponded=${hasResponded}, isFullyApproved=${isFullyApproved}, agentResponse=${match.agentResponse}, status=${match.status}, enrollmentStatus=${match.enrollmentStatus}`);
       
-      return hasAccepted && !isFullyApproved;
+      return hasResponded && !isFullyApproved;
     });
     
     // Agents who are fully approved and active
@@ -486,12 +489,12 @@ function RepMatchingPanel() {
           <>
             {/* 1. SMART MATCHING SYSTEM */}
             {activeSection === 'matching' && (
-              <div className="space-y-6">
+    <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900">🎯 Smart Matching System</h2>
                     <p className="text-gray-600">Find and match the perfect representatives for your gigs</p>
-                  </div>
+            </div>
                   <button
                     onClick={() => setShowWeights(!showWeights)}
                     className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 text-sm font-medium ${
@@ -502,9 +505,9 @@ function RepMatchingPanel() {
                   >
                     <Settings size={16} className={showWeights ? 'rotate-180' : ''} />
                     <span>{showWeights ? 'Close Weights' : 'Adjust Weights'}</span>
-                  </button>
-                </div>
-        
+          </button>
+        </div>
+
                 {/* Weights Configuration Panel */}
                 {showWeights && (
           <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-2xl p-8 mb-8 transform transition-all duration-500 ease-in-out border border-gray-200">
@@ -709,7 +712,7 @@ function RepMatchingPanel() {
                                 </h4>
                                 <p className="text-xs text-gray-600">{gig.companyName}</p>
                               </div>
-                            </div>
+            </div>
                             
                             <span className={`px-2 py-1 rounded text-xs font-medium ${
                               selectedGig?._id === gig._id
@@ -718,27 +721,27 @@ function RepMatchingPanel() {
                             }`}>
                               {gig.category}
                             </span>
-                          </div>
+          </div>
 
                           <div className="space-y-2 text-sm">
                             <div className="flex items-center justify-between">
                               <span className="text-gray-600">Experience:</span>
                               <span className="font-medium">{gig.seniority?.yearsExperience} years</span>
-                            </div>
-                          </div>
+            </div>
+          </div>
 
                           {selectedGig?._id === gig._id && (
                             <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
                               <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                               </svg>
-                            </div>
+            </div>
                           )}
-                        </div>
-                      </div>
+          </div>
+            </div>
                     ))}
-                  </div>
-                </div>
+          </div>
+        </div>
 
                 {/* Matching Results */}
                 {selectedGig && (
@@ -795,7 +798,7 @@ function RepMatchingPanel() {
                                     </button>
                                   )}
                                 </div>
-                              </div>
+      </div>
                             </div>
                           );
                         })}
