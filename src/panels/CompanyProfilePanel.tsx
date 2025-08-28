@@ -140,6 +140,7 @@ function CompanyProfile() {
     className?: string;
   }) => {
     const isEditing = editingField === field && editMode;
+    const isHeroField = className.includes('text-white') || className.includes('text-5xl');
     
     const handleFieldEdit = () => {
       if (editMode) {
@@ -164,7 +165,7 @@ function CompanyProfile() {
     };
     
     return (
-      <div className={`relative ${className}`} onClick={handleFieldEdit}>
+      <div className={`relative group ${className}`} onClick={handleFieldEdit}>
         {Icon && !isEditing && <Icon size={18} className="flex-shrink-0" />}
         
         {isEditing ? (
@@ -178,18 +179,23 @@ function CompanyProfile() {
                   [field]: e.target.value,
                 }))
               }
-              className="w-full px-3 py-2 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none ${
+                isHeroField 
+                  ? 'border-white/30 bg-white/20 backdrop-blur-sm text-white placeholder-white/70' 
+                  : 'border-indigo-300 bg-white text-gray-900'
+              }`}
+              placeholder={isHeroField ? value || "Enter text..." : ""}
             />
             <div className="absolute right-0 top-full mt-2 flex gap-2">
               <button
                 onClick={handleFieldSave}
-                className="p-1.5 bg-green-500 text-white rounded-md hover:bg-green-600"
+                className="p-1.5 bg-green-500 text-white rounded-md hover:bg-green-600 shadow-lg"
               >
                 <CheckCircle2 size={14} />
               </button>
               <button
                 onClick={handleFieldCancel}
-                className="p-1.5 bg-red-500 text-white rounded-md hover:bg-red-600"
+                className="p-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 shadow-lg"
               >
                 <X size={14} />
               </button>
@@ -197,10 +203,14 @@ function CompanyProfile() {
           </div>
         ) : (
           <>
-            <span>{value || "Not set"}</span>
+            <span className={isHeroField ? "" : "text-gray-800"}>{value || "Not set"}</span>
             {editMode && (
               <button
-                className="absolute -right-3 -top-3 opacity-0 group-hover:opacity-100 p-1 bg-white rounded-full shadow-md text-gray-600 hover:text-indigo-600 transition-all"
+                className={`absolute -right-3 -top-3 opacity-0 group-hover:opacity-100 p-1 rounded-full shadow-md transition-all ${
+                  isHeroField 
+                    ? 'bg-white/20 backdrop-blur-sm text-white hover:text-yellow-300' 
+                    : 'bg-white text-gray-600 hover:text-indigo-600'
+                }`}
                 onClick={() => handleFieldEdit()}
               >
                 <Pencil size={12} />
