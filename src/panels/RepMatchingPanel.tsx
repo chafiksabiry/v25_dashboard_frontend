@@ -129,13 +129,14 @@ function RepMatchingPanel() {
   // Update agent lists when data changes
   useEffect(() => {
     // Skip if no data yet
-    if (!companyInvitedAgents || !enrollmentRequests) return;
+    if (!companyInvitedAgents || !enrollmentRequests || !activeAgentsList) return;
     
     // Directly set the lists without filtering again
     setInvitedAgentsList(companyInvitedAgents.filter(agent => !agent.isActive && !agent.hasCompletedOnboarding));
     setEnrollmentRequests(enrollmentRequests);
-    setActiveAgentsList(companyInvitedAgents.filter(agent => agent.status === 'active' || agent.onboardingProgress?.currentPhase === 4));
-  }, [companyInvitedAgents, enrollmentRequests]);
+    // Active agents come directly from the API endpoint
+    console.log('✅ Setting active agents:', activeAgentsList);
+  }, [companyInvitedAgents, enrollmentRequests, activeAgentsList]);
 
   const handleGigSelect = async (gig: Gig) => {
     console.log('🎯 GIG SELECTED:', gig.title, 'ID:', gig._id);
@@ -1002,9 +1003,16 @@ function RepMatchingPanel() {
                                   )}
                                 </div>
                                 
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                  <span className="font-medium">Availability:</span>
-                                  {agent.availability?.schedule?.length} days/week
+                                <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                                  <div>
+                                    <span className="font-medium">Availability:</span> {agent.availability?.schedule?.length} days/week
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Status:</span> {agent.onboardingProgress?.currentPhase === 4 ? 'Fully Onboarded' : 'In Progress'}
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Languages:</span> {agent.personalInfo?.languages?.length || 0}
+                                  </div>
                                 </div>
                               </div>
                             </div>
