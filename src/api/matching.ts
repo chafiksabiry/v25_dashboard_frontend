@@ -239,6 +239,30 @@ export const getAllSkills = async (): Promise<{
   soft: Skill[];
 }> => {
   console.log('getAllSkills called');
+  
+  // Return mock data for now since the API endpoint doesn't exist
+  const mockSkills = {
+    professional: [
+      { _id: '1', name: 'Sales Management', category: 'professional' },
+      { _id: '2', name: 'Customer Service', category: 'professional' },
+      { _id: '3', name: 'Project Management', category: 'professional' },
+    ],
+    technical: [
+      { _id: '4', name: 'CRM Software', category: 'technical' },
+      { _id: '5', name: 'Data Analysis', category: 'technical' },
+      { _id: '6', name: 'Excel Advanced', category: 'technical' },
+    ],
+    soft: [
+      { _id: '7', name: 'Communication', category: 'soft' },
+      { _id: '8', name: 'Leadership', category: 'soft' },
+      { _id: '9', name: 'Problem Solving', category: 'soft' },
+    ]
+  };
+  
+  console.log('Using mock skills data:', mockSkills);
+  return mockSkills;
+  
+  /* Commented out until API endpoint is available
   try {
     const response = await fetch(`${MATCHING_API_URL}/skills`);
     
@@ -256,16 +280,32 @@ export const getAllSkills = async (): Promise<{
     };
   } catch (error) {
     console.error('Error in getAllSkills:', error);
-    return {
-      professional: [],
-      technical: [],
-      soft: []
-    };
+    return mockSkills;
   }
+  */
 };
 
 export const getLanguages = async (): Promise<Language[]> => {
   console.log('getLanguages called');
+  
+  // Return mock data for now since the API endpoint doesn't exist
+  const mockLanguages = [
+    { _id: '1', name: 'English', code: 'en' },
+    { _id: '2', name: 'French', code: 'fr' },
+    { _id: '3', name: 'Spanish', code: 'es' },
+    { _id: '4', name: 'German', code: 'de' },
+    { _id: '5', name: 'Italian', code: 'it' },
+    { _id: '6', name: 'Portuguese', code: 'pt' },
+    { _id: '7', name: 'Dutch', code: 'nl' },
+    { _id: '8', name: 'Arabic', code: 'ar' },
+    { _id: '9', name: 'Chinese', code: 'zh' },
+    { _id: '10', name: 'Japanese', code: 'ja' },
+  ];
+  
+  console.log('Using mock languages data:', mockLanguages);
+  return mockLanguages;
+  
+  /* Commented out until API endpoint is available
   try {
     const response = await fetch(`${MATCHING_API_URL}/languages`);
     
@@ -279,6 +319,7 @@ export const getLanguages = async (): Promise<Language[]> => {
     return data || [];
   } catch (error) {
     console.error('Error in getLanguages:', error);
-    return [];
+    return mockLanguages;
   }
+  */
 };
