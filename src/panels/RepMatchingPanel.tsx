@@ -709,7 +709,11 @@ function RepMatchingPanel() {
               <div className="space-y-3">
                 {matches.map((match, index) => {
                   const isInvited = match.isInvited !== undefined ? match.isInvited : invitedAgents.has(match.agentId);
-                  const isEnrolled = match.isEnrolled || match.status === 'accepted' || match.agentInfo?.status === 'accepted';
+                  const isEnrolled = match.isEnrolled || 
+                                   match.status === 'accepted' || 
+                                   match.agentResponse === 'accepted' || 
+                                   match.enrollmentStatus === 'accepted' || 
+                                   match.agentInfo?.status === 'accepted';
                   const matchPercentage = Math.round(match.overallScore * 100);
                   
                   return (
