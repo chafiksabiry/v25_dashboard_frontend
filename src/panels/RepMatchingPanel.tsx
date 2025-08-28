@@ -309,13 +309,11 @@ function RepMatchingPanel() {
     
     // Use company invited agents from API endpoint
     const invited = companyInvitedAgents.filter(agent => {
-      // Filter agents who are still pending (not accepted yet)
-      const isStillPending = agent.agentResponse === 'pending' && 
-                            agent.enrollmentStatus === 'invited';
+      // Filter agents who are still in draft status
+      const isStillPending = agent.status === 'draft';
       
       console.log(`🔍 Company Invited Agent ${agent.personalInfo?.name}:`, {
-        agentResponse: agent.agentResponse,
-        enrollmentStatus: agent.enrollmentStatus,
+        status: agent.status,
         isStillPending,
         fullData: agent
       });
@@ -323,29 +321,21 @@ function RepMatchingPanel() {
       return isStillPending;
     });
     
-    // Agents who have responded positively (accepted, pending, or requested) but are waiting for company approval
+    // Agents who have completed onboarding but are waiting for company approval
     const enrollmentReqs = companyInvitedAgents.filter(agent => {
-      const hasResponded = agent.agentResponse === 'accepted' || 
-                          agent.agentResponse === 'pending' ||
-                          agent.status === 'accepted' ||
-                          agent.status === 'pending' ||
-                          agent.enrollmentStatus === 'requested';
-      const isFullyApproved = agent.enrollmentStatus === 'accepted' || 
-                              agent.companyApproved === true || 
-                              agent.finalStatus === 'active';
+      const hasCompletedOnboarding = agent.isBasicProfileCompleted === true &&
+                                   agent.onboardingProgress?.phases?.phase4?.status === 'completed';
+      const isStillDraft = agent.status === 'draft';
       
-      console.log(`🔍 Company Agent ${agent.personalInfo?.name}: hasResponded=${hasResponded}, isFullyApproved=${isFullyApproved}, agentResponse=${agent.agentResponse}, status=${agent.status}, enrollmentStatus=${agent.enrollmentStatus}`);
+      console.log(`🔍 Company Agent ${agent.personalInfo?.name}: hasCompletedOnboarding=${hasCompletedOnboarding}, isStillDraft=${isStillDraft}`);
       
-      return hasResponded && !isFullyApproved;
+      return hasCompletedOnboarding && isStillDraft;
     });
     
     // Agents who are fully approved and active
     const active = companyInvitedAgents.filter(agent => {
-      const isActive = agent.isEnrolled || 
-                      agent.companyApproved === true ||
-                      agent.finalStatus === 'active' ||
-                      agent.enrollmentStatus === 'accepted' ||
-                      (agent.agentResponse === 'accepted' && agent.status === 'accepted');
+      const isActive = agent.status === 'active' || 
+                      agent.onboardingProgress?.currentPhase === 4;
       
       console.log(`🔍 Company Agent ${agent.personalInfo?.name}: isActive=${isActive}`);
       
