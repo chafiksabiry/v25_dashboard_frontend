@@ -237,6 +237,23 @@ export const getInvitedAgentsForCompany = async (companyId: string): Promise<any
   }
 };
 
+export const getEnrollmentRequestsForCompany = async (companyId: string): Promise<any[]> => {
+  try {
+    const response = await fetch(`${MATCHING_API_URL}/gig-agents/enrollment-requests/company/${companyId}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('📋 Enrollment requests for company:', data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching enrollment requests for company:', error);
+    throw error;
+  }
+};
+
 // ===== SKILLS & LANGUAGES API =====
 export interface Skill {
   _id: string;

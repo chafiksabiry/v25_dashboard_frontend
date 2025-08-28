@@ -92,6 +92,13 @@ function RepMatchingPanel() {
           getEnrollmentRequestsForCompany(companyId)
         ]);
         
+        setReps(repsData);
+        setGigs(gigsData);
+        setSkills(skillsData);
+        setLanguages(languagesData);
+        setCompanyInvitedAgents(invitedAgentsData);
+        setEnrollmentRequests(enrollmentRequestsData);
+        
         console.log("=== BACKEND DATA ===");
         console.log("Reps:", repsData);
         console.log("Gigs:", gigsData);
@@ -356,7 +363,7 @@ function RepMatchingPanel() {
     });
     
     // Use enrollment requests from API endpoint
-    const enrollmentReqs = enrollmentRequestsData || [];
+    const enrollmentReqs = enrollmentRequests;
     console.log('📋 Enrollment Requests from API:', enrollmentReqs);
     
     // Agents who are fully approved and active
