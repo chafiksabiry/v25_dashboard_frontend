@@ -24,6 +24,7 @@ import {
   createGigAgent,
   getGigAgentsForGig,
   getInvitedAgentsForCompany,
+  getEnrollmentRequestsForCompany,
   getAllSkills,
   getLanguages,
   saveGigWeights,
@@ -82,12 +83,13 @@ function RepMatchingPanel() {
         console.log("Fetching data from backend...");
         const companyId = Cookies.get('companyId') || '685abf28641398dc582f4c95';
         
-        const [repsData, gigsData, skillsData, languagesData, invitedAgentsData] = await Promise.all([
+        const [repsData, gigsData, skillsData, languagesData, invitedAgentsData, enrollmentRequestsData] = await Promise.all([
           getReps(),
           companyId ? getGigsByCompanyId(companyId) : getGigs(),
           getAllSkills(),
           getLanguages(),
-          getInvitedAgentsForCompany(companyId)
+          getInvitedAgentsForCompany(companyId),
+          getEnrollmentRequestsForCompany(companyId)
         ]);
         
         console.log("=== BACKEND DATA ===");
@@ -353,16 +355,9 @@ function RepMatchingPanel() {
       return isInvited;
     });
     
-    // Agents who have completed onboarding but are waiting for company approval
-    const enrollmentReqs = companyInvitedAgents.filter(agent => {
-      const hasCompletedOnboarding = agent.isBasicProfileCompleted === true &&
-                                   agent.onboardingProgress?.phases?.phase4?.status === 'completed';
-      const isStillDraft = agent.status === 'draft';
-      
-      console.log(`🔍 Company Agent ${agent.personalInfo?.name}: hasCompletedOnboarding=${hasCompletedOnboarding}, isStillDraft=${isStillDraft}`);
-      
-      return hasCompletedOnboarding && isStillDraft;
-    });
+    // Use enrollment requests from API endpoint
+    const enrollmentReqs = enrollmentRequestsData || [];
+    console.log('📋 Enrollment Requests from API:', enrollmentReqs);
     
     // Agents who are fully approved and active
     const active = companyInvitedAgents.filter(agent => {
@@ -919,11 +914,21 @@ function RepMatchingPanel() {
                         <div key={`enrollment-${agent._id}-${index}`} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
-                              <h3 className="text-lg font-bold text-gray-900">{agent.personalInfo?.name}</h3>
-                              <p className="text-gray-600">{agent.personalInfo?.email}</p>
-                              <p className="text-sm text-blue-700 mt-1">
-                                Accepted invitation • Ready to start
-                              </p>
+                              <h3 className="text-lg font-bold text-gray-900">{agent.agentId?.personalInfo?.name}</h3>
+                              <p className="text-gray-600">{agent.agentId?.personalInfo?.email}</p>
+                              <div className="mt-2 space-y-1">
+                                <p className="text-sm text-blue-700">
+                                  <span className="font-medium">Status:</span> {agent.enrollmentStatus}
+                                </p>
+                                {agent.notes && (
+                                  <p className="text-sm text-gray-600 italic">
+                                    "{agent.notes}"
+                                  </p>
+                                )}
+                                <p className="text-xs text-gray-500">
+                                  For: {agent.gigId?.title}
+                                </p>
+                              </div>
                             </div>
                             <div className="flex items-center space-x-2">
                               <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 text-sm font-medium">
