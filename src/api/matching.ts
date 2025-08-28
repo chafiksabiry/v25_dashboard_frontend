@@ -403,3 +403,23 @@ export const resetGigWeights = async (gigId: string): Promise<void> => {
     throw error;
   }
 };
+
+// Get invited agents for a company
+export const getInvitedAgentsForCompany = async (companyId: string): Promise<any[]> => {
+  console.log('getInvitedAgentsForCompany called with:', companyId);
+  try {
+    const response = await fetch(`${MATCHING_API_URL}/gig-agents/invited/company/${companyId}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch invited agents for company');
+    }
+    
+    const data = await response.json();
+    console.log('Parsed getInvitedAgentsForCompany response:', data);
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching invited agents for company:', error);
+    return [];
+  }
+};

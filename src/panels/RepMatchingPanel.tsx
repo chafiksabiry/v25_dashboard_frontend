@@ -23,6 +23,7 @@ import {
   findMatchesForGig,
   createGigAgent,
   getGigAgentsForGig,
+  getInvitedAgentsForCompany,
   getAllSkills,
   getLanguages,
   saveGigWeights,
@@ -69,6 +70,7 @@ function RepMatchingPanel() {
   const [invitedAgentsList, setInvitedAgentsList] = useState<any[]>([]);
   const [enrollmentRequests, setEnrollmentRequests] = useState<any[]>([]);
   const [activeAgentsList, setActiveAgentsList] = useState<any[]>([]);
+  const [realInvitedAgents, setRealInvitedAgents] = useState<any[]>([]);
 
   // Fetch data from real backend
   useEffect(() => {
@@ -80,11 +82,12 @@ function RepMatchingPanel() {
         console.log("Fetching data from backend...");
         const companyId = Cookies.get('companyId') || '685abf28641398dc582f4c95';
         
-        const [repsData, gigsData, skillsData, languagesData] = await Promise.all([
+        const [repsData, gigsData, skillsData, languagesData, invitedAgentsData] = await Promise.all([
           getReps(),
           companyId ? getGigsByCompanyId(companyId) : getGigs(),
           getAllSkills(),
-          getLanguages()
+          getLanguages(),
+          getInvitedAgentsForCompany(companyId)
         ]);
         
         console.log("=== BACKEND DATA ===");
@@ -92,11 +95,13 @@ function RepMatchingPanel() {
         console.log("Gigs:", gigsData);
         console.log("Skills:", skillsData);
         console.log("Languages:", languagesData);
+        console.log("Invited Agents:", invitedAgentsData);
         
         setReps(repsData);
         setGigs(gigsData);
         setSkills(skillsData);
         setLanguages(languagesData);
+        setRealInvitedAgents(invitedAgentsData);
         
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -299,63 +304,57 @@ function RepMatchingPanel() {
   // Helper functions to organize agents by status
   const organizeAgentsByStatus = () => {
     console.log('🔍 DEBUG: All matches data:', matches);
-    console.log('🔍 DEBUG: invitedAgents Set:', invitedAgents);
+    console.log('🔍 DEBUG: realInvitedAgents:', realInvitedAgents);
     
-    // Agents who are invited but haven't accepted yet
-    const invited = matches.filter(match => {
-      const isInvited = match.isInvited || invitedAgents.has(match.agentId);
-      const hasAccepted = match.agentResponse === 'accepted' || 
-                         match.status === 'accepted' || 
-                         match.enrollmentStatus === 'accepted';
+    // Use real invited agents from API instead of deducing from matches
+    const invited = realInvitedAgents.filter(agent => {
+      // Filter agents who are still pending (not accepted yet)
+      const isStillPending = agent.agentResponse === 'pending' && 
+                            agent.enrollmentStatus === 'invited';
       
-      console.log(`🔍 Agent ${match.agentInfo?.name}:`, {
-        isInvited,
-        hasAccepted,
-        agentResponse: match.agentResponse,
-        status: match.status,
-        enrollmentStatus: match.enrollmentStatus,
-        isEnrolled: match.isEnrolled,
-        companyApproved: match.companyApproved,
-        finalStatus: match.finalStatus,
-        fullMatchData: match
+      console.log(`🔍 Real Invited Agent ${agent.agentId}:`, {
+        agentResponse: agent.agentResponse,
+        enrollmentStatus: agent.enrollmentStatus,
+        isStillPending,
+        fullData: agent
       });
       
-      return isInvited && !hasAccepted;
+      return isStillPending;
     });
     
     // Agents who have responded positively (accepted, pending, or requested) but are waiting for company approval
-    const enrollmentReqs = matches.filter(match => {
-      const hasResponded = match.agentResponse === 'accepted' || 
-                          match.agentResponse === 'pending' ||
-                          match.status === 'accepted' ||
-                          match.status === 'pending' ||
-                          match.enrollmentStatus === 'requested';
-      const isFullyApproved = match.enrollmentStatus === 'accepted' || 
-                              match.companyApproved === true || 
-                              match.finalStatus === 'active';
+    const enrollmentReqs = realInvitedAgents.filter(agent => {
+      const hasResponded = agent.agentResponse === 'accepted' || 
+                          agent.agentResponse === 'pending' ||
+                          agent.status === 'accepted' ||
+                          agent.status === 'pending' ||
+                          agent.enrollmentStatus === 'requested';
+      const isFullyApproved = agent.enrollmentStatus === 'accepted' || 
+                              agent.companyApproved === true || 
+                              agent.finalStatus === 'active';
       
-      console.log(`🔍 Agent ${match.agentInfo?.name}: hasResponded=${hasResponded}, isFullyApproved=${isFullyApproved}, agentResponse=${match.agentResponse}, status=${match.status}, enrollmentStatus=${match.enrollmentStatus}`);
+      console.log(`🔍 Real Agent ${agent.agentId}: hasResponded=${hasResponded}, isFullyApproved=${isFullyApproved}`);
       
       return hasResponded && !isFullyApproved;
     });
     
     // Agents who are fully approved and active
-    const active = matches.filter(match => {
-      const isActive = match.isEnrolled || 
-                      match.companyApproved === true ||
-                      match.finalStatus === 'active' ||
-                      match.enrollmentStatus === 'accepted' ||
-                      (match.agentResponse === 'accepted' && match.status === 'accepted');
+    const active = realInvitedAgents.filter(agent => {
+      const isActive = agent.isEnrolled || 
+                      agent.companyApproved === true ||
+                      agent.finalStatus === 'active' ||
+                      agent.enrollmentStatus === 'accepted' ||
+                      (agent.agentResponse === 'accepted' && agent.status === 'accepted');
       
-      console.log(`🔍 Agent ${match.agentInfo?.name}: isActive=${isActive}`);
+      console.log(`🔍 Real Agent ${agent.agentId}: isActive=${isActive}`);
       
       return isActive;
     });
 
     console.log('🔄 Organizing agents by status:');
-    console.log('📧 Invited:', invited.length, invited.map(a => ({ name: a.agentInfo?.name, id: a.agentId })));
-    console.log('📋 Enrollment Requests:', enrollmentReqs.length, enrollmentReqs.map(a => ({ name: a.agentInfo?.name, id: a.agentId })));
-    console.log('✅ Active:', active.length, active.map(a => ({ name: a.agentInfo?.name, id: a.agentId })));
+    console.log('📧 Invited:', invited.length, invited.map(a => ({ id: a.agentId, status: a.agentResponse })));
+    console.log('📋 Enrollment Requests:', enrollmentReqs.length, enrollmentReqs.map(a => ({ id: a.agentId, status: a.agentResponse })));
+    console.log('✅ Active:', active.length, active.map(a => ({ id: a.agentId, status: a.agentResponse })));
 
     setInvitedAgentsList(invited);
     setEnrollmentRequests(enrollmentReqs);
@@ -854,11 +853,16 @@ function RepMatchingPanel() {
                         <div key={`invited-${agent.agentId}-${index}`} className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
-                              <h3 className="text-lg font-bold text-gray-900">{agent.agentInfo?.name}</h3>
-                              <p className="text-gray-600">{agent.agentInfo?.email}</p>
+                              <h3 className="text-lg font-bold text-gray-900">Agent ID: {agent.agentId}</h3>
+                              <p className="text-gray-600">Gig: {agent.gigId?.title || 'Unknown Gig'}</p>
                               <p className="text-sm text-yellow-700 mt-1">
                                 Invited • Waiting for response
                               </p>
+                              <div className="mt-2 text-xs text-gray-500">
+                                <p>Status: {agent.agentResponse}</p>
+                                <p>Enrollment: {agent.enrollmentStatus}</p>
+                                <p>Match Score: {agent.matchScore ? Math.round(agent.matchScore * 100) + '%' : 'N/A'}</p>
+                              </div>
                             </div>
                             <div className="flex items-center space-x-2">
                               <span className="inline-flex items-center px-3 py-2 bg-yellow-100 text-yellow-800 rounded-lg text-sm font-medium">
@@ -897,11 +901,16 @@ function RepMatchingPanel() {
                         <div key={`enrollment-${agent.agentId}-${index}`} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
-                              <h3 className="text-lg font-bold text-gray-900">{agent.agentInfo?.name}</h3>
-                              <p className="text-gray-600">{agent.agentInfo?.email}</p>
+                              <h3 className="text-lg font-bold text-gray-900">Agent ID: {agent.agentId}</h3>
+                              <p className="text-gray-600">Gig: {agent.gigId?.title || 'Unknown Gig'}</p>
                               <p className="text-sm text-blue-700 mt-1">
-                                Accepted invitation • Ready to start
+                                Responded to invitation • Awaiting approval
                               </p>
+                              <div className="mt-2 text-xs text-gray-500">
+                                <p>Status: {agent.agentResponse}</p>
+                                <p>Enrollment: {agent.enrollmentStatus}</p>
+                                <p>Match Score: {agent.matchScore ? Math.round(agent.matchScore * 100) + '%' : 'N/A'}</p>
+                              </div>
                             </div>
                             <div className="flex items-center space-x-2">
                               <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 text-sm font-medium">
@@ -943,11 +952,16 @@ function RepMatchingPanel() {
                         <div key={`active-${agent.agentId}-${index}`} className="bg-green-50 border border-green-200 rounded-lg p-4">
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
-                              <h3 className="text-lg font-bold text-gray-900">{agent.agentInfo?.name}</h3>
-                              <p className="text-gray-600">{agent.agentInfo?.email}</p>
+                              <h3 className="text-lg font-bold text-gray-900">Agent ID: {agent.agentId}</h3>
+                              <p className="text-gray-600">Gig: {agent.gigId?.title || 'Unknown Gig'}</p>
                               <p className="text-sm text-green-700 mt-1">
                                 Active • Working on gigs
                               </p>
+                              <div className="mt-2 text-xs text-gray-500">
+                                <p>Status: {agent.agentResponse}</p>
+                                <p>Enrollment: {agent.enrollmentStatus}</p>
+                                <p>Match Score: {agent.matchScore ? Math.round(agent.matchScore * 100) + '%' : 'N/A'}</p>
+                              </div>
                             </div>
                             <div className="flex items-center space-x-2">
                               <span className="inline-flex items-center px-3 py-2 bg-green-100 text-green-800 rounded-lg text-sm font-medium">
