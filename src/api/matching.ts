@@ -237,6 +237,23 @@ export const getInvitedAgentsForCompany = async (companyId: string): Promise<any
   }
 };
 
+export const getActiveAgentsForCompany = async (companyId: string): Promise<any[]> => {
+  try {
+    const response = await fetch(`${MATCHING_API_URL}/gig-agents/active-agents/company/${companyId}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('✅ Active agents for company:', data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching active agents for company:', error);
+    throw error;
+  }
+};
+
 export const getEnrollmentRequestsForCompany = async (companyId: string): Promise<any[]> => {
   try {
     const response = await fetch(`${MATCHING_API_URL}/gig-agents/enrollment-requests/company/${companyId}`);

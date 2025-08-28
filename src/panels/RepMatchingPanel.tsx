@@ -25,6 +25,7 @@ import {
   getGigAgentsForGig,
   getInvitedAgentsForCompany,
   getEnrollmentRequestsForCompany,
+  getActiveAgentsForCompany,
   getAllSkills,
   getLanguages,
   saveGigWeights,
@@ -84,16 +85,18 @@ function RepMatchingPanel() {
         const companyId = Cookies.get('companyId') || '685abf28641398dc582f4c95';
         
         // Load essential data first
-        const [gigsData, invitedAgentsData, enrollmentRequestsData] = await Promise.all([
+        const [gigsData, invitedAgentsData, enrollmentRequestsData, activeAgentsData] = await Promise.all([
           companyId ? getGigsByCompanyId(companyId) : getGigs(),
           getInvitedAgentsForCompany(companyId),
-          getEnrollmentRequestsForCompany(companyId)
+          getEnrollmentRequestsForCompany(companyId),
+          getActiveAgentsForCompany(companyId)
         ]);
         
         // Set essential data
         setGigs(gigsData);
         setCompanyInvitedAgents(invitedAgentsData);
         setEnrollmentRequests(enrollmentRequestsData);
+        setActiveAgentsList(activeAgentsData);
         
         // Then load secondary data
         const [repsData, skillsData, languagesData] = await Promise.all([
@@ -310,14 +313,16 @@ function RepMatchingPanel() {
       const companyId = Cookies.get('companyId') || '685abf28641398dc582f4c95';
       
       // Fetch only what we need
-      const [invitedAgentsData, enrollmentRequestsData] = await Promise.all([
+      const [invitedAgentsData, enrollmentRequestsData, activeAgentsData] = await Promise.all([
         getInvitedAgentsForCompany(companyId),
-        getEnrollmentRequestsForCompany(companyId)
+        getEnrollmentRequestsForCompany(companyId),
+        getActiveAgentsForCompany(companyId)
       ]);
       
       // Update essential state
       setCompanyInvitedAgents(invitedAgentsData);
       setEnrollmentRequests(enrollmentRequestsData);
+      setActiveAgentsList(activeAgentsData);
       
       // If a gig is selected, refresh its matches
       if (selectedGig) {
@@ -361,15 +366,9 @@ function RepMatchingPanel() {
     const enrollmentReqs = enrollmentRequests;
     console.log('📋 Enrollment Requests from API:', enrollmentReqs);
     
-    // Agents who are fully approved and active
-    const active = companyInvitedAgents.filter(agent => {
-      const isActive = agent.status === 'active' || 
-                      agent.onboardingProgress?.currentPhase === 4;
-      
-      console.log(`🔍 Company Agent ${agent.personalInfo?.name}: isActive=${isActive}`);
-      
-      return isActive;
-    });
+    // Use active agents from API endpoint
+    const active = activeAgentsList;
+    console.log('✅ Active Agents from API:', active);
 
     console.log('🔄 Organizing agents by status:');
     console.log('📧 Invited:', invited.length, invited.map(a => ({ name: a.personalInfo?.name, id: a._id })));
