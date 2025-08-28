@@ -298,34 +298,61 @@ function RepMatchingPanel() {
 
   // Helper functions to organize agents by status
   const organizeAgentsByStatus = () => {
-    const invited = matches.filter(match => 
-      (match.isInvited || invitedAgents.has(match.agentId)) && 
-      match.agentResponse !== 'accepted' && 
-      match.enrollmentStatus !== 'accepted' &&
-      match.status !== 'accepted'
-    );
+    console.log('🔍 DEBUG: All matches data:', matches);
+    console.log('🔍 DEBUG: invitedAgents Set:', invitedAgents);
     
-    // Agents who have accepted and are requesting enrollment (waiting company approval)
-    const enrollmentReqs = matches.filter(match => 
-      (match.agentResponse === 'accepted' || match.status === 'accepted') &&
-      match.enrollmentStatus !== 'accepted' &&
-      match.companyApproved !== true &&
-      match.finalStatus !== 'active'
-    );
+    // Agents who are invited but haven't accepted yet
+    const invited = matches.filter(match => {
+      const isInvited = match.isInvited || invitedAgents.has(match.agentId);
+      const hasAccepted = match.agentResponse === 'accepted' || 
+                         match.status === 'accepted' || 
+                         match.enrollmentStatus === 'accepted';
+      
+      console.log(`🔍 Agent ${match.agentInfo?.name}:`, {
+        isInvited,
+        hasAccepted,
+        agentResponse: match.agentResponse,
+        status: match.status,
+        enrollmentStatus: match.enrollmentStatus,
+        isEnrolled: match.isEnrolled,
+        companyApproved: match.companyApproved,
+        finalStatus: match.finalStatus,
+        fullMatchData: match
+      });
+      
+      return isInvited && !hasAccepted;
+    });
     
-    // Agents who are fully approved and active (agent accepted + company approved)
-    const active = matches.filter(match => 
-      match.isEnrolled || 
-      match.companyApproved === true ||
-      match.finalStatus === 'active' ||
-      match.enrollmentStatus === 'accepted' || // If enrollment is accepted, they're active
-      (match.agentResponse === 'accepted' && match.status === 'accepted') // Both agent and system accepted
-    );
+    // Agents who have accepted but are waiting for company approval
+    const enrollmentReqs = matches.filter(match => {
+      const hasAccepted = match.agentResponse === 'accepted' || 
+                         match.status === 'accepted';
+      const isFullyApproved = match.enrollmentStatus === 'accepted' || 
+                              match.companyApproved === true || 
+                              match.finalStatus === 'active';
+      
+      console.log(`🔍 Agent ${match.agentInfo?.name}: hasAccepted=${hasAccepted}, isFullyApproved=${isFullyApproved}`);
+      
+      return hasAccepted && !isFullyApproved;
+    });
+    
+    // Agents who are fully approved and active
+    const active = matches.filter(match => {
+      const isActive = match.isEnrolled || 
+                      match.companyApproved === true ||
+                      match.finalStatus === 'active' ||
+                      match.enrollmentStatus === 'accepted' ||
+                      (match.agentResponse === 'accepted' && match.status === 'accepted');
+      
+      console.log(`🔍 Agent ${match.agentInfo?.name}: isActive=${isActive}`);
+      
+      return isActive;
+    });
 
     console.log('🔄 Organizing agents by status:');
-    console.log('📧 Invited:', invited.length, invited);
-    console.log('📋 Enrollment Requests:', enrollmentReqs.length, enrollmentReqs);
-    console.log('✅ Active:', active.length, active);
+    console.log('📧 Invited:', invited.length, invited.map(a => ({ name: a.agentInfo?.name, id: a.agentId })));
+    console.log('📋 Enrollment Requests:', enrollmentReqs.length, enrollmentReqs.map(a => ({ name: a.agentInfo?.name, id: a.agentId })));
+    console.log('✅ Active:', active.length, active.map(a => ({ name: a.agentInfo?.name, id: a.agentId })));
 
     setInvitedAgentsList(invited);
     setEnrollmentRequests(enrollmentReqs);
