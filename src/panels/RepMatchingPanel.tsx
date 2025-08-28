@@ -971,18 +971,47 @@ function RepMatchingPanel() {
                         <div key={`active-${agent._id}-${index}`} className="bg-green-50 border border-green-200 rounded-lg p-4">
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
-                              <h3 className="text-lg font-bold text-gray-900">{agent.personalInfo?.name}</h3>
-                              <p className="text-gray-600">{agent.personalInfo?.email}</p>
-                              <p className="text-sm text-green-700 mt-1">
-                                Active • Working on gigs
-                              </p>
+                              <div className="flex items-center gap-3 mb-2">
+                                <h3 className="text-lg font-bold text-gray-900">{agent.personalInfo?.name}</h3>
+                                <span className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                                  ✅ Active
+                                </span>
+                              </div>
+                              <p className="text-gray-600 mb-2">{agent.personalInfo?.email}</p>
+                              
+                              <div className="mt-3 space-y-2">
+                                <div className="flex items-center gap-4 text-sm">
+                                  <span className="text-gray-600">
+                                    <span className="font-medium">Experience:</span> {agent.professionalSummary?.yearsOfExperience} years
+                                  </span>
+                                  <span className="text-gray-600">
+                                    <span className="font-medium">Role:</span> {agent.professionalSummary?.currentRole}
+                                  </span>
+                                </div>
+                                
+                                <div className="flex flex-wrap gap-2">
+                                  {agent.professionalSummary?.keyExpertise?.slice(0, 5).map((skill, i) => (
+                                    <span key={i} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                                      {skill}
+                                    </span>
+                                  ))}
+                                  {agent.professionalSummary?.keyExpertise?.length > 5 && (
+                                    <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                      +{agent.professionalSummary.keyExpertise.length - 5} more
+                                    </span>
+                                  )}
+                                </div>
+                                
+                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                  <span className="font-medium">Availability:</span>
+                                  {agent.availability?.schedule?.length} days/week
+                                </div>
+                              </div>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <span className="inline-flex items-center px-3 py-2 bg-green-100 text-green-800 rounded-lg text-sm font-medium">
-                                ✅ Active
-                              </span>
+                            
+                            <div className="flex flex-col items-end space-y-2">
                               <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 text-sm font-medium">
-                                Manage
+                                Manage Profile
                               </button>
                             </div>
                           </div>
