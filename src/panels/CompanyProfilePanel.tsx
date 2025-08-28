@@ -170,7 +170,7 @@ function CompanyProfile() {
         {Icon && !isEditing && <Icon size={18} className="flex-shrink-0" />}
         
         {isEditing ? (
-          <div className="w-full bg-white p-3 rounded-lg border border-indigo-300 shadow-lg relative z-10">
+          <div className="w-full bg-white p-4 rounded-lg border border-indigo-300 shadow-lg relative z-50 mt-2">
             {isTextArea ? (
               <textarea
                 value={tempValues[field] || ""}
@@ -196,19 +196,19 @@ function CompanyProfile() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-gray-900 bg-white"
               />
             )}
-            <div className="flex justify-end gap-2 mt-2">
+            <div className="flex justify-end gap-2 mt-3">
               <button
                 onClick={handleFieldSave}
-                className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 flex items-center gap-1"
+                className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 flex items-center gap-2"
               >
-                <CheckCircle2 size={14} />
+                <CheckCircle2 size={16} />
                 Save
               </button>
               <button
                 onClick={handleFieldCancel}
-                className="px-3 py-1 bg-gray-500 text-white rounded-md hover:bg-gray-600 flex items-center gap-1"
+                className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 flex items-center gap-2"
               >
-                <X size={14} />
+                <X size={16} />
                 Cancel
               </button>
             </div>
