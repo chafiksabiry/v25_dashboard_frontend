@@ -83,34 +83,34 @@ function RepMatchingPanel() {
         console.log("Fetching data from backend...");
         const companyId = Cookies.get('companyId') || '685abf28641398dc582f4c95';
         
-        const [repsData, gigsData, skillsData, languagesData, invitedAgentsData, enrollmentRequestsData] = await Promise.all([
-          getReps(),
+        // Load essential data first
+        const [gigsData, invitedAgentsData, enrollmentRequestsData] = await Promise.all([
           companyId ? getGigsByCompanyId(companyId) : getGigs(),
-          getAllSkills(),
-          getLanguages(),
           getInvitedAgentsForCompany(companyId),
           getEnrollmentRequestsForCompany(companyId)
         ]);
         
-        setReps(repsData);
+        // Set essential data
         setGigs(gigsData);
-        setSkills(skillsData);
-        setLanguages(languagesData);
         setCompanyInvitedAgents(invitedAgentsData);
         setEnrollmentRequests(enrollmentRequestsData);
         
-        console.log("=== BACKEND DATA ===");
-        console.log("Reps:", repsData);
-        console.log("Gigs:", gigsData);
-        console.log("Skills:", skillsData);
-        console.log("Languages:", languagesData);
-        console.log("Company Invited Agents:", invitedAgentsData);
+        // Then load secondary data
+        const [repsData, skillsData, languagesData] = await Promise.all([
+          getReps(),
+          getAllSkills(),
+          getLanguages()
+        ]);
         
+        // Set secondary data
         setReps(repsData);
-        setGigs(gigsData);
         setSkills(skillsData);
         setLanguages(languagesData);
-        setCompanyInvitedAgents(invitedAgentsData);
+        
+        console.log("=== BACKEND DATA ===");
+        console.log("Gigs:", gigsData);
+        console.log("Company Invited Agents:", invitedAgentsData);
+        console.log("Enrollment Requests:", enrollmentRequestsData);
         
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -123,12 +123,16 @@ function RepMatchingPanel() {
     fetchData();
   }, []);
 
-  // Update agent lists when matches or company invited agents change
+  // Update agent lists when data changes
   useEffect(() => {
-    if (companyInvitedAgents.length > 0) {
-      organizeAgentsByStatus();
-    }
-  }, [companyInvitedAgents]);
+    // Skip if no data yet
+    if (!companyInvitedAgents || !enrollmentRequests) return;
+    
+    // Directly set the lists without filtering again
+    setInvitedAgentsList(companyInvitedAgents.filter(agent => !agent.isActive && !agent.hasCompletedOnboarding));
+    setEnrollmentRequests(enrollmentRequests);
+    setActiveAgentsList(companyInvitedAgents.filter(agent => agent.status === 'active' || agent.onboardingProgress?.currentPhase === 4));
+  }, [companyInvitedAgents, enrollmentRequests]);
 
   const handleGigSelect = async (gig: Gig) => {
     console.log('🎯 GIG SELECTED:', gig.title, 'ID:', gig._id);
@@ -302,24 +306,18 @@ function RepMatchingPanel() {
         setGigAgentSuccess(null);
       }, 3000);
 
-      // Refresh all data immediately
+      // Refresh only essential data
       const companyId = Cookies.get('companyId') || '685abf28641398dc582f4c95';
       
-      // Fetch all data in parallel
-      const [repsData, gigsData, skillsData, languagesData, invitedAgentsData] = await Promise.all([
-        getReps(),
-        companyId ? getGigsByCompanyId(companyId) : getGigs(),
-        getAllSkills(),
-        getLanguages(),
-        getInvitedAgentsForCompany(companyId)
+      // Fetch only what we need
+      const [invitedAgentsData, enrollmentRequestsData] = await Promise.all([
+        getInvitedAgentsForCompany(companyId),
+        getEnrollmentRequestsForCompany(companyId)
       ]);
       
-      // Update all state
-      setReps(repsData);
-      setGigs(gigsData);
-      setSkills(skillsData);
-      setLanguages(languagesData);
+      // Update essential state
       setCompanyInvitedAgents(invitedAgentsData);
+      setEnrollmentRequests(enrollmentRequestsData);
       
       // If a gig is selected, refresh its matches
       if (selectedGig) {
@@ -327,9 +325,6 @@ function RepMatchingPanel() {
         setMatches(matchesData.preferedmatches || matchesData.matches || []);
         setMatchStats(matchesData);
       }
-
-      // Organize agents by status
-      setTimeout(() => organizeAgentsByStatus(), 100);
 
     } catch (error) {
       console.error('Error creating gig-agent:', error);
