@@ -784,8 +784,14 @@ function RepMatchingPanel() {
                     ) : matches.length > 0 ? (
                       <div className="space-y-3">
                         {matches.map((match, index) => {
+                          // Check if agent is already enrolled in this specific gig
+                          const isAlreadyEnrolledInThisGig = activeAgentsList.some(
+                            agent => agent.agentId._id === match.agentId && agent.gigId._id === selectedGig?._id
+                          );
+                          
                           const isInvited = match.isInvited !== undefined ? match.isInvited : invitedAgents.has(match.agentId);
-                          const isEnrolled = match.isEnrolled || 
+                          const isEnrolled = isAlreadyEnrolledInThisGig || 
+                                           match.isEnrolled || 
                                            match.status === 'accepted' || 
                                            match.agentResponse === 'accepted' || 
                                            match.enrollmentStatus === 'accepted' || 
