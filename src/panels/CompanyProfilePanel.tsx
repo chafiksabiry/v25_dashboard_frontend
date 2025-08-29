@@ -35,8 +35,26 @@ import {
 } from "lucide-react";
 import Cookies from 'js-cookie';
 
+interface CompanyResponse {
+  success: boolean;
+  message: string;
+  data: {
+    _id: string;
+    name: string;
+    industry: string;
+    headquarters: string;
+    contact: {
+      email: string;
+      phone: string;
+      address: string;
+      website: string;
+    };
+    logoUrl?: string;
+    logo?: string;
+  };
+}
 
-function CompanyProfilePanel() {
+function CompanyProfile() {
   const [company, setCompany] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,10 +65,20 @@ function CompanyProfilePanel() {
   const [editMode, setEditMode] = useState(false);
   const [logoUrl, setLogoUrl] = useState("");
   const [showUniquenessPanel, setShowUniquenessPanel] = useState(false);
+  // Onboarding state removed
 
-  
-  const companyId = Cookies.get('userId');
-  console.log('Stored userId from cookie:', companyId);
+  const companyId = Cookies.get('companyId');
+  console.log('Stored companyId from cookie:', companyId);
+
+  // Onboarding useEffects removed
+  // Component initialization simplified
+  useEffect(() => {
+    console.log('🚀 CompanyProfile component loaded');
+  }, [companyId]);
+
+  // hasBasicInfo function removed - was used for onboarding
+
+  // checkStepStatus function removed - was used for onboarding
 
   // Helper functions for the new UI
   const hasContactInfo = company.contact && (
@@ -112,6 +140,7 @@ function CompanyProfilePanel() {
     className?: string;
   }) => {
     const isEditing = editingField === field && editMode;
+    const isHeroField = className.includes('text-white') || className.includes('text-5xl');
     
     const handleFieldEdit = () => {
       if (editMode) {
@@ -136,7 +165,7 @@ function CompanyProfilePanel() {
     };
     
     return (
-      <div className={`relative ${className}`} onClick={handleFieldEdit}>
+      <div className={`relative group ${className}`} onClick={handleFieldEdit}>
         {Icon && !isEditing && <Icon size={18} className="flex-shrink-0" />}
         
         {isEditing ? (
@@ -150,18 +179,23 @@ function CompanyProfilePanel() {
                   [field]: e.target.value,
                 }))
               }
-              className="w-full px-3 py-2 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none ${
+                isHeroField 
+                  ? 'border-white/30 bg-white/20 backdrop-blur-sm text-white placeholder-white/70' 
+                  : 'border-indigo-300 bg-white text-gray-900'
+              }`}
+              placeholder={isHeroField ? value || "Enter text..." : ""}
             />
             <div className="absolute right-0 top-full mt-2 flex gap-2">
               <button
                 onClick={handleFieldSave}
-                className="p-1.5 bg-green-500 text-white rounded-md hover:bg-green-600"
+                className="p-1.5 bg-green-500 text-white rounded-md hover:bg-green-600 shadow-lg"
               >
                 <CheckCircle2 size={14} />
               </button>
               <button
                 onClick={handleFieldCancel}
-                className="p-1.5 bg-red-500 text-white rounded-md hover:bg-red-600"
+                className="p-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 shadow-lg"
               >
                 <X size={14} />
               </button>
@@ -169,10 +203,14 @@ function CompanyProfilePanel() {
           </div>
         ) : (
           <>
-            <span>{value || "Not set"}</span>
+            <span className={isHeroField ? "" : "text-gray-800"}>{value || "Not set"}</span>
             {editMode && (
               <button
-                className="absolute -right-3 -top-3 opacity-0 group-hover:opacity-100 p-1 bg-white rounded-full shadow-md text-gray-600 hover:text-indigo-600 transition-all"
+                className={`absolute -right-3 -top-3 opacity-0 group-hover:opacity-100 p-1 rounded-full shadow-md transition-all ${
+                  isHeroField 
+                    ? 'bg-white/20 backdrop-blur-sm text-white hover:text-yellow-300' 
+                    : 'bg-white text-gray-600 hover:text-indigo-600'
+                }`}
                 onClick={() => handleFieldEdit()}
               >
                 <Pencil size={12} />
@@ -188,12 +226,13 @@ function CompanyProfilePanel() {
   const fetchCompanyDetails = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL_COMPANY}/companies/${companyId}`
+      const response = await axios.get<CompanyResponse>(
+        `${import.meta.env.VITE_BACKEND_URL_COMPANY}/companies/${companyId}/details`
       );
       setCompany(response.data.data);
-      // Set logo URL if available in the company data
-      if (response.data.data.logoUrl) {
+      if ((response.data.data as any).logo) {
+        setLogoUrl((response.data.data as any).logo);
+      } else if (response.data.data.logoUrl) {
         setLogoUrl(response.data.data.logoUrl);
       }
     } catch (err) {
@@ -244,17 +283,26 @@ function CompanyProfilePanel() {
 
   const handleSaveAll = async () => {
     try {
+      console.log('🚀 Starting save process...');
+      console.log('📊 Current company data:', company);
+      
+      // Sauvegarder les informations de l'entreprise
       await axios.put(
         `${import.meta.env.VITE_BACKEND_URL_COMPANY}/companies/${companyId}`,
         company
       );
+      
+      console.log('✅ Company data saved successfully');
+      
+      // Profile saved successfully
+      
       setHasChanges(false);
       setSaveSuccess(true);
 
       // Afficher un popup SweetAlert2 pour indiquer le succès
       Swal.fire({
         title: "Success!",
-        text: "Company profile updated successfully.",
+        text: "Company profile updated successfully!",
         icon: "success",
         confirmButtonText: "Ok",
       });
@@ -333,7 +381,7 @@ function CompanyProfilePanel() {
     mission: company.mission || '',
     founded: company.founded || '',
     headquarters: company.headquarters || '',
-    logoUrl: company.logoUrl || '',
+    logoUrl: company.logo || company.logoUrl || '',
     contact: company.contact || {},
     socialMedia: company.socialMedia || {},
     culture: company.culture || {
@@ -477,7 +525,7 @@ function CompanyProfilePanel() {
                             onClick={() => {
                               setCompany((prev) => ({
                                 ...prev,
-                                logoUrl: logoUrl
+                                logo: logoUrl
                               }));
                               setEditingField(null);
                               setHasChanges(true);
@@ -502,11 +550,13 @@ function CompanyProfilePanel() {
                   )}
                 </div>
                 <div>
+                  <div className="flex items-center gap-3 mb-2">
                   <EditableField
                     value={profile.name}
                     field="name"
-                    className="text-5xl font-bold text-white mb-2 tracking-tight"
+                      className="text-5xl font-bold text-white tracking-tight"
                   />
+                  </div>
                   <div className="flex flex-wrap gap-6 text-white/90">
                     {profile.industry && (
                       <EditableField
@@ -958,4 +1008,4 @@ function CompanyProfilePanel() {
   );
 }
 
-export default CompanyProfilePanel;
+export default CompanyProfile;

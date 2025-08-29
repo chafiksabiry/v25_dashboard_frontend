@@ -30,8 +30,10 @@ ENV QALQUL_API=https://digital-works.qalqul.io/discovery/v1/calls
 ENV QALQUL_KEY=k0HDn140xJM6WGoAMmX2U.17084ed7cc245f6d9f707538ebd90d60
 ENV VITE_QALQUL_USERNAME=Agent.1
 ENV VITE_QALQUL_PASSWORD=ewyaHtvzDPRdXrZL
+
 ENV VITE_BACKEND_KNOWLEDGEBASE_BACKEND=https://preprod-api-knowledge-base.harx.ai
 ENV VITE_MATCHING_API_URL=https://preprod-api-matching.harx.ai/api
+ENV VITE_API_URL_GIGS=https://preprod-api-gigsmanual.harx.ai/api
 ENV VITE_ZOHO_API_URL=https://preprod-api-dashboard.harx.ai/api/zoho
 ENV VITE_BACKEND_URL_GIGS=https://preprod-api-gigsmanual.harx.ai/api/gigs
 
