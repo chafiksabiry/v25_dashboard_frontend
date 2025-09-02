@@ -92,21 +92,62 @@ export interface MatchingWeights {
 export interface Match {
   agentId: string;
   gigId: string;
-  overallScore: number;
+  totalMatchingScore: number;
+  overallScore?: number; // Backward compatibility
   isInvited?: boolean;
   agentInfo?: {
     name: string;
     email: string;
     photo?: string;
+    location?: string;
+    phone?: string;
     timezone?: {
+      timezoneId?: string;
       timezoneName: string;
+      gmtOffset?: number;
       gmtDisplay: string;
+      countryCode?: string;
       countryName: string;
     };
     languages?: Array<{
+      _id: string;
       language: string;
-      proficiency?: string;
+      languageName: string;
+      proficiency: string;
     }>;
+    professionalSummary?: {
+      industries?: string[];
+      activities?: string[];
+      yearsOfExperience?: string;
+    };
+    skills?: {
+      technical?: Array<{
+        _id: string;
+        skill: string;
+        level: number;
+        name: string;
+      }>;
+      professional?: Array<{
+        _id: string;
+        skill: string;
+        level: number;
+        name: string;
+      }>;
+      soft?: Array<{
+        _id: string;
+        skill: string;
+        level: number;
+        name: string;
+      }>;
+      contactCenter?: Array<{
+        _id: string;
+        skill: string;
+        level: number;
+        name: string;
+      }>;
+    };
+    experience?: any[];
+    status?: string;
   };
   skillsMatch?: {
     score: number;
@@ -159,6 +200,12 @@ export interface Match {
     score: number;
     details: any;
   };
+  matchStatus?: string;
+  alreadyEnrolled?: boolean;
+  isEnrolled?: boolean;
+  status?: string;
+  agentResponse?: string;
+  enrollmentStatus?: string;
 }
 
 export interface MatchResponse {

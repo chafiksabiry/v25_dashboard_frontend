@@ -77,6 +77,8 @@ function RepMatchingPanel() {
   const [activeAgentsList, setActiveAgentsList] = useState<any[]>([]);
 
   // Fetch data from real backend
+
+
   useEffect(() => {
     const fetchData = async () => {
       setInitialLoading(true);
@@ -84,6 +86,7 @@ function RepMatchingPanel() {
       
       try {
         console.log("Fetching data from backend...");
+        
         const companyId = Cookies.get('companyId') || '685abf28641398dc582f4c95';
         
         // Load essential data first
@@ -175,8 +178,39 @@ function RepMatchingPanel() {
       
       // Find matches for the selected gig using current or loaded weights
       console.log("Searching for reps matching gig:", gig.title);
+      console.log("🎯 WEIGHTS BEING SENT TO API:", currentWeights);
       const matchesData = await findMatchesForGig(gig._id || '', currentWeights);
       console.log("=== MATCHES DATA ===", matchesData);
+      
+      // Debug first match score calculation
+      if (matchesData.preferedmatches && matchesData.preferedmatches.length > 0) {
+        const firstMatch = matchesData.preferedmatches[0];
+        console.log("🔍 SCORE BREAKDOWN FOR FIRST MATCH:");
+        console.log("- Agent:", firstMatch.agentInfo?.name);
+        console.log("- Total Score from API:", firstMatch.totalMatchingScore);
+        console.log("- Skills Score:", firstMatch.skillsMatch?.score, "× Weight:", currentWeights.skills, "=", (firstMatch.skillsMatch?.score || 0) * currentWeights.skills);
+        console.log("- Languages Score:", firstMatch.languageMatch?.score, "× Weight:", currentWeights.languages, "=", (firstMatch.languageMatch?.score || 0) * currentWeights.languages);
+        console.log("- Industry Score:", firstMatch.industryMatch?.score, "× Weight:", currentWeights.industry, "=", (firstMatch.industryMatch?.score || 0) * currentWeights.industry);
+        console.log("- Activity Score:", firstMatch.activityMatch?.score, "× Weight:", currentWeights.activities, "=", (firstMatch.activityMatch?.score || 0) * currentWeights.activities);
+        console.log("- Experience Score:", firstMatch.experienceMatch?.score, "× Weight:", currentWeights.experience, "=", (firstMatch.experienceMatch?.score || 0) * currentWeights.experience);
+        console.log("- Timezone Score:", firstMatch.timezoneMatch?.score, "× Weight:", currentWeights.timezone, "=", (firstMatch.timezoneMatch?.score || 0) * currentWeights.timezone);
+        console.log("- Region Score:", firstMatch.regionMatch?.score, "× Weight:", currentWeights.region, "=", (firstMatch.regionMatch?.score || 0) * currentWeights.region);
+        console.log("- Availability Score:", firstMatch.availabilityMatch?.score, "× Weight:", currentWeights.availability, "=", (firstMatch.availabilityMatch?.score || 0) * currentWeights.availability);
+        
+        const calculatedTotal = 
+          (firstMatch.skillsMatch?.score || 0) * currentWeights.skills +
+          (firstMatch.languageMatch?.score || 0) * currentWeights.languages +
+          (firstMatch.industryMatch?.score || 0) * currentWeights.industry +
+          (firstMatch.activityMatch?.score || 0) * currentWeights.activities +
+          (firstMatch.experienceMatch?.score || 0) * currentWeights.experience +
+          (firstMatch.timezoneMatch?.score || 0) * currentWeights.timezone +
+          (firstMatch.regionMatch?.score || 0) * currentWeights.region +
+          (firstMatch.availabilityMatch?.score || 0) * currentWeights.availability;
+          
+        console.log("🧮 CALCULATED TOTAL:", calculatedTotal);
+        console.log("📊 API TOTAL:", firstMatch.totalMatchingScore);
+        console.log("❓ DIFFERENCE:", Math.abs(calculatedTotal - firstMatch.totalMatchingScore));
+      }
       
       setMatches(matchesData.preferedmatches || matchesData.matches || []);
       setMatchStats(matchesData);
@@ -247,8 +281,30 @@ function RepMatchingPanel() {
       
       // Trigger new search with saved weights
       console.log("Searching for reps with saved weights:", selectedGig.title);
+      console.log("🎯 SAVED WEIGHTS BEING SENT TO API:", weights);
       const matchesData = await findMatchesForGig(selectedGig._id || '', weights);
       console.log("=== MATCHES DATA AFTER SAVE ===", matchesData);
+      
+      // Debug first match score calculation after save
+      if (matchesData.preferedmatches && matchesData.preferedmatches.length > 0) {
+        const firstMatch = matchesData.preferedmatches[0];
+        console.log("🔍 SCORE BREAKDOWN AFTER SAVE:");
+        console.log("- Agent:", firstMatch.agentInfo?.name);
+        console.log("- Total Score from API:", firstMatch.totalMatchingScore);
+        
+        const calculatedTotal = 
+          (firstMatch.skillsMatch?.score || 0) * weights.skills +
+          (firstMatch.languageMatch?.score || 0) * weights.languages +
+          (firstMatch.industryMatch?.score || 0) * weights.industry +
+          (firstMatch.activityMatch?.score || 0) * weights.activities +
+          (firstMatch.experienceMatch?.score || 0) * weights.experience +
+          (firstMatch.timezoneMatch?.score || 0) * weights.timezone +
+          (firstMatch.regionMatch?.score || 0) * weights.region +
+          (firstMatch.availabilityMatch?.score || 0) * weights.availability;
+          
+        console.log("🧮 CALCULATED TOTAL AFTER SAVE:", calculatedTotal);
+        console.log("📊 API TOTAL AFTER SAVE:", firstMatch.totalMatchingScore);
+      }
       
       setMatches(matchesData.preferedmatches || matchesData.matches || []);
       setMatchStats(matchesData);
@@ -517,16 +573,16 @@ function RepMatchingPanel() {
                     <p className="text-gray-600">Find and match the perfect representatives for your gigs</p>
             </div>
                   <button
-                    onClick={() => setShowWeights(!showWeights)}
-                    className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 text-sm font-medium ${
-                      showWeights 
-                        ? 'bg-orange-600 text-white' 
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    <Settings size={16} className={showWeights ? 'rotate-180' : ''} />
-                    <span>{showWeights ? 'Close Weights' : 'Adjust Weights'}</span>
-          </button>
+                        onClick={() => setShowWeights(!showWeights)}
+                        className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 text-sm font-medium ${
+                          showWeights 
+                            ? 'bg-orange-600 text-white' 
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      >
+                        <Settings size={16} className={showWeights ? 'rotate-180' : ''} />
+                        <span>{showWeights ? 'Close Weights' : 'Adjust Weights'}</span>
+                  </button>
         </div>
 
                 {/* Weights Configuration Panel */}
@@ -767,10 +823,14 @@ function RepMatchingPanel() {
                 {/* Matching Results */}
                 {selectedGig && (
                   <div className="bg-white rounded-xl shadow-lg p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
-                      <Users size={20} className="text-orange-600" />
-                      <span>Matches for "{selectedGig?.title}"</span>
-                    </h3>
+                    <div className="mb-6">
+                      <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                        <Users size={20} className="text-orange-600" />
+                        <span>Matches for "{selectedGig?.title}"</span>
+                      </h3>
+                      
+
+                    </div>
                     
                     {loading ? (
                       <div className="flex justify-center items-center py-12">
@@ -797,12 +857,40 @@ function RepMatchingPanel() {
                                            match.enrollmentStatus === 'accepted' || 
                                            match.agentInfo?.status === 'accepted';
                           
+
+
+                          const matchScore = Math.round((match.totalMatchingScore || 0) * 100);
+                          const cardBgColor = matchScore >= 70 ? 'bg-green-50 border-green-200' :
+                                            matchScore >= 50 ? 'bg-yellow-50 border-yellow-200' :
+                                            'bg-red-50 border-red-200';
+                          
                           return (
-                            <div key={`match-${match.agentId}-${index}`} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                              <div className="flex items-center justify-between">
+                            <div key={`match-${match.agentId}-${index}`} className={`rounded-xl p-6 border-2 hover:shadow-lg transition-all duration-300 ${cardBgColor}`}>
+                              {/* Agent Header */}
+                              <div className="flex items-center justify-between mb-4">
                                 <div className="flex-1 min-w-0">
-                                  <h4 className="text-base font-bold text-gray-900 truncate">{match.agentInfo?.name}</h4>
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <h4 className="text-lg font-bold text-gray-900 truncate">{match.agentInfo?.name}</h4>
+                                    <div className={`px-4 py-2 rounded-full text-sm font-bold shadow-sm ${
+                                      matchScore >= 70 ? 'bg-green-500 text-white' :
+                                      matchScore >= 50 ? 'bg-yellow-500 text-white' :
+                                      'bg-red-500 text-white'
+                                    }`}>
+                                      {matchScore}% Match
+                                    </div>
+                                  </div>
                                   <p className="text-sm text-gray-600 truncate">{match.agentInfo?.email}</p>
+                                  <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
+                                    {(match.agentInfo?.timezone?.countryName || match.agentInfo?.location) && (
+                                      <span>📍 {match.agentInfo?.timezone?.countryName || match.agentInfo?.location}</span>
+                                    )}
+                                    {match.agentInfo?.timezone?.gmtDisplay && match.agentInfo.timezone.gmtDisplay !== 'Unknown' && (
+                                      <span>🕒 {match.agentInfo.timezone.gmtDisplay}</span>
+                                    )}
+                                    {match.agentInfo?.professionalSummary?.yearsOfExperience && (
+                                      <span>💼 {match.agentInfo.professionalSummary.yearsOfExperience.toString().replace(/\s+years?/gi, '')} years exp.</span>
+                                    )}
+                                  </div>
                                 </div>
                                 
                                 <div className="flex-shrink-0 ml-4">
@@ -829,7 +917,7 @@ function RepMatchingPanel() {
                                     </button>
                                   )}
                                 </div>
-      </div>
+                              </div>
                             </div>
                           );
                         })}
@@ -1025,45 +1113,45 @@ function RepMatchingPanel() {
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-2">
-                                <h3 className="text-lg font-bold text-gray-900">{agent.personalInfo?.name}</h3>
+                                <h3 className="text-lg font-bold text-gray-900">{agent.agentId?.personalInfo?.name}</h3>
                                 <span className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
                                   ✅ Active
                                 </span>
                               </div>
-                              <p className="text-gray-600 mb-2">{agent.personalInfo?.email}</p>
+                              <p className="text-gray-600 mb-2">{agent.agentId?.personalInfo?.email}</p>
                               
                               <div className="mt-3 space-y-2">
                                 <div className="flex items-center gap-4 text-sm">
                                   <span className="text-gray-600">
-                                    <span className="font-medium">Experience:</span> {agent.professionalSummary?.yearsOfExperience} years
+                                    <span className="font-medium">Experience:</span> {agent.agentId?.professionalSummary?.yearsOfExperience} years
                                   </span>
                                   <span className="text-gray-600">
-                                    <span className="font-medium">Role:</span> {agent.professionalSummary?.currentRole}
+                                    <span className="font-medium">Role:</span> {agent.agentId?.professionalSummary?.currentRole}
                                   </span>
                                 </div>
                                 
                                 <div className="flex flex-wrap gap-2">
-                                  {agent.professionalSummary?.keyExpertise?.slice(0, 5).map((skill, i) => (
+                                  {agent.agentId?.professionalSummary?.keyExpertise?.slice(0, 5).map((skill, i) => (
                                     <span key={i} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
                                       {skill}
                                     </span>
                                   ))}
-                                  {agent.professionalSummary?.keyExpertise?.length > 5 && (
+                                  {agent.agentId?.professionalSummary?.keyExpertise?.length > 5 && (
                                     <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
-                                      +{agent.professionalSummary.keyExpertise.length - 5} more
+                                      +{agent.agentId.professionalSummary.keyExpertise.length - 5} more
                                     </span>
                                   )}
                                 </div>
                                 
                                 <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                                   <div>
-                                    <span className="font-medium">Availability:</span> {agent.availability?.schedule?.length} days/week
+                                    <span className="font-medium">Availability:</span> {agent.agentId?.availability?.schedule?.length} days/week
                                   </div>
                                   <div>
-                                    <span className="font-medium">Status:</span> {agent.onboardingProgress?.currentPhase === 4 ? 'Fully Onboarded' : 'In Progress'}
+                                    <span className="font-medium">Status:</span> {agent.agentId?.onboardingProgress?.currentPhase === 4 ? 'Fully Onboarded' : 'In Progress'}
                                   </div>
                                   <div>
-                                    <span className="font-medium">Languages:</span> {agent.personalInfo?.languages?.length || 0}
+                                    <span className="font-medium">Languages:</span> {agent.agentId?.personalInfo?.languages?.length || 0}
                                   </div>
                                 </div>
                               </div>
