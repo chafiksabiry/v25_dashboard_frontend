@@ -77,25 +77,7 @@ function RepMatchingPanel() {
   const [activeAgentsList, setActiveAgentsList] = useState<any[]>([]);
 
   // Fetch data from real backend
-  // Test function to fetch specific agent profile
-  const testAgentProfileAPI = async () => {
-    const testAgentId = '67e57503db31ada6f0695674';
-    try {
-      console.log(`🧪 Testing API call for agent ${testAgentId}...`);
-      const response = await fetch(`https://api-repcreationwizard.harx.ai/api/profiles/${testAgentId}`);
-      
-      if (response.ok) {
-        const profileData = await response.json();
-        console.log('✅ API Response for agent 67e57503db31ada6f0695674:', profileData);
-      } else {
-        console.error('❌ API Error:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.error('❌ Error details:', errorText);
-      }
-    } catch (error) {
-      console.error('❌ Network Error:', error);
-    }
-  };
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -104,9 +86,6 @@ function RepMatchingPanel() {
       
       try {
         console.log("Fetching data from backend...");
-        
-        // Test the agent profile API
-        testAgentProfileAPI();
         
         const companyId = Cookies.get('companyId') || '685abf28641398dc582f4c95';
         
@@ -593,15 +572,7 @@ function RepMatchingPanel() {
                     <h2 className="text-2xl font-bold text-gray-900">🎯 Smart Matching System</h2>
                     <p className="text-gray-600">Find and match the perfect representatives for your gigs</p>
             </div>
-                                      <div className="flex space-x-2">
-                      <button
-                        onClick={testAgentProfileAPI}
-                        className="px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700"
-                      >
-                        <span>🧪</span>
-                        <span>Test API</span>
-                      </button>
-                      <button
+                  <button
                         onClick={() => setShowWeights(!showWeights)}
                         className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 text-sm font-medium ${
                           showWeights 
@@ -611,8 +582,7 @@ function RepMatchingPanel() {
                       >
                         <Settings size={16} className={showWeights ? 'rotate-180' : ''} />
                         <span>{showWeights ? 'Close Weights' : 'Adjust Weights'}</span>
-                      </button>
-                    </div>
+                  </button>
         </div>
 
                 {/* Weights Configuration Panel */}
@@ -887,28 +857,7 @@ function RepMatchingPanel() {
                                            match.enrollmentStatus === 'accepted' || 
                                            match.agentInfo?.status === 'accepted';
                           
-                          // Fetch agent profile from API
-                          const fetchAgentProfile = async (agentId: string) => {
-                            try {
-                              const response = await fetch(`https://api-repcreationwizard.harx.ai/api/profiles/${agentId}`);
-                              if (response.ok) {
-                                const profileData = await response.json();
-                                console.log(`🔍 Agent Profile for ${agentId}:`, profileData);
-                                return profileData;
-                              } else {
-                                console.error(`❌ Failed to fetch profile for ${agentId}:`, response.status);
-                              }
-                            } catch (error) {
-                              console.error(`❌ Error fetching profile for ${agentId}:`, error);
-                            }
-                          };
 
-                          // Call the API for this agent (only once per agent)
-                          if (!window.fetchedProfiles) window.fetchedProfiles = new Set();
-                          if (!window.fetchedProfiles.has(match.agentId)) {
-                            window.fetchedProfiles.add(match.agentId);
-                            fetchAgentProfile(match.agentId);
-                          }
 
                           const matchScore = Math.round((match.totalMatchingScore || 0) * 100);
                           const cardBgColor = matchScore >= 70 ? 'bg-green-50 border-green-200' :
