@@ -199,8 +199,39 @@ function RepMatchingPanel() {
       
       // Find matches for the selected gig using current or loaded weights
       console.log("Searching for reps matching gig:", gig.title);
+      console.log("🎯 WEIGHTS BEING SENT TO API:", currentWeights);
       const matchesData = await findMatchesForGig(gig._id || '', currentWeights);
       console.log("=== MATCHES DATA ===", matchesData);
+      
+      // Debug first match score calculation
+      if (matchesData.preferedmatches && matchesData.preferedmatches.length > 0) {
+        const firstMatch = matchesData.preferedmatches[0];
+        console.log("🔍 SCORE BREAKDOWN FOR FIRST MATCH:");
+        console.log("- Agent:", firstMatch.agentInfo?.name);
+        console.log("- Total Score from API:", firstMatch.totalMatchingScore);
+        console.log("- Skills Score:", firstMatch.skillsMatch?.score, "× Weight:", currentWeights.skills, "=", (firstMatch.skillsMatch?.score || 0) * currentWeights.skills);
+        console.log("- Languages Score:", firstMatch.languageMatch?.score, "× Weight:", currentWeights.languages, "=", (firstMatch.languageMatch?.score || 0) * currentWeights.languages);
+        console.log("- Industry Score:", firstMatch.industryMatch?.score, "× Weight:", currentWeights.industry, "=", (firstMatch.industryMatch?.score || 0) * currentWeights.industry);
+        console.log("- Activity Score:", firstMatch.activityMatch?.score, "× Weight:", currentWeights.activities, "=", (firstMatch.activityMatch?.score || 0) * currentWeights.activities);
+        console.log("- Experience Score:", firstMatch.experienceMatch?.score, "× Weight:", currentWeights.experience, "=", (firstMatch.experienceMatch?.score || 0) * currentWeights.experience);
+        console.log("- Timezone Score:", firstMatch.timezoneMatch?.score, "× Weight:", currentWeights.timezone, "=", (firstMatch.timezoneMatch?.score || 0) * currentWeights.timezone);
+        console.log("- Region Score:", firstMatch.regionMatch?.score, "× Weight:", currentWeights.region, "=", (firstMatch.regionMatch?.score || 0) * currentWeights.region);
+        console.log("- Availability Score:", firstMatch.availabilityMatch?.score, "× Weight:", currentWeights.availability, "=", (firstMatch.availabilityMatch?.score || 0) * currentWeights.availability);
+        
+        const calculatedTotal = 
+          (firstMatch.skillsMatch?.score || 0) * currentWeights.skills +
+          (firstMatch.languageMatch?.score || 0) * currentWeights.languages +
+          (firstMatch.industryMatch?.score || 0) * currentWeights.industry +
+          (firstMatch.activityMatch?.score || 0) * currentWeights.activities +
+          (firstMatch.experienceMatch?.score || 0) * currentWeights.experience +
+          (firstMatch.timezoneMatch?.score || 0) * currentWeights.timezone +
+          (firstMatch.regionMatch?.score || 0) * currentWeights.region +
+          (firstMatch.availabilityMatch?.score || 0) * currentWeights.availability;
+          
+        console.log("🧮 CALCULATED TOTAL:", calculatedTotal);
+        console.log("📊 API TOTAL:", firstMatch.totalMatchingScore);
+        console.log("❓ DIFFERENCE:", Math.abs(calculatedTotal - firstMatch.totalMatchingScore));
+      }
       
       setMatches(matchesData.preferedmatches || matchesData.matches || []);
       setMatchStats(matchesData);
@@ -271,8 +302,30 @@ function RepMatchingPanel() {
       
       // Trigger new search with saved weights
       console.log("Searching for reps with saved weights:", selectedGig.title);
+      console.log("🎯 SAVED WEIGHTS BEING SENT TO API:", weights);
       const matchesData = await findMatchesForGig(selectedGig._id || '', weights);
       console.log("=== MATCHES DATA AFTER SAVE ===", matchesData);
+      
+      // Debug first match score calculation after save
+      if (matchesData.preferedmatches && matchesData.preferedmatches.length > 0) {
+        const firstMatch = matchesData.preferedmatches[0];
+        console.log("🔍 SCORE BREAKDOWN AFTER SAVE:");
+        console.log("- Agent:", firstMatch.agentInfo?.name);
+        console.log("- Total Score from API:", firstMatch.totalMatchingScore);
+        
+        const calculatedTotal = 
+          (firstMatch.skillsMatch?.score || 0) * weights.skills +
+          (firstMatch.languageMatch?.score || 0) * weights.languages +
+          (firstMatch.industryMatch?.score || 0) * weights.industry +
+          (firstMatch.activityMatch?.score || 0) * weights.activities +
+          (firstMatch.experienceMatch?.score || 0) * weights.experience +
+          (firstMatch.timezoneMatch?.score || 0) * weights.timezone +
+          (firstMatch.regionMatch?.score || 0) * weights.region +
+          (firstMatch.availabilityMatch?.score || 0) * weights.availability;
+          
+        console.log("🧮 CALCULATED TOTAL AFTER SAVE:", calculatedTotal);
+        console.log("📊 API TOTAL AFTER SAVE:", firstMatch.totalMatchingScore);
+      }
       
       setMatches(matchesData.preferedmatches || matchesData.matches || []);
       setMatchStats(matchesData);
