@@ -638,6 +638,26 @@ function RepMatchingPanel() {
               </div>
             </div>
 
+            {/* Saved Weights Notice */}
+            {gigHasWeights && (
+              <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-xl p-4 mb-6">
+                <div className="flex items-start space-x-3">
+                  <div className="p-2 bg-orange-500 rounded-lg">
+                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-orange-900 mb-1">Saved Weights Active</h4>
+                    <p className="text-sm text-orange-700">
+                      This gig has saved weight configurations. Sliders are locked to prevent accidental changes. 
+                      Use "Delete Saved Weights" to unlock editing or "Update Weights" to modify and save new values.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Weights Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {Object.entries(weights).map(([key, value]) => (
@@ -663,10 +683,11 @@ function RepMatchingPanel() {
                       max="1"
                       step="0.05"
                       value={value}
+                      disabled={gigHasWeights}
                       onChange={(e) =>
                         handleWeightChange(key, parseFloat(e.target.value))
                       }
-                      className="w-full h-3 bg-gray-200 rounded-full appearance-none cursor-pointer slider"
+                      className={`w-full h-3 bg-gray-200 rounded-full appearance-none ${gigHasWeights ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} slider`}
                       style={{
                         background: `linear-gradient(to right, #f97316 0%, #dc2626 ${value * 100}%, #e5e7eb ${value * 100}%, #e5e7eb 100%)`
                       }}
@@ -688,6 +709,16 @@ function RepMatchingPanel() {
                     {key === 'activities' && 'Activity performance'}
                     {key === 'region' && 'Geographic location'}
                   </div>
+                  
+                  {/* Locked Indicator */}
+                  {gigHasWeights && (
+                    <div className="flex items-center justify-center mt-2 text-xs text-orange-600">
+                      <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                      </svg>
+                      Saved Weight
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
