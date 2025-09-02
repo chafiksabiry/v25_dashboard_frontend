@@ -798,7 +798,7 @@ function RepMatchingPanel() {
                 <div className="bg-white rounded-xl shadow-lg p-6">
                   <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center space-x-2">
                     <Briefcase size={20} className="text-orange-600" />
-                    <span>Select a Gig to Find Matching Representatives</span>
+                    <span>Select a Gig to Find Matching Reps</span>
                   </h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
