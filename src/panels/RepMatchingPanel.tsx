@@ -74,6 +74,7 @@ function RepMatchingPanel() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [originalWeights, setOriginalWeights] = useState<MatchingWeights | null>(null);
   const [activeSection, setActiveSection] = useState<'matching' | 'invited' | 'enrollment' | 'active'>('matching');
+  const [expandedReps, setExpandedReps] = useState<Set<string>>(new Set());
   const [invitedAgentsList, setInvitedAgentsList] = useState<any[]>([]);
   const [enrollmentRequests, setEnrollmentRequests] = useState<any[]>([]);
   const [activeAgentsList, setActiveAgentsList] = useState<any[]>([]);
@@ -482,6 +483,19 @@ function RepMatchingPanel() {
     }
     
     return language ? language.name : languageCode;
+  };
+
+  // Toggle rep details expansion
+  const toggleRepDetails = (agentId: string) => {
+    setExpandedReps(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(agentId)) {
+        newSet.delete(agentId);
+      } else {
+        newSet.add(agentId);
+      }
+      return newSet;
+    });
   };
 
   return (
@@ -905,9 +919,11 @@ function RepMatchingPanel() {
                                             matchScore >= 50 ? 'bg-yellow-50 border-yellow-200' :
                                             'bg-red-50 border-red-200';
                           
+                          const isExpanded = expandedReps.has(match.agentId);
+                          
                           return (
                             <div key={`match-${match.agentId}-${index}`} className={`rounded-xl p-6 border-2 hover:shadow-lg transition-all duration-300 ${cardBgColor}`}>
-                              {/* Agent Header */}
+                              {/* Rep Header */}
                               <div className="flex items-center justify-between mb-4">
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-3 mb-2">
@@ -959,6 +975,248 @@ function RepMatchingPanel() {
                                   )}
                                 </div>
                               </div>
+
+                              {/* View Details Button */}
+                              <div className="flex justify-center mt-4">
+                                <button
+                                  onClick={() => toggleRepDetails(match.agentId)}
+                                  className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all duration-200 text-sm font-medium text-gray-700"
+                                >
+                                  <span>View Details</span>
+                                  <svg 
+                                    className={`w-4 h-4 transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} 
+                                    fill="none" 
+                                    stroke="currentColor" 
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                </button>
+                              </div>
+
+                              {/* Expanded Details */}
+                              {isExpanded && (
+                                <div className="mt-6 pt-6 border-t border-gray-200 space-y-6">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    
+                                    {/* Skills Match */}
+                                    {match.skillsMatch && (
+                                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <h5 className="font-semibold text-gray-800">Skills Match</h5>
+                                          <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                            Math.round((match.skillsMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
+                                            Math.round((match.skillsMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-red-100 text-red-800'
+                                          }`}>
+                                            {Math.round((match.skillsMatch.score || 0) * 100)}%
+                                          </span>
+                                        </div>
+                                        {match.skillsMatch.matchedSkills && match.skillsMatch.matchedSkills.length > 0 && (
+                                          <div className="space-y-1">
+                                            <p className="text-xs text-gray-600 mb-2">Matched Skills:</p>
+                                            <div className="flex flex-wrap gap-1">
+                                              {match.skillsMatch.matchedSkills.slice(0, 3).map((skill: any, i: number) => (
+                                                <span key={i} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                                  {getSkillNameById(skill._id || skill.skillId || skill, skill.category || 'professional')}
+                                                </span>
+                                              ))}
+                                              {match.skillsMatch.matchedSkills.length > 3 && (
+                                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                                  +{match.skillsMatch.matchedSkills.length - 3}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Languages Match */}
+                                    {match.languageMatch && (
+                                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <h5 className="font-semibold text-gray-800">Languages</h5>
+                                          <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                            Math.round((match.languageMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
+                                            Math.round((match.languageMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-red-100 text-red-800'
+                                          }`}>
+                                            {Math.round((match.languageMatch.score || 0) * 100)}%
+                                          </span>
+                                        </div>
+                                        {match.languageMatch.matchedLanguages && match.languageMatch.matchedLanguages.length > 0 && (
+                                          <div className="space-y-1">
+                                            <p className="text-xs text-gray-600 mb-2">Matched Languages:</p>
+                                            <div className="flex flex-wrap gap-1">
+                                              {match.languageMatch.matchedLanguages.slice(0, 3).map((lang: any, i: number) => (
+                                                <span key={i} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                                                  {getLanguageNameByCode(lang.language || lang.code || lang)}
+                                                </span>
+                                              ))}
+                                              {match.languageMatch.matchedLanguages.length > 3 && (
+                                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                                  +{match.languageMatch.matchedLanguages.length - 3}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Industry Match */}
+                                    {match.industryMatch && (
+                                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <h5 className="font-semibold text-gray-800">Industry</h5>
+                                          <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                            Math.round((match.industryMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
+                                            Math.round((match.industryMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-red-100 text-red-800'
+                                          }`}>
+                                            {Math.round((match.industryMatch.score || 0) * 100)}%
+                                          </span>
+                                        </div>
+                                        {match.industryMatch.matchedIndustries && match.industryMatch.matchedIndustries.length > 0 && (
+                                          <div className="space-y-1">
+                                            <p className="text-xs text-gray-600 mb-2">Industries:</p>
+                                            <div className="flex flex-wrap gap-1">
+                                              {match.industryMatch.matchedIndustries.slice(0, 2).map((industry: any, i: number) => (
+                                                <span key={i} className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs">
+                                                  {industry.name || industry}
+                                                </span>
+                                              ))}
+                                              {match.industryMatch.matchedIndustries.length > 2 && (
+                                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                                  +{match.industryMatch.matchedIndustries.length - 2}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Experience Match */}
+                                    {match.experienceMatch && (
+                                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <h5 className="font-semibold text-gray-800">Experience</h5>
+                                          <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                            Math.round((match.experienceMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
+                                            Math.round((match.experienceMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-red-100 text-red-800'
+                                          }`}>
+                                            {Math.round((match.experienceMatch.score || 0) * 100)}%
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-gray-600">
+                                          <p>Rep: {match.agentInfo?.professionalSummary?.yearsOfExperience || 'N/A'} years</p>
+                                          <p>Required: {selectedGig?.seniority?.yearsExperience || 'N/A'} years</p>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                  </div>
+
+                                  {/* Second Row */}
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    
+                                    {/* Timezone Match */}
+                                    {match.timezoneMatch && (
+                                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <h5 className="font-semibold text-gray-800">Timezone</h5>
+                                          <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                            Math.round((match.timezoneMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
+                                            Math.round((match.timezoneMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-red-100 text-red-800'
+                                          }`}>
+                                            {Math.round((match.timezoneMatch.score || 0) * 100)}%
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-gray-600">
+                                          <p>Rep: {match.agentInfo?.timezone?.gmtDisplay || 'N/A'}</p>
+                                          <p>Location: {match.agentInfo?.timezone?.countryName || match.agentInfo?.location || 'N/A'}</p>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Region Match */}
+                                    {match.regionMatch && (
+                                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <h5 className="font-semibold text-gray-800">Region</h5>
+                                          <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                            Math.round((match.regionMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
+                                            Math.round((match.regionMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-red-100 text-red-800'
+                                          }`}>
+                                            {Math.round((match.regionMatch.score || 0) * 100)}%
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-gray-600">
+                                          <p>{match.agentInfo?.timezone?.countryName || match.agentInfo?.location || 'N/A'}</p>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Availability Match */}
+                                    {match.availabilityMatch && (
+                                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <h5 className="font-semibold text-gray-800">Availability</h5>
+                                          <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                            Math.round((match.availabilityMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
+                                            Math.round((match.availabilityMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-red-100 text-red-800'
+                                          }`}>
+                                            {Math.round((match.availabilityMatch.score || 0) * 100)}%
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-gray-600">
+                                          <p>Schedule: {match.agentInfo?.availability?.schedule?.length || 0} days/week</p>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Activity Match */}
+                                    {match.activityMatch && (
+                                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <h5 className="font-semibold text-gray-800">Activities</h5>
+                                          <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                            Math.round((match.activityMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
+                                            Math.round((match.activityMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-red-100 text-red-800'
+                                          }`}>
+                                            {Math.round((match.activityMatch.score || 0) * 100)}%
+                                          </span>
+                                        </div>
+                                        {match.activityMatch.matchedActivities && match.activityMatch.matchedActivities.length > 0 && (
+                                          <div className="space-y-1">
+                                            <p className="text-xs text-gray-600 mb-2">Activities:</p>
+                                            <div className="flex flex-wrap gap-1">
+                                              {match.activityMatch.matchedActivities.slice(0, 2).map((activity: any, i: number) => (
+                                                <span key={i} className="px-2 py-1 bg-teal-100 text-teal-800 rounded text-xs">
+                                                  {activity.name || activity}
+                                                </span>
+                                              ))}
+                                              {match.activityMatch.matchedActivities.length > 2 && (
+                                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                                  +{match.activityMatch.matchedActivities.length - 2}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
