@@ -71,6 +71,7 @@ function RepMatchingPanel() {
   }>({ professional: [], technical: [], soft: [] });
   const [languages, setLanguages] = useState<Language[]>([]);
   const [gigHasWeights, setGigHasWeights] = useState(false);
+  const [savedWeights, setSavedWeights] = useState<MatchingWeights | null>(null);
   const [activeSection, setActiveSection] = useState<'matching' | 'invited' | 'enrollment' | 'active'>('matching');
   const [invitedAgentsList, setInvitedAgentsList] = useState<any[]>([]);
   const [enrollmentRequests, setEnrollmentRequests] = useState<any[]>([]);
@@ -153,20 +154,23 @@ function RepMatchingPanel() {
     
     // Reset weights state
     setGigHasWeights(false);
+    setSavedWeights(null);
     
     let currentWeights = weights;
     
     try {
       // Try to load saved weights for this gig
       try {
-        const savedWeights = await getGigWeights(gig._id || '');
-        setWeights(savedWeights.matchingWeights);
+        const savedWeightsData = await getGigWeights(gig._id || '');
+        setWeights(savedWeightsData.matchingWeights);
+        setSavedWeights(savedWeightsData.matchingWeights);
         setGigHasWeights(true);
-        currentWeights = savedWeights.matchingWeights;
-        console.log('✅ Gig has saved weights, loaded:', savedWeights.matchingWeights);
+        currentWeights = savedWeightsData.matchingWeights;
+        console.log('✅ Gig has saved weights, loaded:', savedWeightsData.matchingWeights);
       } catch (error) {
         console.log('❌ No saved weights found for gig:', gig._id);
         setGigHasWeights(false);
+        setSavedWeights(null);
         // Keep current weights
       }
       
@@ -259,6 +263,17 @@ function RepMatchingPanel() {
     }
   };
 
+  // Check if current weights are different from saved weights
+  const hasUnsavedChanges = () => {
+    if (!savedWeights) return false;
+    
+    return Object.keys(weights).some(key => {
+      const currentValue = weights[key as keyof MatchingWeights];
+      const savedValue = savedWeights[key as keyof MatchingWeights];
+      return Math.abs(currentValue - savedValue) > 0.01; // Small tolerance for floating point comparison
+    });
+  };
+
   // Save weights for selected gig and search
   const saveWeightsForGig = async () => {
     console.log('🚨 SAVE WEIGHTS FOR GIG CALLED');
@@ -278,6 +293,7 @@ function RepMatchingPanel() {
       await saveGigWeights(selectedGig._id || '', weights);
       console.log('✅ Weights saved successfully for gig:', selectedGig._id);
       setGigHasWeights(true);
+      setSavedWeights(weights); // Update saved weights to current weights
       
       // Trigger new search with saved weights
       console.log("Searching for reps with saved weights:", selectedGig.title);
@@ -617,6 +633,7 @@ function RepMatchingPanel() {
                         setLoading(true);
                         await resetGigWeights(selectedGig._id || '');
                         setGigHasWeights(false);
+                        setSavedWeights(null);
                         resetWeights(); // Reset UI weights to default
                         console.log('✅ Gig weights reset successfully');
                       } catch (error) {
@@ -638,34 +655,23 @@ function RepMatchingPanel() {
               </div>
             </div>
 
-            {/* Saved Weights Notice */}
-            {gigHasWeights && (
-              <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-xl p-4 mb-6">
-                <div className="flex items-start space-x-3">
-                  <div className="p-2 bg-orange-500 rounded-lg">
-                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-orange-900 mb-1">Saved Weights Active</h4>
-                    <p className="text-sm text-orange-700">
-                      This gig has saved weight configurations. Sliders are locked to prevent accidental changes. 
-                      Use "Delete Saved Weights" to unlock editing or "Update Weights" to modify and save new values.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Weights Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {Object.entries(weights).map(([key, value]) => (
-                <div key={`weight-${key}`} className="bg-white rounded-xl p-6 shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 group">
+              {Object.entries(weights).map(([key, value]) => {
+                const isModified = savedWeights && Math.abs(value - savedWeights[key as keyof MatchingWeights]) > 0.01;
+                return (
+                <div key={`weight-${key}`} className={`bg-white rounded-xl p-6 shadow-lg border transition-all duration-300 group ${
+                  isModified ? 'border-orange-400 bg-orange-50' : 'border-gray-200 hover:shadow-xl'
+                }`}>
                   <div className="flex justify-between items-center mb-4">
-                    <label className="text-sm font-bold text-gray-700 uppercase tracking-wider">
-                      {key}
-                    </label>
+                    <div className="flex items-center space-x-2">
+                      <label className="text-sm font-bold text-gray-700 uppercase tracking-wider">
+                        {key}
+                      </label>
+                      {isModified && (
+                        <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" title="Modifié depuis la sauvegarde"></span>
+                      )}
+                    </div>
                     <div className={`px-3 py-1 rounded-lg text-sm font-bold ${
                       Math.round(value * 100) >= 20 ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white' :
                       Math.round(value * 100) >= 10 ? 'bg-orange-100 text-orange-800' :
@@ -683,11 +689,10 @@ function RepMatchingPanel() {
                       max="1"
                       step="0.05"
                       value={value}
-                      disabled={gigHasWeights}
                       onChange={(e) =>
                         handleWeightChange(key, parseFloat(e.target.value))
                       }
-                      className={`w-full h-3 bg-gray-200 rounded-full appearance-none ${gigHasWeights ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} slider`}
+                      className="w-full h-3 bg-gray-200 rounded-full appearance-none cursor-pointer slider"
                       style={{
                         background: `linear-gradient(to right, #f97316 0%, #dc2626 ${value * 100}%, #e5e7eb ${value * 100}%, #e5e7eb 100%)`
                       }}
@@ -709,19 +714,29 @@ function RepMatchingPanel() {
                     {key === 'activities' && 'Activity performance'}
                     {key === 'region' && 'Geographic location'}
                   </div>
-                  
-                  {/* Locked Indicator */}
-                  {gigHasWeights && (
-                    <div className="flex items-center justify-center mt-2 text-xs text-orange-600">
-                      <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                      </svg>
-                      Saved Weight
-                    </div>
-                  )}
                 </div>
-              ))}
+                );
+              })}
             </div>
+            {/* Unsaved Changes Alert */}
+            {hasUnsavedChanges() && (
+              <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-300 rounded-xl p-6 mb-6">
+                <div className="flex items-start space-x-3">
+                  <div className="p-2 bg-orange-500 rounded-lg">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-orange-900 mb-1">Changements Non Sauvegardés</h4>
+                    <p className="text-sm text-orange-700">
+                      Vous avez modifié les poids de matching. Cliquez sur "Sauvegarder les Poids" pour enregistrer vos modifications.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Info Box */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 mb-6">
               <div className="flex items-start space-x-3">
@@ -731,10 +746,15 @@ function RepMatchingPanel() {
                   </svg>
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-blue-900 mb-1">How Weights Work</h4>
+                  <h4 className="text-sm font-bold text-blue-900 mb-1">Comment Fonctionnent les Poids</h4>
                   <p className="text-sm text-blue-700">
-                    These weights determine how much each factor contributes to the overall matching score. 
-                    Higher weights give more importance to that criteria when ranking representatives.
+                    Ces poids déterminent l'importance de chaque facteur dans le score de matching global. 
+                    Des poids plus élevés donnent plus d'importance à ce critère lors du classement des représentants.
+                    {gigHasWeights && (
+                      <span className="block mt-2 font-medium">
+                        ✅ Ce gig a des poids sauvegardés que vous pouvez modifier à tout moment.
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>
@@ -750,9 +770,11 @@ function RepMatchingPanel() {
                   }}
                   disabled={loading}
                   className={`group relative px-10 py-4 rounded-2xl transition-all duration-300 flex items-center space-x-3 shadow-2xl transform hover:-translate-y-1 hover:shadow-3xl font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed ${
-                    gigHasWeights 
-                      ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white' 
-                      : 'bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white'
+                    hasUnsavedChanges() 
+                      ? 'bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white animate-pulse' 
+                      : gigHasWeights 
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white' 
+                        : 'bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white'
                   }`}
                 >
                   {/* Animated Background */}
@@ -769,14 +791,20 @@ function RepMatchingPanel() {
                   
                   {/* Text */}
                   <span className="relative z-10">
-                    {loading ? 'Saving weights...' : (gigHasWeights ? `Update Weights for ${selectedGig.title}` : `Save Weights for ${selectedGig.title}`)}
+                    {loading ? 'Sauvegarde des poids...' : (
+                      hasUnsavedChanges() ? `Sauvegarder les Modifications - ${selectedGig.title}` :
+                      gigHasWeights ? `Mettre à jour les Poids - ${selectedGig.title}` : 
+                      `Sauvegarder les Poids - ${selectedGig.title}`
+                    )}
                   </span>
                   
                   {/* Glow Effect */}
                   <div className={`absolute inset-0 rounded-2xl blur-xl opacity-30 group-hover:opacity-60 transition-opacity duration-300 ${
-                    gigHasWeights 
-                      ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
-                      : 'bg-gradient-to-r from-orange-500 to-red-600'
+                    hasUnsavedChanges() 
+                      ? 'bg-gradient-to-r from-yellow-500 to-orange-600' 
+                      : gigHasWeights 
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
+                        : 'bg-gradient-to-r from-orange-500 to-red-600'
                   }`}></div>
                 </button>
               </div>
