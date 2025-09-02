@@ -767,10 +767,190 @@ function RepMatchingPanel() {
                 {/* Matching Results */}
                 {selectedGig && (
                   <div className="bg-white rounded-xl shadow-lg p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
-                      <Users size={20} className="text-orange-600" />
-                      <span>Matches for "{selectedGig?.title}"</span>
-                    </h3>
+                    <div className="mb-6">
+                      <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                        <Users size={20} className="text-orange-600" />
+                        <span>Matches for "{selectedGig?.title}"</span>
+                      </h3>
+                      
+                      {/* Match Statistics Summary */}
+                      {matchStats && (
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6">
+                          <h4 className="text-lg font-bold text-gray-900 mb-4">📊 Matching Statistics</h4>
+                          
+                          {/* Overall Stats */}
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <div className="text-center bg-white rounded-lg p-3 shadow-sm">
+                              <div className="text-2xl font-bold text-blue-600">{matchStats.totalMatches || 0}</div>
+                              <div className="text-sm text-gray-600">Total Matches</div>
+                            </div>
+                            <div className="text-center bg-white rounded-lg p-3 shadow-sm">
+                              <div className="text-2xl font-bold text-green-600">{matchStats.perfectMatches || 0}</div>
+                              <div className="text-sm text-gray-600">Perfect Matches</div>
+                            </div>
+                            <div className="text-center bg-white rounded-lg p-3 shadow-sm">
+                              <div className="text-2xl font-bold text-yellow-600">{matchStats.partialMatches || 0}</div>
+                              <div className="text-sm text-gray-600">Partial Matches</div>
+                            </div>
+                            <div className="text-center bg-white rounded-lg p-3 shadow-sm">
+                              <div className="text-2xl font-bold text-red-600">{matchStats.noMatches || 0}</div>
+                              <div className="text-sm text-gray-600">No Matches</div>
+                            </div>
+                          </div>
+
+                          {/* Score Statistics */}
+                          {matchStats.filteringProcess?.scoreStats && (
+                            <div className="bg-white rounded-lg p-4 mb-4">
+                              <h5 className="font-bold text-gray-800 mb-3">Score Distribution</h5>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                                <div>
+                                  <div className="text-lg font-bold text-green-600">
+                                    {Math.round((matchStats.filteringProcess.scoreStats.highest || 0) * 100)}%
+                                  </div>
+                                  <div className="text-xs text-gray-500">Highest Score</div>
+                                </div>
+                                <div>
+                                  <div className="text-lg font-bold text-blue-600">
+                                    {Math.round((parseFloat(matchStats.filteringProcess.scoreStats.average) || 0) * 100)}%
+                                  </div>
+                                  <div className="text-xs text-gray-500">Average Score</div>
+                                </div>
+                                <div>
+                                  <div className="text-lg font-bold text-yellow-600">
+                                    {Math.round((matchStats.filteringProcess.scoreStats.median || 0) * 100)}%
+                                  </div>
+                                  <div className="text-xs text-gray-500">Median Score</div>
+                                </div>
+                                <div>
+                                  <div className="text-lg font-bold text-red-600">
+                                    {Math.round((matchStats.filteringProcess.scoreStats.lowest || 0) * 100)}%
+                                  </div>
+                                  <div className="text-xs text-gray-500">Lowest Score</div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Detailed Category Stats */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {/* Language Stats */}
+                            {matchStats.languageStats && (
+                              <div className="bg-white rounded-lg p-4">
+                                <h5 className="font-bold text-gray-800 mb-2 flex items-center">
+                                  <span className="mr-2">🌐</span>Languages
+                                </h5>
+                                <div className="space-y-1 text-sm">
+                                  <div className="flex justify-between">
+                                    <span className="text-green-600">Perfect:</span>
+                                    <span className="font-medium">{matchStats.languageStats.perfectMatches || 0}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-yellow-600">Partial:</span>
+                                    <span className="font-medium">{matchStats.languageStats.partialMatches || 0}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-red-600">None:</span>
+                                    <span className="font-medium">{matchStats.languageStats.noMatches || 0}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Skills Stats */}
+                            {matchStats.skillsStats && (
+                              <div className="bg-white rounded-lg p-4">
+                                <h5 className="font-bold text-gray-800 mb-2 flex items-center">
+                                  <span className="mr-2">🎯</span>Skills
+                                </h5>
+                                <div className="space-y-1 text-sm">
+                                  <div className="flex justify-between">
+                                    <span className="text-green-600">Perfect:</span>
+                                    <span className="font-medium">{matchStats.skillsStats.perfectMatches || 0}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-yellow-600">Partial:</span>
+                                    <span className="font-medium">{matchStats.skillsStats.partialMatches || 0}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-red-600">None:</span>
+                                    <span className="font-medium">{matchStats.skillsStats.noMatches || 0}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Experience Stats */}
+                            {matchStats.experienceStats && (
+                              <div className="bg-white rounded-lg p-4">
+                                <h5 className="font-bold text-gray-800 mb-2 flex items-center">
+                                  <span className="mr-2">💼</span>Experience
+                                </h5>
+                                <div className="space-y-1 text-sm">
+                                  <div className="flex justify-between">
+                                    <span className="text-green-600">Perfect:</span>
+                                    <span className="font-medium">{matchStats.experienceStats.perfectMatches || 0}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-yellow-600">Partial:</span>
+                                    <span className="font-medium">{matchStats.experienceStats.partialMatches || 0}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-red-600">None:</span>
+                                    <span className="font-medium">{matchStats.experienceStats.noMatches || 0}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Industry Stats */}
+                            {matchStats.industryStats && (
+                              <div className="bg-white rounded-lg p-4">
+                                <h5 className="font-bold text-gray-800 mb-2 flex items-center">
+                                  <span className="mr-2">🏢</span>Industry
+                                </h5>
+                                <div className="space-y-1 text-sm">
+                                  <div className="flex justify-between">
+                                    <span className="text-green-600">Perfect:</span>
+                                    <span className="font-medium">{matchStats.industryStats.perfectMatches || 0}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-yellow-600">Partial:</span>
+                                    <span className="font-medium">{matchStats.industryStats.partialMatches || 0}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-red-600">None:</span>
+                                    <span className="font-medium">{matchStats.industryStats.noMatches || 0}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Activity Stats */}
+                            {matchStats.activityStats && (
+                              <div className="bg-white rounded-lg p-4">
+                                <h5 className="font-bold text-gray-800 mb-2 flex items-center">
+                                  <span className="mr-2">⚡</span>Activity
+                                </h5>
+                                <div className="space-y-1 text-sm">
+                                  <div className="flex justify-between">
+                                    <span className="text-green-600">Perfect:</span>
+                                    <span className="font-medium">{matchStats.activityStats.perfectMatches || 0}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-yellow-600">Partial:</span>
+                                    <span className="font-medium">{matchStats.activityStats.partialMatches || 0}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-red-600">None:</span>
+                                    <span className="font-medium">{matchStats.activityStats.noMatches || 0}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     
                     {loading ? (
                       <div className="flex justify-center items-center py-12">
@@ -798,11 +978,26 @@ function RepMatchingPanel() {
                                            match.agentInfo?.status === 'accepted';
                           
                           return (
-                            <div key={`match-${match.agentId}-${index}`} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                              <div className="flex items-center justify-between">
+                            <div key={`match-${match.agentId}-${index}`} className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all duration-300">
+                              {/* Agent Header */}
+                              <div className="flex items-center justify-between mb-4">
                                 <div className="flex-1 min-w-0">
-                                  <h4 className="text-base font-bold text-gray-900 truncate">{match.agentInfo?.name}</h4>
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <h4 className="text-lg font-bold text-gray-900 truncate">{match.agentInfo?.name}</h4>
+                                    <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                      Math.round((match.totalMatchingScore || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
+                                      Math.round((match.totalMatchingScore || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                                      'bg-red-100 text-red-800'
+                                    }`}>
+                                      {Math.round((match.totalMatchingScore || 0) * 100)}% Match
+                                    </div>
+                                  </div>
                                   <p className="text-sm text-gray-600 truncate">{match.agentInfo?.email}</p>
+                                  <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
+                                    <span>📍 {match.agentInfo?.timezone?.countryName || match.agentInfo?.location || 'Unknown'}</span>
+                                    <span>🕒 {match.agentInfo?.timezone?.gmtDisplay || 'Unknown timezone'}</span>
+                                    <span>💼 {match.agentInfo?.professionalSummary?.yearsOfExperience || 0} years exp.</span>
+                                  </div>
                                 </div>
                                 
                                 <div className="flex-shrink-0 ml-4">
@@ -829,7 +1024,208 @@ function RepMatchingPanel() {
                                     </button>
                                   )}
                                 </div>
-      </div>
+                              </div>
+
+                              {/* Detailed Score Breakdown */}
+                              <div className="space-y-3">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                  {/* Experience Score */}
+                                  <div className="bg-gray-50 rounded-lg p-3">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-xs font-medium text-gray-600">Experience</span>
+                                      <span className={`text-xs font-bold ${
+                                        (match.experienceMatch?.score || 0) >= 1 ? 'text-green-600' : 
+                                        (match.experienceMatch?.score || 0) >= 0.7 ? 'text-yellow-600' : 'text-red-600'
+                                      }`}>
+                                        {Math.round((match.experienceMatch?.score || 0) * 100)}%
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      {match.experienceMatch?.details?.agentExperience || 0} / {match.experienceMatch?.details?.gigRequiredExperience || 0} years
+                                    </div>
+                                  </div>
+
+                                  {/* Languages Score */}
+                                  <div className="bg-gray-50 rounded-lg p-3">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-xs font-medium text-gray-600">Languages</span>
+                                      <span className={`text-xs font-bold ${
+                                        (match.languageMatch?.score || 0) >= 0.8 ? 'text-green-600' : 
+                                        (match.languageMatch?.score || 0) >= 0.5 ? 'text-yellow-600' : 'text-red-600'
+                                      }`}>
+                                        {Math.round((match.languageMatch?.score || 0) * 100)}%
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      {match.languageMatch?.details?.matchingLanguages?.length || 0} / {(match.languageMatch?.details?.matchingLanguages?.length || 0) + (match.languageMatch?.details?.missingLanguages?.length || 0)} matched
+                                    </div>
+                                  </div>
+
+                                  {/* Skills Score */}
+                                  <div className="bg-gray-50 rounded-lg p-3">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-xs font-medium text-gray-600">Skills</span>
+                                      <span className={`text-xs font-bold ${
+                                        (match.skillsMatch?.score || 0) >= 0.8 ? 'text-green-600' : 
+                                        (match.skillsMatch?.score || 0) >= 0.5 ? 'text-yellow-600' : 'text-red-600'
+                                      }`}>
+                                        {Math.round((match.skillsMatch?.score || 0) * 100)}%
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      {match.skillsMatch?.details?.matchingSkills?.length || 0} / {(match.skillsMatch?.details?.matchingSkills?.length || 0) + (match.skillsMatch?.details?.missingSkills?.length || 0)} matched
+                                    </div>
+                                  </div>
+
+                                  {/* Availability Score */}
+                                  <div className="bg-gray-50 rounded-lg p-3">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-xs font-medium text-gray-600">Availability</span>
+                                      <span className={`text-xs font-bold ${
+                                        (match.availabilityMatch?.score || 0) >= 0.8 ? 'text-green-600' : 
+                                        (match.availabilityMatch?.score || 0) >= 0.5 ? 'text-yellow-600' : 'text-red-600'
+                                      }`}>
+                                        {Math.round((match.availabilityMatch?.score || 0) * 100)}%
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      {match.availabilityMatch?.details?.matchingDays?.length || 0} days compatible
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Additional Scores */}
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                  {/* Industry Score */}
+                                  <div className="text-center">
+                                    <div className={`text-sm font-bold ${
+                                      (match.industryMatch?.score || 0) >= 0.8 ? 'text-green-600' : 
+                                      (match.industryMatch?.score || 0) >= 0.5 ? 'text-yellow-600' : 'text-red-600'
+                                    }`}>
+                                      {Math.round((match.industryMatch?.score || 0) * 100)}%
+                                    </div>
+                                    <div className="text-xs text-gray-500">Industry</div>
+                                  </div>
+
+                                  {/* Activity Score */}
+                                  <div className="text-center">
+                                    <div className={`text-sm font-bold ${
+                                      (match.activityMatch?.score || 0) >= 0.8 ? 'text-green-600' : 
+                                      (match.activityMatch?.score || 0) >= 0.5 ? 'text-yellow-600' : 'text-red-600'
+                                    }`}>
+                                      {Math.round((match.activityMatch?.score || 0) * 100)}%
+                                    </div>
+                                    <div className="text-xs text-gray-500">Activity</div>
+                                  </div>
+
+                                  {/* Timezone Score */}
+                                  <div className="text-center">
+                                    <div className={`text-sm font-bold ${
+                                      (match.timezoneMatch?.score || 0) >= 0.8 ? 'text-green-600' : 
+                                      (match.timezoneMatch?.score || 0) >= 0.5 ? 'text-yellow-600' : 'text-red-600'
+                                    }`}>
+                                      {Math.round((match.timezoneMatch?.score || 0) * 100)}%
+                                    </div>
+                                    <div className="text-xs text-gray-500">Timezone</div>
+                                  </div>
+
+                                  {/* Region Score */}
+                                  <div className="text-center">
+                                    <div className={`text-sm font-bold ${
+                                      (match.regionMatch?.score || 0) >= 0.8 ? 'text-green-600' : 
+                                      (match.regionMatch?.score || 0) >= 0.5 ? 'text-yellow-600' : 'text-red-600'
+                                    }`}>
+                                      {Math.round((match.regionMatch?.score || 0) * 100)}%
+                                    </div>
+                                    <div className="text-xs text-gray-500">Region</div>
+                                  </div>
+                                </div>
+
+                                {/* Languages Details */}
+                                {match.languageMatch?.details?.matchingLanguages && match.languageMatch.details.matchingLanguages.length > 0 && (
+                                  <div className="mt-3 p-3 bg-green-50 rounded-lg">
+                                    <div className="text-xs font-medium text-green-800 mb-2">✅ Matching Languages:</div>
+                                    <div className="flex flex-wrap gap-1">
+                                      {match.languageMatch.details.matchingLanguages.map((lang, i) => (
+                                        <span key={i} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                                          {lang.languageName} ({lang.agentLevel})
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Missing Languages */}
+                                {match.languageMatch?.details?.missingLanguages && match.languageMatch.details.missingLanguages.length > 0 && (
+                                  <div className="mt-2 p-3 bg-red-50 rounded-lg">
+                                    <div className="text-xs font-medium text-red-800 mb-2">❌ Missing Languages:</div>
+                                    <div className="flex flex-wrap gap-1">
+                                      {match.languageMatch.details.missingLanguages.map((lang, i) => (
+                                        <span key={i} className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">
+                                          {lang.languageName} ({lang.requiredLevel})
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Skills Details */}
+                                {match.skillsMatch?.details?.matchingSkills && match.skillsMatch.details.matchingSkills.length > 0 && (
+                                  <div className="mt-2 p-3 bg-blue-50 rounded-lg">
+                                    <div className="text-xs font-medium text-blue-800 mb-2">🎯 Matching Skills:</div>
+                                    <div className="flex flex-wrap gap-1">
+                                      {match.skillsMatch.details.matchingSkills.map((skill, i) => (
+                                        <span key={i} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                          {skill.skillName}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Missing Skills */}
+                                {match.skillsMatch?.details?.missingSkills && match.skillsMatch.details.missingSkills.length > 0 && (
+                                  <div className="mt-2 p-3 bg-orange-50 rounded-lg">
+                                    <div className="text-xs font-medium text-orange-800 mb-2">⚠️ Missing Skills:</div>
+                                    <div className="flex flex-wrap gap-1">
+                                      {match.skillsMatch.details.missingSkills.map((skill, i) => (
+                                        <span key={i} className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs">
+                                          {skill.skillName}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Industry Match Details */}
+                                {match.industryMatch?.details?.matchingIndustries && match.industryMatch.details.matchingIndustries.length > 0 && (
+                                  <div className="mt-2 p-3 bg-purple-50 rounded-lg">
+                                    <div className="text-xs font-medium text-purple-800 mb-2">🏢 Matching Industries:</div>
+                                    <div className="flex flex-wrap gap-1">
+                                      {match.industryMatch.details.matchingIndustries.map((industry, i) => (
+                                        <span key={i} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                                          {industry.industryName}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Timezone & Region Details */}
+                                {(match.timezoneMatch?.details?.reason || match.regionMatch?.details?.reason) && (
+                                  <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                                    <div className="text-xs font-medium text-gray-800 mb-2">📍 Location Details:</div>
+                                    <div className="space-y-1 text-xs text-gray-600">
+                                      {match.timezoneMatch?.details?.reason && (
+                                        <div>🕒 <span className="font-medium">Timezone:</span> {match.timezoneMatch.details.reason}</div>
+                                      )}
+                                      {match.regionMatch?.details?.reason && (
+                                        <div>🌍 <span className="font-medium">Region:</span> {match.regionMatch.details.reason}</div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           );
                         })}
