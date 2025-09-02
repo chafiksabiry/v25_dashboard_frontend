@@ -106,14 +106,14 @@ function RepMatchingPanel() {
         setActiveAgentsList(activeAgentsData);
         
         // Then load secondary data
-        const [repsData, skillsData, languagesData] = await Promise.all([
+        const [representativesData, skillsData, languagesData] = await Promise.all([
           getReps(),
           getAllSkills(),
           getLanguages()
         ]);
         
         // Set secondary data
-        setReps(repsData);
+        setReps(representativesData);
         setSkills(skillsData);
         setLanguages(languagesData);
         
@@ -183,7 +183,7 @@ function RepMatchingPanel() {
       console.log('📧 Invited agents for gig:', invitedAgentIds);
       
       // Find matches for the selected gig using current or loaded weights
-      console.log("Searching for reps matching gig:", gig.title);
+      console.log("Searching for representatives matching gig:", gig.title);
       console.log("🎯 WEIGHTS BEING SENT TO API:", currentWeights);
       const matchesData = await findMatchesForGig(gig._id || '', currentWeights);
       console.log("=== MATCHES DATA ===", matchesData);
@@ -505,7 +505,7 @@ function RepMatchingPanel() {
             <div className="hidden lg:flex items-center space-x-6 px-4 py-2 bg-white/10 rounded-lg text-sm">
               <div className="text-center">
                 <div className="font-bold text-lg">{reps.length}</div>
-                <div className="text-orange-200 text-xs">Total Reps</div>
+                <div className="text-orange-200 text-xs">Total Representatives</div>
               </div>
               <div className="text-center">
                 <div className="font-bold text-lg">{invitedAgentsList.length}</div>
@@ -528,7 +528,7 @@ function RepMatchingPanel() {
           <div className="container mx-auto px-4">
             <nav className="flex space-x-0">
               {[
-                { id: 'matching', label: 'Smart Matching System', icon: '🎯', description: 'Find & match perfect reps' },
+                { id: 'matching', label: 'Smart Matching System', icon: '🎯', description: 'Find & match perfect representatives' },
                 { id: 'invited', label: 'Invited Agents', icon: '📧', description: 'Pending invitations' },
                 { id: 'enrollment', label: 'Enrollment Requests', icon: '📋', description: 'Agent applications' },
                 { id: 'active', label: 'Active Agents', icon: '✅', description: 'Working agents' }
@@ -625,7 +625,7 @@ function RepMatchingPanel() {
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                         </svg>
-                        Modifications non sauvegardées
+                        Unsaved changes
                       </span>
                     )}
                   </div>
@@ -1077,7 +1077,7 @@ function RepMatchingPanel() {
                               <button 
                                 onClick={async () => {
                                   try {
-                                    await acceptEnrollmentRequest(agent._id, "Bienvenue dans l'équipe ! Nous sommes ravis de vous avoir.");
+                                    await acceptEnrollmentRequest(agent._id, "Welcome to the team! We are delighted to have you.");
                                     // Refresh data
                                     const companyId = Cookies.get('companyId') || '';
                                     const [invitedAgentsData, enrollmentRequestsData, activeAgentsData] = await Promise.all([
@@ -1100,7 +1100,7 @@ function RepMatchingPanel() {
                               <button 
                                 onClick={async () => {
                                   try {
-                                    await rejectEnrollmentRequest(agent._id, "Désolé, nous ne pouvons pas donner suite à votre candidature pour le moment.");
+                                    await rejectEnrollmentRequest(agent._id, "Sorry, we cannot proceed with your application at this time.");
                                     // Refresh data
                                     const companyId = Cookies.get('companyId') || '';
                                     const [invitedAgentsData, enrollmentRequestsData, activeAgentsData] = await Promise.all([
