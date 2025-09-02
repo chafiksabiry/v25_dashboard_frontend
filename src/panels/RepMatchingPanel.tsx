@@ -176,14 +176,14 @@ function RepMatchingPanel() {
         // Keep current weights
       }
       
-      // Fetch invited agents for this gig
+      // Fetch invited reps for this gig
       const gigAgents = await getGigAgentsForGig(gig._id || '');
       const invitedAgentIds = new Set<string>(gigAgents.map((ga: any) => ga.agentId as string));
       setInvitedAgents(invitedAgentIds);
-      console.log('📧 Invited agents for gig:', invitedAgentIds);
+      console.log('📧 Invited reps for gig:', invitedAgentIds);
       
       // Find matches for the selected gig using current or loaded weights
-      console.log("Searching for representatives matching gig:", gig.title);
+      console.log("Searching for reps matching gig:", gig.title);
       console.log("🎯 WEIGHTS BEING SENT TO API:", currentWeights);
       const matchesData = await findMatchesForGig(gig._id || '', currentWeights);
       console.log("=== MATCHES DATA ===", matchesData);
@@ -271,7 +271,7 @@ function RepMatchingPanel() {
       setMatches(matchesData.preferedmatches || matchesData.matches || []);
       setMatchStats(matchesData);
       
-      // Fetch invited agents for this gig
+      // Fetch invited reps for this gig
       const gigAgents = await getGigAgentsForGig(selectedGig._id || '');
       const invitedAgentIds = new Set<string>(gigAgents.map((ga: any) => ga.agentId as string));
       setInvitedAgents(invitedAgentIds);
@@ -346,7 +346,7 @@ function RepMatchingPanel() {
     }
   };
 
-  // Handle creating gig-agent (inviting agent to gig)
+  // Handle creating gig-rep (inviting rep to gig)
   const handleCreateGigAgent = async (match: Match) => {
     if (!selectedGig) {
       setGigAgentError("No gig selected");
@@ -357,7 +357,7 @@ function RepMatchingPanel() {
     setGigAgentError(null);
     setGigAgentSuccess(null);
 
-    console.log('Creating gig-agent with data:', {
+    console.log('Creating gig-rep with data:', {
       agentId: match.agentId,
       gigId: selectedGig._id,
       match: match
@@ -371,9 +371,9 @@ function RepMatchingPanel() {
     
     try {
       const response = await createGigAgent(requestData);
-      console.log('Gig-Agent created successfully:', response);
+      console.log('Gig-Rep created successfully:', response);
       
-      // Add agent to invited list
+      // Add rep to invited list
       setInvitedAgents(prev => new Set([...prev, match.agentId]));
       
       // Update the match object to mark it as invited
@@ -415,26 +415,26 @@ function RepMatchingPanel() {
       }
 
     } catch (error) {
-      console.error('Error creating gig-agent:', error);
-      setGigAgentError('Failed to invite agent to gig. Please try again.');
+      console.error('Error creating gig-rep:', error);
+      setGigAgentError('Failed to invite rep to gig. Please try again.');
     } finally {
       setCreatingGigAgent(false);
     }
   };
 
-  // Helper functions to organize agents by status
+  // Helper functions to organize reps by status
   const organizeAgentsByStatus = () => {
     console.log('🔍 DEBUG: All matches data:', matches);
     console.log('🔍 DEBUG: invitedAgents Set:', invitedAgents);
-    console.log('🔍 DEBUG: Company Invited Agents:', companyInvitedAgents);
+    console.log('🔍 DEBUG: Company Invited Reps:', companyInvitedAgents);
     
-    // Use company invited agents from API endpoint
+    // Use company invited reps from API endpoint
     const invited = companyInvitedAgents.filter(agent => {
-      // Show all agents who are not yet active, regardless of their status
+      // Show all reps who are not yet active, regardless of their status
       const isInvited = !agent.isActive && 
                        !agent.hasCompletedOnboarding;
       
-      console.log(`🔍 Company Invited Agent ${agent.personalInfo?.name}:`, {
+      console.log(`🔍 Company Invited Rep ${agent.personalInfo?.name}:`, {
         status: agent.status,
         isActive: agent.isActive,
         hasCompletedOnboarding: agent.hasCompletedOnboarding,
@@ -449,11 +449,11 @@ function RepMatchingPanel() {
     const enrollmentReqs = enrollmentRequests;
     console.log('📋 Enrollment Requests from API:', enrollmentReqs);
     
-    // Use active agents from API endpoint
+    // Use active reps from API endpoint
     const active = activeAgentsList;
-    console.log('✅ Active Agents from API:', active);
+    console.log('✅ Active Reps from API:', active);
 
-    console.log('🔄 Organizing agents by status:');
+    console.log('🔄 Organizing reps by status:');
     console.log('📧 Invited:', invited.length, invited.map(a => ({ name: a.personalInfo?.name, id: a._id })));
     console.log('📋 Enrollment Requests:', enrollmentReqs.length, enrollmentReqs.map(a => ({ name: a.personalInfo?.name, id: a._id })));
     console.log('✅ Active:', active.length, active.map(a => ({ name: a.personalInfo?.name, id: a._id })));
@@ -496,8 +496,8 @@ function RepMatchingPanel() {
                 <Users size={24} className="text-yellow-300" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">Representative Management System</h1>
-                <p className="text-orange-200 text-sm">Manage agents through their complete lifecycle</p>
+                <h1 className="text-2xl font-bold">Reps Management System</h1>
+                <p className="text-orange-200 text-sm">Manage reps through their complete lifecycle</p>
               </div>
             </div>
             
@@ -505,7 +505,7 @@ function RepMatchingPanel() {
             <div className="hidden lg:flex items-center space-x-6 px-4 py-2 bg-white/10 rounded-lg text-sm">
               <div className="text-center">
                 <div className="font-bold text-lg">{reps.length}</div>
-                <div className="text-orange-200 text-xs">Total Representatives</div>
+                <div className="text-orange-200 text-xs">Total Reps</div>
               </div>
               <div className="text-center">
                 <div className="font-bold text-lg">{invitedAgentsList.length}</div>
@@ -528,10 +528,10 @@ function RepMatchingPanel() {
           <div className="container mx-auto px-4">
             <nav className="flex space-x-0">
               {[
-                { id: 'matching', label: 'Smart Matching System', icon: '🎯', description: 'Find & match perfect representatives' },
-                { id: 'invited', label: 'Invited Agents', icon: '📧', description: 'Pending invitations' },
-                { id: 'enrollment', label: 'Enrollment Requests', icon: '📋', description: 'Agent applications' },
-                { id: 'active', label: 'Active Agents', icon: '✅', description: 'Working agents' }
+                { id: 'matching', label: 'Smart Matching System', icon: '🎯', description: 'Find & match perfect reps' },
+                { id: 'invited', label: 'Invited Reps', icon: '📧', description: 'Pending invitations' },
+                { id: 'enrollment', label: 'Enrollment Requests', icon: '📋', description: 'Rep applications' },
+                { id: 'active', label: 'Active Reps', icon: '✅', description: 'Working reps' }
               ].map(section => (
                 <button
                   key={section.id}
@@ -594,7 +594,7 @@ function RepMatchingPanel() {
                 <div className="flex justify-between items-center">
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900">🎯 Smart Matching System</h2>
-                    <p className="text-gray-600">Find and match the perfect representatives for your gigs</p>
+                    <p className="text-gray-600">Find and match the perfect reps for your gigs</p>
             </div>
                   <button
                         onClick={() => setShowWeights(!showWeights)}
@@ -737,7 +737,7 @@ function RepMatchingPanel() {
                   <h4 className="text-sm font-bold text-blue-900 mb-1">How Weights Work</h4>
                   <p className="text-sm text-blue-700">
                     These weights determine how much each factor contributes to the overall matching score. 
-                    Higher weights give more importance to that criteria when ranking representatives.
+                    Higher weights give more importance to that criteria when ranking reps.
                   </p>
                 </div>
               </div>
@@ -999,12 +999,12 @@ function RepMatchingPanel() {
               </div>
             )}
 
-            {/* 2. INVITED AGENTS */}
+            {/* 2. INVITED REPS */}
             {activeSection === 'invited' && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">📧 Invited Agents</h2>
-                  <p className="text-gray-600">Agents who have been invited but haven't responded yet</p>
+                  <h2 className="text-2xl font-bold text-gray-900">📧 Invited Reps</h2>
+                  <p className="text-gray-600">Reps who have been invited but haven't responded yet</p>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-lg p-6">
@@ -1047,7 +1047,7 @@ function RepMatchingPanel() {
               <div className="space-y-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">📋 Enrollment Requests</h2>
-                  <p className="text-gray-600">Agents who accepted invitations and are requesting to join</p>
+                  <p className="text-gray-600">Reps who accepted invitations and are requesting to join</p>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-lg p-6">
@@ -1130,7 +1130,7 @@ function RepMatchingPanel() {
                       <div className="bg-gray-50 rounded-xl p-8 max-w-md mx-auto">
                         <div className="text-6xl mb-4">📋</div>
                         <p className="text-gray-600 text-lg mb-2">No enrollment requests</p>
-                        <p className="text-sm text-gray-400">No agents are waiting for approval.</p>
+                        <p className="text-sm text-gray-400">No reps are waiting for approval.</p>
                       </div>
                     </div>
                   )}
@@ -1138,12 +1138,12 @@ function RepMatchingPanel() {
               </div>
             )}
 
-            {/* 4. ACTIVE AGENTS */}
+            {/* 4. ACTIVE REPS */}
             {activeSection === 'active' && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">✅ Active Agents</h2>
-                  <p className="text-gray-600">Agents who are approved and actively working</p>
+                  <h2 className="text-2xl font-bold text-gray-900">✅ Active Reps</h2>
+                  <p className="text-gray-600">Reps who are approved and actively working</p>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-lg p-6">
@@ -1211,8 +1211,8 @@ function RepMatchingPanel() {
                     <div className="text-center py-12">
                       <div className="bg-gray-50 rounded-xl p-8 max-w-md mx-auto">
                         <div className="text-6xl mb-4">✅</div>
-                        <p className="text-gray-600 text-lg mb-2">No active agents</p>
-                        <p className="text-sm text-gray-400">Start by finding matches and inviting agents.</p>
+                        <p className="text-gray-600 text-lg mb-2">No active reps</p>
+                        <p className="text-sm text-gray-400">Start by finding matches and inviting reps.</p>
                       </div>
                     </div>
                   )}
