@@ -823,9 +823,15 @@ function RepMatchingPanel() {
                                   </div>
                                   <p className="text-sm text-gray-600 truncate">{match.agentInfo?.email}</p>
                                   <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
-                                    <span>📍 {match.agentInfo?.timezone?.countryName || match.agentInfo?.location || 'Unknown'}</span>
-                                    <span>🕒 {match.agentInfo?.timezone?.gmtDisplay || 'Unknown timezone'}</span>
-                                    <span>💼 {match.agentInfo?.professionalSummary?.yearsOfExperience || 0} years exp.</span>
+                                    {(match.agentInfo?.timezone?.countryName || match.agentInfo?.location) && (
+                                      <span>📍 {match.agentInfo?.timezone?.countryName || match.agentInfo?.location}</span>
+                                    )}
+                                    {match.agentInfo?.timezone?.gmtDisplay && match.agentInfo.timezone.gmtDisplay !== 'Unknown' && (
+                                      <span>🕒 {match.agentInfo.timezone.gmtDisplay}</span>
+                                    )}
+                                    {match.agentInfo?.professionalSummary?.yearsOfExperience && (
+                                      <span>💼 {match.agentInfo.professionalSummary.yearsOfExperience.toString().replace(/\s+years?/gi, '')} years exp.</span>
+                                    )}
                                   </div>
                                 </div>
                                 
