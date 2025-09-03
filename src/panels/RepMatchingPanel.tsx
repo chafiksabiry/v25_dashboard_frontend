@@ -75,6 +75,7 @@ function RepMatchingPanel() {
   const [originalWeights, setOriginalWeights] = useState<MatchingWeights | null>(null);
   const [activeSection, setActiveSection] = useState<'matching' | 'invited' | 'enrollment' | 'active'>('matching');
   const [expandedReps, setExpandedReps] = useState<Set<string>>(new Set());
+  const [expandedGigs, setExpandedGigs] = useState<Set<string>>(new Set());
   const [invitedAgentsList, setInvitedAgentsList] = useState<any[]>([]);
   const [enrollmentRequests, setEnrollmentRequests] = useState<any[]>([]);
   const [activeAgentsList, setActiveAgentsList] = useState<any[]>([]);
@@ -531,6 +532,19 @@ function RepMatchingPanel() {
     });
   };
 
+  // Toggle gig details expansion
+  const toggleGigDetails = (gigId: string) => {
+    setExpandedGigs(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(gigId)) {
+        newSet.delete(gigId);
+      } else {
+        newSet.add(gigId);
+      }
+      return newSet;
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header with Navigation Tabs */}
@@ -848,190 +862,220 @@ function RepMatchingPanel() {
                     <span>Select a Gig to Find Matching Reps</span>
                   </h3>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {gigs.map((gig) => (
-                      <div
-                        key={gig._id}
-                        className={`cursor-pointer transition-all duration-200 ${
-                          selectedGig?._id === gig._id ? "scale-102" : "hover:scale-101"
-                        }`}
-                        onClick={() => handleGigSelect(gig)}
-                      >
-                        <div className={`relative bg-white rounded-lg p-5 border-2 transition-all duration-200 min-h-[280px] ${
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {gigs.map((gig) => {
+                      const isGigExpanded = expandedGigs.has(gig._id || '');
+                      
+                      return (
+                        <div key={gig._id} className={`bg-white rounded-lg border-2 transition-all duration-200 ${
                           selectedGig?._id === gig._id
                             ? "border-orange-400 shadow-lg bg-orange-50"
                             : "border-gray-200 hover:border-orange-300 hover:shadow-md"
                         }`}>
-                          <div className="flex justify-between items-start mb-3">
-                            <div className="flex items-center space-x-2">
-                              <div className={`p-2 rounded-lg ${
-                                selectedGig?._id === gig._id ? "bg-orange-500" : "bg-gray-400"
-                              }`}>
-                                <Briefcase size={16} className="text-white" />
-                              </div>
-                              <div>
-                                <h4 className={`font-bold text-base ${
-                                  selectedGig?._id === gig._id ? "text-orange-900" : "text-gray-800"
+                          {/* Gig Header - Clickable for selection */}
+                          <div
+                            className="cursor-pointer p-4"
+                            onClick={() => handleGigSelect(gig)}
+                          >
+                            <div className="flex justify-between items-start mb-3">
+                              <div className="flex items-center space-x-2 flex-1">
+                                <div className={`p-2 rounded-lg ${
+                                  selectedGig?._id === gig._id ? "bg-orange-500" : "bg-gray-400"
                                 }`}>
-                                  {gig.title}
-                                </h4>
-                                <p className="text-xs text-gray-600">{gig.companyName}</p>
-                              </div>
-            </div>
-                            
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              selectedGig?._id === gig._id
-                                ? "bg-orange-500 text-white"
-                                : "bg-blue-100 text-blue-800"
-                            }`}>
-                              {gig.category}
-                            </span>
-          </div>
-
-                          <div className="space-y-3 text-sm">
-                            {/* Experience */}
-                            <div className="flex items-center justify-between">
-                              <span className="text-gray-600">Experience:</span>
-                              <span className="font-medium">{gig.seniority?.yearsExperience || 'N/A'} years</span>
-            </div>
-
-                            {/* Skills */}
-                            {gig.skills && (gig.skills.professional?.length > 0 || gig.skills.technical?.length > 0 || gig.skills.soft?.length > 0) && (
-                              <div>
-                                <p className="text-gray-600 mb-1">Skills:</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {/* Professional Skills */}
-                                  {gig.skills.professional?.slice(0, 2).map((skillItem: any, i: number) => (
-                                    <span key={`prof-${i}`} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                                      {getSkillNameById(skillItem.skill || skillItem, 'professional')}
-                                    </span>
-                                  ))}
-                                  {/* Technical Skills */}
-                                  {gig.skills.technical?.slice(0, 1).map((skillItem: any, i: number) => (
-                                    <span key={`tech-${i}`} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
-                                      {getSkillNameById(skillItem.skill || skillItem, 'technical')}
-                                    </span>
-                                  ))}
-                                  {/* Show count of remaining skills */}
-                                  {(() => {
-                                    const totalSkills = (gig.skills.professional?.length || 0) + (gig.skills.technical?.length || 0) + (gig.skills.soft?.length || 0);
-                                    const shownSkills = Math.min(2, gig.skills.professional?.length || 0) + Math.min(1, gig.skills.technical?.length || 0);
-                                    return totalSkills > shownSkills ? (
-                                      <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
-                                        +{totalSkills - shownSkills}
-                                      </span>
-                                    ) : null;
-                                  })()}
+                                  <Briefcase size={16} className="text-white" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className={`font-bold text-sm truncate ${
+                                    selectedGig?._id === gig._id ? "text-orange-900" : "text-gray-800"
+                                  }`}>
+                                    {gig.title}
+                                  </h4>
+                                  <p className="text-xs text-gray-600 truncate">{gig.companyName}</p>
                                 </div>
                               </div>
-                            )}
-
-                            {/* Languages */}
-                            {gig.skills?.languages && gig.skills.languages.length > 0 && (
-                              <div>
-                                <p className="text-gray-600 mb-1">Languages:</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {gig.skills.languages.slice(0, 3).map((lang: any, i: number) => (
-                                    <span key={i} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
-                                      {getLanguageNameByCode(lang.language || lang.iso639_1 || lang)}
-                                    </span>
-                                  ))}
-                                  {gig.skills.languages.length > 3 && (
-                                    <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
-                                      +{gig.skills.languages.length - 3}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Industries */}
-                            {gig.industries && gig.industries.length > 0 && (
-                              <div>
-                                <p className="text-gray-600 mb-1">Industries:</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {gig.industries.slice(0, 2).map((industry: any, i: number) => {
-                                    const displayName = industry.name || 
-                                                       (typeof industry === 'string' && !industry.match(/^[0-9a-fA-F]{24}$/) ? industry : 'Industry');
-                                    return (
-                                      <span key={i} className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs">
-                                        {displayName}
-                                      </span>
-                                    );
-                                  })}
-                                  {gig.industries.length > 2 && (
-                                    <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
-                                      +{gig.industries.length - 2}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Activities */}
-                            {gig.activities && gig.activities.length > 0 && (
-                              <div>
-                                <p className="text-gray-600 mb-1">Activities:</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {gig.activities.slice(0, 2).map((activity: any, i: number) => {
-                                    const displayName = activity.name || 
-                                                       (typeof activity === 'string' && !activity.match(/^[0-9a-fA-F]{24}$/) ? activity : 'Activity');
-                                    return (
-                                      <span key={i} className="px-2 py-1 bg-teal-100 text-teal-800 rounded text-xs">
-                                        {displayName}
-                                      </span>
-                                    );
-                                  })}
-                                  {gig.activities.length > 2 && (
-                                    <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
-                                      +{gig.activities.length - 2}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Region & Timezone */}
-                            <div className="grid grid-cols-2 gap-2 text-xs">
-                              {gig.region && (
-                                <div>
-                                  <span className="text-gray-600">Region:</span>
-                                  <p className="font-medium truncate">{gig.region}</p>
-                                </div>
-                              )}
-                              {gig.timezone && (
-                                <div>
-                                  <span className="text-gray-600">Timezone:</span>
-                                  <p className="font-medium truncate">{gig.timezone}</p>
-                                </div>
-                              )}
+                              
+                              <span className={`px-2 py-1 rounded text-xs font-medium flex-shrink-0 ml-2 ${
+                                selectedGig?._id === gig._id
+                                  ? "bg-orange-500 text-white"
+                                  : "bg-blue-100 text-blue-800"
+                              }`}>
+                                {gig.category}
+                              </span>
                             </div>
-
-                            {/* Availability */}
-                            {gig.availability && (
-                              <div className="text-xs">
-                                <span className="text-gray-600">Availability:</span>
-                                <p className="font-medium">
-                                  {gig.availability.schedule ? `${gig.availability.schedule.length} days/week` : 
-                                   gig.availability.hoursPerWeek ? `${gig.availability.hoursPerWeek}h/week` :
-                                   gig.availability.workingHours ? gig.availability.workingHours :
-                                   'Flexible'}
-                                </p>
+                            
+                            {selectedGig?._id === gig._id && (
+                              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                </svg>
                               </div>
                             )}
-          </div>
+                          </div>
 
-                          {selectedGig?._id === gig._id && (
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          {/* View Details Button */}
+                          <div className="px-4 pb-4">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleGigDetails(gig._id || '');
+                              }}
+                              className="w-full flex items-center justify-center space-x-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all duration-200 text-sm font-medium text-gray-700"
+                            >
+                              <span>View Details</span>
+                              <svg 
+                                className={`w-4 h-4 transform transition-transform duration-200 ${isGigExpanded ? 'rotate-180' : ''}`} 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                               </svg>
-            </div>
+                            </button>
+                          </div>
+
+                                                    {/* Expanded Details */}
+                          {isGigExpanded && (
+                            <div className="px-4 pb-4 border-t border-gray-200 bg-gray-50">
+                              <div className="pt-4 space-y-4 text-sm">
+                                
+                                {/* Experience */}
+                                <div className="flex items-center justify-between">
+                                  <span className="text-gray-600 font-medium">Experience:</span>
+                                  <span className="font-semibold">{gig.seniority?.yearsExperience || 'N/A'} years</span>
+                                </div>
+
+                                {/* ALL Professional Skills */}
+                                {gig.skills?.professional && gig.skills.professional.length > 0 && (
+                                  <div>
+                                    <p className="text-gray-700 font-medium mb-2">Professional Skills:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {gig.skills.professional.map((skillItem: any, i: number) => (
+                                        <span key={`prof-${i}`} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                          {getSkillNameById(skillItem.skill || skillItem, 'professional')}
+                                          {skillItem.level && <span className="ml-1 text-blue-600">({skillItem.level}/5)</span>}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* ALL Technical Skills */}
+                                {gig.skills?.technical && gig.skills.technical.length > 0 && (
+                                  <div>
+                                    <p className="text-gray-700 font-medium mb-2">Technical Skills:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {gig.skills.technical.map((skillItem: any, i: number) => (
+                                        <span key={`tech-${i}`} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                                          {getSkillNameById(skillItem.skill || skillItem, 'technical')}
+                                          {skillItem.level && <span className="ml-1 text-green-600">({skillItem.level}/5)</span>}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* ALL Soft Skills */}
+                                {gig.skills?.soft && gig.skills.soft.length > 0 && (
+                                  <div>
+                                    <p className="text-gray-700 font-medium mb-2">Soft Skills:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {gig.skills.soft.map((skillItem: any, i: number) => (
+                                        <span key={`soft-${i}`} className="px-2 py-1 bg-pink-100 text-pink-800 rounded text-xs">
+                                          {getSkillNameById(skillItem.skill || skillItem, 'soft')}
+                                          {skillItem.level && <span className="ml-1 text-pink-600">({skillItem.level}/5)</span>}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* ALL Languages */}
+                                {gig.skills?.languages && gig.skills.languages.length > 0 && (
+                                  <div>
+                                    <p className="text-gray-700 font-medium mb-2">Languages:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {gig.skills.languages.map((lang: any, i: number) => (
+                                        <span key={i} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                                          {getLanguageNameByCode(lang.language || lang.iso639_1 || lang)}
+                                          {lang.proficiency && <span className="ml-1 text-purple-600">({lang.proficiency})</span>}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Industries */}
+                                {gig.industries && gig.industries.length > 0 && (
+                                  <div>
+                                    <p className="text-gray-700 font-medium mb-2">Industries:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {gig.industries.map((industry: any, i: number) => {
+                                        const displayName = industry.name || 
+                                                           (typeof industry === 'string' && !industry.match(/^[0-9a-fA-F]{24}$/) ? industry : 'Industry');
+                                        return (
+                                          <span key={i} className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs">
+                                            {displayName}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Activities */}
+                                {gig.activities && gig.activities.length > 0 && (
+                                  <div>
+                                    <p className="text-gray-700 font-medium mb-2">Activities:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {gig.activities.map((activity: any, i: number) => {
+                                        const displayName = activity.name || 
+                                                           (typeof activity === 'string' && !activity.match(/^[0-9a-fA-F]{24}$/) ? activity : 'Activity');
+                                        return (
+                                          <span key={i} className="px-2 py-1 bg-teal-100 text-teal-800 rounded text-xs">
+                                            {displayName}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Region & Timezone */}
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                  {gig.region && (
+                                    <div>
+                                      <span className="text-gray-600 font-medium">Region:</span>
+                                      <p className="font-semibold">{gig.region}</p>
+                                    </div>
+                                  )}
+                                  {gig.timezone && (
+                                    <div>
+                                      <span className="text-gray-600 font-medium">Timezone:</span>
+                                      <p className="font-semibold">{gig.timezone}</p>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Availability */}
+                                {gig.availability && (
+                                  <div>
+                                    <span className="text-gray-600 font-medium">Availability:</span>
+                                    <p className="font-semibold">
+                                      {gig.availability.schedule ? `${gig.availability.schedule.length} days/week` : 
+                                       gig.availability.hoursPerWeek ? `${gig.availability.hoursPerWeek}h/week` :
+                                       gig.availability.workingHours ? gig.availability.workingHours :
+                                       'Flexible'}
+                                    </p>
+                                  </div>
+                                )}
+
+                              </div>
+                            </div>
                           )}
-          </div>
-            </div>
-                    ))}
-          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
         </div>
 
                 {/* Matching Results */}
