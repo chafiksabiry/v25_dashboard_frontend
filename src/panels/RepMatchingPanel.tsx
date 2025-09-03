@@ -863,18 +863,32 @@ function RepMatchingPanel() {
                             </div>
 
                             {/* Skills */}
-                            {gig.skills && gig.skills.length > 0 && (
+                            {gig.skills && (gig.skills.professional?.length > 0 || gig.skills.technical?.length > 0 || gig.skills.soft?.length > 0) && (
                               <div>
                                 <p className="text-gray-600 mb-1">Skills:</p>
                                 <div className="flex flex-wrap gap-1">
-                                  {gig.skills.slice(0, 3).map((skill: any, i: number) => (
-                                    <span key={i} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                                      {getSkillNameById(skill._id || skill.skillId || skill, skill.category || 'professional')}
+                                  {/* Professional Skills */}
+                                  {gig.skills.professional?.slice(0, 2).map((skill: any, i: number) => (
+                                    <span key={`prof-${i}`} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                      {getSkillNameById(skill.skill || skill._id || skill, 'professional')}
                                     </span>
                                   ))}
-                                  {gig.skills.length > 3 && (
+                                  {/* Technical Skills */}
+                                  {gig.skills.technical?.slice(0, 2).map((skill: any, i: number) => (
+                                    <span key={`tech-${i}`} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                                      {getSkillNameById(skill.skill || skill._id || skill, 'technical')}
+                                    </span>
+                                  ))}
+                                  {/* Soft Skills */}
+                                  {gig.skills.soft?.slice(0, 1).map((skill: any, i: number) => (
+                                    <span key={`soft-${i}`} className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">
+                                      {getSkillNameById(skill.skill || skill._id || skill, 'soft')}
+                                    </span>
+                                  ))}
+                                  {/* Show more indicator */}
+                                  {((gig.skills.professional?.length || 0) + (gig.skills.technical?.length || 0) + (gig.skills.soft?.length || 0)) > 5 && (
                                     <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
-                                      +{gig.skills.length - 3}
+                                      +{((gig.skills.professional?.length || 0) + (gig.skills.technical?.length || 0) + (gig.skills.soft?.length || 0)) - 5}
                                     </span>
                                   )}
                                 </div>
@@ -882,18 +896,21 @@ function RepMatchingPanel() {
                             )}
 
                             {/* Languages */}
-                            {gig.languages && gig.languages.length > 0 && (
+                            {gig.skills?.languages && gig.skills.languages.length > 0 && (
                               <div>
                                 <p className="text-gray-600 mb-1">Languages:</p>
                                 <div className="flex flex-wrap gap-1">
-                                  {gig.languages.slice(0, 3).map((lang: any, i: number) => (
+                                  {gig.skills.languages.slice(0, 3).map((lang: any, i: number) => (
                                     <span key={i} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
-                                      {getLanguageNameByCode(lang.language || lang.code || lang)}
+                                      {getLanguageNameByCode(lang.language || lang.iso639_1 || lang)}
+                                      {lang.proficiency && (
+                                        <span className="ml-1 text-purple-600">({lang.proficiency})</span>
+                                      )}
                                     </span>
                                   ))}
-                                  {gig.languages.length > 3 && (
+                                  {gig.skills.languages.length > 3 && (
                                     <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
-                                      +{gig.languages.length - 3}
+                                      +{gig.skills.languages.length - 3}
                                     </span>
                                   )}
                                 </div>
@@ -959,9 +976,14 @@ function RepMatchingPanel() {
                               <div className="text-xs">
                                 <span className="text-gray-600">Availability:</span>
                                 <p className="font-medium">
-                                  {gig.availability.schedule ? `${gig.availability.schedule.length} days/week` : 
-                                   gig.availability.hoursPerWeek ? `${gig.availability.hoursPerWeek}h/week` :
-                                   gig.availability.workingHours ? gig.availability.workingHours :
+                                  {gig.availability.schedule && gig.availability.schedule.length > 0 ? 
+                                    `${gig.availability.schedule.length} days/week` : 
+                                   gig.availability.minimumHours?.weekly ? 
+                                    `${gig.availability.minimumHours.weekly}h/week` :
+                                   gig.availability.minimumHours?.daily ? 
+                                    `${gig.availability.minimumHours.daily}h/day` :
+                                   gig.availability.flexibility && gig.availability.flexibility.length > 0 ?
+                                    gig.availability.flexibility.join(', ') :
                                    'Flexible'}
                                 </p>
                               </div>
