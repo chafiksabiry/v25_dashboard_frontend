@@ -365,15 +365,18 @@ function RepMatchingPanel() {
       match: match
     });
 
+    // Send only the essential IDs to avoid any object processing errors
     const requestData = {
       agentId: match.agentId,
-      gigId: selectedGig._id || '',
-      matchDetails: match
+      gigId: selectedGig._id || ''
+      // Removed matchDetails completely to avoid backend language processing
     };
+    
+    console.log('🚀 Sending minimal request data:', requestData);
     
     try {
       const response = await createGigAgent(requestData);
-      console.log('Gig-Rep created successfully:', response);
+      console.log('✅ Gig-Rep created successfully:', response);
       
       // Add rep to invited list
       setInvitedAgents(prev => new Set([...prev, match.agentId]));
