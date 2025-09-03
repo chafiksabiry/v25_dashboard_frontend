@@ -469,11 +469,6 @@ function RepMatchingPanel() {
     // Handle null/undefined/empty values
     if (!skillId) return 'Unknown';
     
-    // If it's already an object with name, use it directly
-    if (typeof skillId === 'object' && skillId.name) {
-      return skillId.name;
-    }
-    
     // Convert to string if it's an object or other type
     const idStr = typeof skillId === 'string' ? skillId : 
                  typeof skillId === 'object' && skillId._id ? skillId._id :
@@ -481,23 +476,12 @@ function RepMatchingPanel() {
     
     const skillArray = skills[skillType];
     const skill = skillArray.find(s => s._id === idStr);
-    
-    // If not found in mock data, return a truncated ObjectId for display
-    if (!skill && idStr.length > 10) {
-      return `Skill (${idStr.substring(0, 8)}...)`;
-    }
-    
     return skill ? skill.name : idStr;
   };
 
   const getLanguageNameByCode = (languageCode: any) => {
     // Handle null/undefined/empty values
     if (!languageCode) return 'Unknown';
-    
-    // If it's already an object with name, use it directly
-    if (typeof languageCode === 'object' && languageCode.name) {
-      return languageCode.name;
-    }
     
     // Convert to string if it's an object or other type
     const codeStr = typeof languageCode === 'string' ? languageCode : 
@@ -515,11 +499,6 @@ function RepMatchingPanel() {
     // Try to find by name (case insensitive)
     if (!language && typeof codeStr === 'string') {
       language = languages.find(l => l.name && l.name.toLowerCase() === codeStr.toLowerCase());
-    }
-    
-    // If not found in mock data, return a truncated ObjectId for display
-    if (!language && codeStr.length > 10) {
-      return `Language (${codeStr.substring(0, 8)}...)`;
     }
     
     return language ? language.name : codeStr;
@@ -909,8 +888,8 @@ function RepMatchingPanel() {
                                 <div className="flex flex-wrap gap-1">
                                   {/* Professional Skills */}
                                   {gig.skills.professional?.slice(0, 2).map((skill: any, i: number) => {
-                                    const skillName = skill?.skill?.name || skill?.name || 
-                                                    getSkillNameById(skill?.skill || skill?._id || skill, 'professional');
+                                    const skillId = skill?.skill || skill?._id || skill;
+                                    const skillName = getSkillNameById(skillId, 'professional');
                                     return (
                                       <span key={`prof-${i}`} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
                                         {skillName}
@@ -919,8 +898,8 @@ function RepMatchingPanel() {
                                   })}
                                   {/* Technical Skills */}
                                   {gig.skills.technical?.slice(0, 2).map((skill: any, i: number) => {
-                                    const skillName = skill?.skill?.name || skill?.name || 
-                                                    getSkillNameById(skill?.skill || skill?._id || skill, 'technical');
+                                    const skillId = skill?.skill || skill?._id || skill;
+                                    const skillName = getSkillNameById(skillId, 'technical');
                                     return (
                                       <span key={`tech-${i}`} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
                                         {skillName}
@@ -929,8 +908,8 @@ function RepMatchingPanel() {
                                   })}
                                   {/* Soft Skills */}
                                   {gig.skills.soft?.slice(0, 1).map((skill: any, i: number) => {
-                                    const skillName = skill?.skill?.name || skill?.name || 
-                                                    getSkillNameById(skill?.skill || skill?._id || skill, 'soft');
+                                    const skillId = skill?.skill || skill?._id || skill;
+                                    const skillName = getSkillNameById(skillId, 'soft');
                                     return (
                                       <span key={`soft-${i}`} className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">
                                         {skillName}
@@ -953,9 +932,8 @@ function RepMatchingPanel() {
                                 <p className="text-gray-600 mb-1">Languages:</p>
                                 <div className="flex flex-wrap gap-1">
                                   {gig.skills.languages.slice(0, 3).map((lang: any, i: number) => {
-                                    // Use the populated language data directly
-                                    const langName = lang?.language?.name || lang?.name || 
-                                                    getLanguageNameByCode(lang?.language || lang?.iso639_1 || lang);
+                                    const langCode = lang?.language || lang?.iso639_1 || lang;
+                                    const langName = getLanguageNameByCode(langCode);
                                     return (
                                       <span key={i} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
                                         {langName}
