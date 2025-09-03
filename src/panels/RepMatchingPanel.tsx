@@ -365,30 +365,20 @@ function RepMatchingPanel() {
       match: match
     });
 
-    // Clean the match data to avoid language processing errors on backend
-    const cleanMatchDetails = {
-      ...match,
-      // Clean agent info languages to ensure they're properly formatted
-      agentInfo: match.agentInfo ? {
-        ...match.agentInfo,
-        languages: match.agentInfo.languages?.map((lang: any) => ({
-          _id: lang._id || '',
-          language: typeof lang.language === 'string' ? lang.language : (lang.language?.name || lang.language?.code || ''),
-          languageName: lang.languageName || (typeof lang.language === 'object' ? lang.language.name : lang.language) || '',
-          proficiency: lang.proficiency || ''
-        })) || []
-      } : undefined,
-      // Clean language match details
-      languageMatch: match.languageMatch ? {
-        ...match.languageMatch,
-        details: typeof match.languageMatch.details === 'object' ? match.languageMatch.details : {}
-      } : undefined
-    };
-
+    // Send only essential data to avoid complex object processing errors
     const requestData = {
       agentId: match.agentId,
       gigId: selectedGig._id || '',
-      matchDetails: cleanMatchDetails
+      // Send minimal match details to avoid language processing errors
+      matchDetails: {
+        agentId: match.agentId,
+        totalMatchingScore: match.totalMatchingScore,
+        // Basic agent info without complex language objects
+        agentInfo: {
+          name: match.agentInfo?.name || '',
+          email: match.agentInfo?.email || ''
+        }
+      }
     };
     
     try {
