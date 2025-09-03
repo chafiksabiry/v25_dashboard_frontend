@@ -465,24 +465,43 @@ function RepMatchingPanel() {
   };
 
   // Helper functions to get skill and language names
-  const getSkillNameById = (skillId: string, skillType: 'professional' | 'technical' | 'soft') => {
+  const getSkillNameById = (skillId: any, skillType: 'professional' | 'technical' | 'soft') => {
+    // Handle null/undefined/empty values
+    if (!skillId) return 'Unknown';
+    
+    // Convert to string if it's an object or other type
+    const idStr = typeof skillId === 'string' ? skillId : 
+                 typeof skillId === 'object' && skillId._id ? skillId._id :
+                 String(skillId);
+    
     const skillArray = skills[skillType];
-    const skill = skillArray.find(s => s._id === skillId);
-    return skill ? skill.name : skillId;
+    const skill = skillArray.find(s => s._id === idStr);
+    return skill ? skill.name : idStr;
   };
 
-  const getLanguageNameByCode = (languageCode: string) => {
-    let language = languages.find(l => l.code === languageCode);
+  const getLanguageNameByCode = (languageCode: any) => {
+    // Handle null/undefined/empty values
+    if (!languageCode) return 'Unknown';
     
+    // Convert to string if it's an object or other type
+    const codeStr = typeof languageCode === 'string' ? languageCode : 
+                   typeof languageCode === 'object' && languageCode._id ? languageCode._id :
+                   String(languageCode);
+    
+    // Try to find by code
+    let language = languages.find(l => l.code === codeStr);
+    
+    // Try to find by _id
     if (!language) {
-      language = languages.find(l => l._id === languageCode);
+      language = languages.find(l => l._id === codeStr);
     }
     
-    if (!language) {
-      language = languages.find(l => l.name.toLowerCase() === languageCode.toLowerCase());
+    // Try to find by name (case insensitive)
+    if (!language && typeof codeStr === 'string') {
+      language = languages.find(l => l.name && l.name.toLowerCase() === codeStr.toLowerCase());
     }
     
-    return language ? language.name : languageCode;
+    return language ? language.name : codeStr;
   };
 
   // Toggle rep details expansion
@@ -868,23 +887,35 @@ function RepMatchingPanel() {
                                 <p className="text-gray-600 mb-1">Skills:</p>
                                 <div className="flex flex-wrap gap-1">
                                   {/* Professional Skills */}
-                                  {gig.skills.professional?.slice(0, 2).map((skill: any, i: number) => (
-                                    <span key={`prof-${i}`} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                                      {getSkillNameById(skill.skill || skill._id || skill, 'professional')}
-                                    </span>
-                                  ))}
+                                  {gig.skills.professional?.slice(0, 2).map((skill: any, i: number) => {
+                                    const skillId = skill?.skill || skill?._id || skill;
+                                    const skillName = getSkillNameById(skillId, 'professional');
+                                    return (
+                                      <span key={`prof-${i}`} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                        {skillName}
+                                      </span>
+                                    );
+                                  })}
                                   {/* Technical Skills */}
-                                  {gig.skills.technical?.slice(0, 2).map((skill: any, i: number) => (
-                                    <span key={`tech-${i}`} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
-                                      {getSkillNameById(skill.skill || skill._id || skill, 'technical')}
-                                    </span>
-                                  ))}
+                                  {gig.skills.technical?.slice(0, 2).map((skill: any, i: number) => {
+                                    const skillId = skill?.skill || skill?._id || skill;
+                                    const skillName = getSkillNameById(skillId, 'technical');
+                                    return (
+                                      <span key={`tech-${i}`} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                                        {skillName}
+                                      </span>
+                                    );
+                                  })}
                                   {/* Soft Skills */}
-                                  {gig.skills.soft?.slice(0, 1).map((skill: any, i: number) => (
-                                    <span key={`soft-${i}`} className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">
-                                      {getSkillNameById(skill.skill || skill._id || skill, 'soft')}
-                                    </span>
-                                  ))}
+                                  {gig.skills.soft?.slice(0, 1).map((skill: any, i: number) => {
+                                    const skillId = skill?.skill || skill?._id || skill;
+                                    const skillName = getSkillNameById(skillId, 'soft');
+                                    return (
+                                      <span key={`soft-${i}`} className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">
+                                        {skillName}
+                                      </span>
+                                    );
+                                  })}
                                   {/* Show more indicator */}
                                   {((gig.skills.professional?.length || 0) + (gig.skills.technical?.length || 0) + (gig.skills.soft?.length || 0)) > 5 && (
                                     <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
@@ -900,14 +931,18 @@ function RepMatchingPanel() {
                               <div>
                                 <p className="text-gray-600 mb-1">Languages:</p>
                                 <div className="flex flex-wrap gap-1">
-                                  {gig.skills.languages.slice(0, 3).map((lang: any, i: number) => (
-                                    <span key={i} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
-                                      {getLanguageNameByCode(lang.language || lang.iso639_1 || lang)}
-                                      {lang.proficiency && (
-                                        <span className="ml-1 text-purple-600">({lang.proficiency})</span>
-                                      )}
-                                    </span>
-                                  ))}
+                                  {gig.skills.languages.slice(0, 3).map((lang: any, i: number) => {
+                                    const langCode = lang?.language || lang?.iso639_1 || lang;
+                                    const langName = getLanguageNameByCode(langCode);
+                                    return (
+                                      <span key={i} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                                        {langName}
+                                        {lang?.proficiency && (
+                                          <span className="ml-1 text-purple-600">({lang.proficiency})</span>
+                                        )}
+                                      </span>
+                                    );
+                                  })}
                                   {gig.skills.languages.length > 3 && (
                                     <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
                                       +{gig.skills.languages.length - 3}
