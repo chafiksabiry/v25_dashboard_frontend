@@ -465,43 +465,57 @@ function RepMatchingPanel() {
   };
 
   // Helper functions to get skill and language names
-  const getSkillNameById = (skillId: any, skillType: 'professional' | 'technical' | 'soft') => {
-    // Handle null/undefined/empty values
-    if (!skillId) return 'Unknown';
+  const getSkillNameById = (skillId: string | any, skillType: 'professional' | 'technical' | 'soft') => {
+    if (!skillId) return 'Unknown Skill';
     
-    // Convert to string if it's an object or other type
-    const idStr = typeof skillId === 'string' ? skillId : 
-                 typeof skillId === 'object' && skillId._id ? skillId._id :
-                 String(skillId);
+    // If it's already an object with name, return the name
+    if (typeof skillId === 'object' && skillId.name) {
+      return skillId.name;
+    }
     
-    const skillArray = skills[skillType];
-    const skill = skillArray.find(s => s._id === idStr);
-    return skill ? skill.name : idStr;
+    // Convert to string if it's an ObjectId
+    const idString = typeof skillId === 'string' ? skillId : skillId.toString();
+    
+    // Don't display ObjectIds
+    if (idString.match(/^[0-9a-fA-F]{24}$/)) {
+      const skillArray = skills[skillType];
+      const skill = skillArray.find(s => s._id === idString);
+      return skill ? skill.name : `${skillType.charAt(0).toUpperCase() + skillType.slice(1)} Skill`;
+    }
+    
+    return idString;
   };
 
-  const getLanguageNameByCode = (languageCode: any) => {
-    // Handle null/undefined/empty values
-    if (!languageCode) return 'Unknown';
+  const getLanguageNameByCode = (languageCode: string | any) => {
+    if (!languageCode) return 'Unknown Language';
     
-    // Convert to string if it's an object or other type
-    const codeStr = typeof languageCode === 'string' ? languageCode : 
-                   typeof languageCode === 'object' && languageCode._id ? languageCode._id :
-                   String(languageCode);
+    // If it's already an object with name, return the name
+    if (typeof languageCode === 'object' && languageCode.name) {
+      return languageCode.name;
+    }
+    
+    // Convert to string if it's an ObjectId
+    const codeString = typeof languageCode === 'string' ? languageCode : languageCode.toString();
+    
+    // Don't display ObjectIds
+    if (codeString.match(/^[0-9a-fA-F]{24}$/)) {
+      let language = languages.find(l => l._id === codeString);
+      if (language) return language.name;
+      return 'Language';
+    }
     
     // Try to find by code
-    let language = languages.find(l => l.code === codeStr);
+    let language = languages.find(l => l.code === codeString);
     
-    // Try to find by _id
     if (!language) {
-      language = languages.find(l => l._id === codeStr);
+      language = languages.find(l => l._id === codeString);
     }
     
-    // Try to find by name (case insensitive)
-    if (!language && typeof codeStr === 'string') {
-      language = languages.find(l => l.name && l.name.toLowerCase() === codeStr.toLowerCase());
+    if (!language) {
+      language = languages.find(l => l.name?.toLowerCase() === codeString.toLowerCase());
     }
     
-    return language ? language.name : codeStr;
+    return language ? language.name : codeString;
   };
 
   // Toggle rep details expansion
@@ -887,41 +901,27 @@ function RepMatchingPanel() {
                                 <p className="text-gray-600 mb-1">Skills:</p>
                                 <div className="flex flex-wrap gap-1">
                                   {/* Professional Skills */}
-                                  {gig.skills.professional?.slice(0, 2).map((skill: any, i: number) => {
-                                    const skillId = skill?.skill || skill?._id || skill;
-                                    const skillName = getSkillNameById(skillId, 'professional');
-                                    return (
-                                      <span key={`prof-${i}`} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                                        {skillName}
-                                      </span>
-                                    );
-                                  })}
-                                  {/* Technical Skills */}
-                                  {gig.skills.technical?.slice(0, 2).map((skill: any, i: number) => {
-                                    const skillId = skill?.skill || skill?._id || skill;
-                                    const skillName = getSkillNameById(skillId, 'technical');
-                                    return (
-                                      <span key={`tech-${i}`} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
-                                        {skillName}
-                                      </span>
-                                    );
-                                  })}
-                                  {/* Soft Skills */}
-                                  {gig.skills.soft?.slice(0, 1).map((skill: any, i: number) => {
-                                    const skillId = skill?.skill || skill?._id || skill;
-                                    const skillName = getSkillNameById(skillId, 'soft');
-                                    return (
-                                      <span key={`soft-${i}`} className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">
-                                        {skillName}
-                                      </span>
-                                    );
-                                  })}
-                                  {/* Show more indicator */}
-                                  {((gig.skills.professional?.length || 0) + (gig.skills.technical?.length || 0) + (gig.skills.soft?.length || 0)) > 5 && (
-                                    <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
-                                      +{((gig.skills.professional?.length || 0) + (gig.skills.technical?.length || 0) + (gig.skills.soft?.length || 0)) - 5}
+                                  {gig.skills.professional?.slice(0, 2).map((skillItem: any, i: number) => (
+                                    <span key={`prof-${i}`} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                      {getSkillNameById(skillItem.skill || skillItem, 'professional')}
                                     </span>
-                                  )}
+                                  ))}
+                                  {/* Technical Skills */}
+                                  {gig.skills.technical?.slice(0, 1).map((skillItem: any, i: number) => (
+                                    <span key={`tech-${i}`} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                                      {getSkillNameById(skillItem.skill || skillItem, 'technical')}
+                                    </span>
+                                  ))}
+                                  {/* Show count of remaining skills */}
+                                  {(() => {
+                                    const totalSkills = (gig.skills.professional?.length || 0) + (gig.skills.technical?.length || 0) + (gig.skills.soft?.length || 0);
+                                    const shownSkills = Math.min(2, gig.skills.professional?.length || 0) + Math.min(1, gig.skills.technical?.length || 0);
+                                    return totalSkills > shownSkills ? (
+                                      <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                        +{totalSkills - shownSkills}
+                                      </span>
+                                    ) : null;
+                                  })()}
                                 </div>
                               </div>
                             )}
@@ -931,18 +931,11 @@ function RepMatchingPanel() {
                               <div>
                                 <p className="text-gray-600 mb-1">Languages:</p>
                                 <div className="flex flex-wrap gap-1">
-                                  {gig.skills.languages.slice(0, 3).map((lang: any, i: number) => {
-                                    const langCode = lang?.language || lang?.iso639_1 || lang;
-                                    const langName = getLanguageNameByCode(langCode);
-                                    return (
-                                      <span key={i} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
-                                        {langName}
-                                        {lang?.proficiency && (
-                                          <span className="ml-1 text-purple-600">({lang.proficiency})</span>
-                                        )}
-                                      </span>
-                                    );
-                                  })}
+                                  {gig.skills.languages.slice(0, 3).map((lang: any, i: number) => (
+                                    <span key={i} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                                      {getLanguageNameByCode(lang.language || lang.iso639_1 || lang)}
+                                    </span>
+                                  ))}
                                   {gig.skills.languages.length > 3 && (
                                     <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
                                       +{gig.skills.languages.length - 3}
@@ -957,11 +950,15 @@ function RepMatchingPanel() {
                               <div>
                                 <p className="text-gray-600 mb-1">Industries:</p>
                                 <div className="flex flex-wrap gap-1">
-                                  {gig.industries.slice(0, 2).map((industry: any, i: number) => (
-                                    <span key={i} className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs">
-                                      {industry.name || industry}
-                                    </span>
-                                  ))}
+                                  {gig.industries.slice(0, 2).map((industry: any, i: number) => {
+                                    const displayName = industry.name || 
+                                                       (typeof industry === 'string' && !industry.match(/^[0-9a-fA-F]{24}$/) ? industry : 'Industry');
+                                    return (
+                                      <span key={i} className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs">
+                                        {displayName}
+                                      </span>
+                                    );
+                                  })}
                                   {gig.industries.length > 2 && (
                                     <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
                                       +{gig.industries.length - 2}
@@ -976,11 +973,15 @@ function RepMatchingPanel() {
                               <div>
                                 <p className="text-gray-600 mb-1">Activities:</p>
                                 <div className="flex flex-wrap gap-1">
-                                  {gig.activities.slice(0, 2).map((activity: any, i: number) => (
-                                    <span key={i} className="px-2 py-1 bg-teal-100 text-teal-800 rounded text-xs">
-                                      {activity.name || activity}
-                                    </span>
-                                  ))}
+                                  {gig.activities.slice(0, 2).map((activity: any, i: number) => {
+                                    const displayName = activity.name || 
+                                                       (typeof activity === 'string' && !activity.match(/^[0-9a-fA-F]{24}$/) ? activity : 'Activity');
+                                    return (
+                                      <span key={i} className="px-2 py-1 bg-teal-100 text-teal-800 rounded text-xs">
+                                        {displayName}
+                                      </span>
+                                    );
+                                  })}
                                   {gig.activities.length > 2 && (
                                     <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
                                       +{gig.activities.length - 2}
@@ -1011,14 +1012,9 @@ function RepMatchingPanel() {
                               <div className="text-xs">
                                 <span className="text-gray-600">Availability:</span>
                                 <p className="font-medium">
-                                  {gig.availability.schedule && gig.availability.schedule.length > 0 ? 
-                                    `${gig.availability.schedule.length} days/week` : 
-                                   gig.availability.minimumHours?.weekly ? 
-                                    `${gig.availability.minimumHours.weekly}h/week` :
-                                   gig.availability.minimumHours?.daily ? 
-                                    `${gig.availability.minimumHours.daily}h/day` :
-                                   gig.availability.flexibility && gig.availability.flexibility.length > 0 ?
-                                    gig.availability.flexibility.join(', ') :
+                                  {gig.availability.schedule ? `${gig.availability.schedule.length} days/week` : 
+                                   gig.availability.hoursPerWeek ? `${gig.availability.hoursPerWeek}h/week` :
+                                   gig.availability.workingHours ? gig.availability.workingHours :
                                    'Flexible'}
                                 </p>
                               </div>
