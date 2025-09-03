@@ -365,25 +365,18 @@ function RepMatchingPanel() {
       match: match
     });
 
-    // Send only essential data to avoid complex object processing errors
+    // Send only the essential IDs to avoid any object processing errors
     const requestData = {
       agentId: match.agentId,
-      gigId: selectedGig._id || '',
-      // Send minimal match details to avoid language processing errors
-      matchDetails: {
-        agentId: match.agentId,
-        totalMatchingScore: match.totalMatchingScore,
-        // Basic agent info without complex language objects
-        agentInfo: {
-          name: match.agentInfo?.name || '',
-          email: match.agentInfo?.email || ''
-        }
-      }
+      gigId: selectedGig._id || ''
+      // Removed matchDetails completely to avoid backend language processing
     };
+    
+    console.log('🚀 Sending minimal request data:', requestData);
     
     try {
       const response = await createGigAgent(requestData);
-      console.log('Gig-Rep created successfully:', response);
+      console.log('✅ Gig-Rep created successfully:', response);
       
       // Add rep to invited list
       setInvitedAgents(prev => new Set([...prev, match.agentId]));

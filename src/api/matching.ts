@@ -178,6 +178,8 @@ export const generateOptimalMatches = async (weights: MatchingWeights): Promise<
 export const createGigAgent = async (request: GigAgentRequest) => {
   console.log('createGigAgent called with:', request);
   try {
+    console.log('🔍 Request payload being sent:', JSON.stringify(request, null, 2));
+    
     const response = await fetch(`${MATCHING_API_URL}/gig-agents`, {
       method: 'POST',
       headers: {
@@ -186,17 +188,33 @@ export const createGigAgent = async (request: GigAgentRequest) => {
       body: JSON.stringify(request),
     });
     
+    console.log('📡 Response status:', response.status, response.statusText);
+    
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to create gig-agent');
+      let errorData;
+      try {
+        errorData = await response.json();
+        console.log('❌ Error response data:', errorData);
+      } catch (parseError) {
+        console.log('❌ Could not parse error response as JSON');
+        const errorText = await response.text();
+        console.log('❌ Error response text:', errorText);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      throw new Error(errorData.message || errorData.error || 'Failed to create gig-agent');
     }
     
     const data = await response.json();
-    console.log('Parsed createGigAgent response:', data);
+    console.log('✅ Parsed createGigAgent response:', data);
     
     return data;
   } catch (error) {
-    console.error('Error in createGigAgent:', error);
+    console.error('❌ Error in createGigAgent:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     throw error;
   }
 };
