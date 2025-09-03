@@ -1570,6 +1570,7 @@ function RepMatchingPanel() {
                   </div>
                 )}
               </div>
+            </div>
 
             {/* 2. INVITED REPS */}
             {activeSection === 'invited' && (
