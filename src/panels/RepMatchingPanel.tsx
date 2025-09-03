@@ -938,73 +938,7 @@ function RepMatchingPanel() {
                             <div className="px-4 pb-4 border-t border-gray-200 bg-gray-50">
                               <div className="pt-4 space-y-4 text-sm">
                                 
-                                {/* Experience */}
-                                <div className="flex items-center justify-between">
-                                  <span className="text-gray-600 font-medium">Experience:</span>
-                                  <span className="font-semibold">{gig.seniority?.yearsExperience || 'N/A'} years</span>
-                                </div>
-
-                                {/* ALL Professional Skills */}
-                                {gig.skills?.professional && gig.skills.professional.length > 0 && (
-                                  <div>
-                                    <p className="text-gray-700 font-medium mb-2">Professional Skills:</p>
-                                    <div className="flex flex-wrap gap-1">
-                                      {gig.skills.professional.map((skillItem: any, i: number) => (
-                                        <span key={`prof-${i}`} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                                          {getSkillNameById(skillItem.skill || skillItem, 'professional')}
-                                          {skillItem.level && <span className="ml-1 text-blue-600">({skillItem.level}/5)</span>}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* ALL Technical Skills */}
-                                {gig.skills?.technical && gig.skills.technical.length > 0 && (
-                                  <div>
-                                    <p className="text-gray-700 font-medium mb-2">Technical Skills:</p>
-                                    <div className="flex flex-wrap gap-1">
-                                      {gig.skills.technical.map((skillItem: any, i: number) => (
-                                        <span key={`tech-${i}`} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
-                                          {getSkillNameById(skillItem.skill || skillItem, 'technical')}
-                                          {skillItem.level && <span className="ml-1 text-green-600">({skillItem.level}/5)</span>}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* ALL Soft Skills */}
-                                {gig.skills?.soft && gig.skills.soft.length > 0 && (
-                                  <div>
-                                    <p className="text-gray-700 font-medium mb-2">Soft Skills:</p>
-                                    <div className="flex flex-wrap gap-1">
-                                      {gig.skills.soft.map((skillItem: any, i: number) => (
-                                        <span key={`soft-${i}`} className="px-2 py-1 bg-pink-100 text-pink-800 rounded text-xs">
-                                          {getSkillNameById(skillItem.skill || skillItem, 'soft')}
-                                          {skillItem.level && <span className="ml-1 text-pink-600">({skillItem.level}/5)</span>}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* ALL Languages */}
-                                {gig.skills?.languages && gig.skills.languages.length > 0 && (
-                                  <div>
-                                    <p className="text-gray-700 font-medium mb-2">Languages:</p>
-                                    <div className="flex flex-wrap gap-1">
-                                      {gig.skills.languages.map((lang: any, i: number) => (
-                                        <span key={i} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
-                                          {getLanguageNameByCode(lang.language || lang.iso639_1 || lang)}
-                                          {lang.proficiency && <span className="ml-1 text-purple-600">({lang.proficiency})</span>}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Industries */}
+                                {/* 1. Industries */}
                                 {gig.industries && gig.industries.length > 0 && (
                                   <div>
                                     <p className="text-gray-700 font-medium mb-2">Industries:</p>
@@ -1022,7 +956,7 @@ function RepMatchingPanel() {
                                   </div>
                                 )}
 
-                                {/* Activities */}
+                                {/* 2. Activities */}
                                 {gig.activities && gig.activities.length > 0 && (
                                   <div>
                                     <p className="text-gray-700 font-medium mb-2">Activities:</p>
@@ -1036,6 +970,82 @@ function RepMatchingPanel() {
                                           </span>
                                         );
                                       })}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* 3. Experience */}
+                                <div className="flex items-center justify-between">
+                                  <span className="text-gray-600 font-medium">Experience:</span>
+                                  <span className="font-semibold">{gig.seniority?.yearsExperience || 'N/A'} years</span>
+                                </div>
+
+                                {/* 4. Languages */}
+                                {gig.skills?.languages && gig.skills.languages.length > 0 && (
+                                  <div>
+                                    <p className="text-gray-700 font-medium mb-2">Languages:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {gig.skills.languages.map((lang: any, i: number) => (
+                                        <span key={i} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                                          {getLanguageNameByCode(lang.language || lang.iso639_1 || lang)}
+                                          {lang.proficiency && <span className="ml-1 text-purple-600">({lang.proficiency})</span>}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* 5. Availability */}
+                                {gig.availability && (
+                                  <div>
+                                    <span className="text-gray-600 font-medium">Availability:</span>
+                                    <p className="font-semibold">
+                                      {gig.availability.schedule ? `${gig.availability.schedule.length} days/week` : 
+                                       gig.availability.hoursPerWeek ? `${gig.availability.hoursPerWeek}h/week` :
+                                       gig.availability.workingHours ? gig.availability.workingHours :
+                                       'Flexible'}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* 6. Skills - Professional */}
+                                {gig.skills?.professional && gig.skills.professional.length > 0 && (
+                                  <div>
+                                    <p className="text-gray-700 font-medium mb-2">Professional Skills:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {gig.skills.professional.map((skillItem: any, i: number) => (
+                                        <span key={`prof-${i}`} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                          {getSkillNameById(skillItem.skill || skillItem, 'professional')}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* 6. Skills - Technical */}
+                                {gig.skills?.technical && gig.skills.technical.length > 0 && (
+                                  <div>
+                                    <p className="text-gray-700 font-medium mb-2">Technical Skills:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {gig.skills.technical.map((skillItem: any, i: number) => (
+                                        <span key={`tech-${i}`} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                                          {getSkillNameById(skillItem.skill || skillItem, 'technical')}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* 6. Skills - Soft */}
+                                {gig.skills?.soft && gig.skills.soft.length > 0 && (
+                                  <div>
+                                    <p className="text-gray-700 font-medium mb-2">Soft Skills:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {gig.skills.soft.map((skillItem: any, i: number) => (
+                                        <span key={`soft-${i}`} className="px-2 py-1 bg-pink-100 text-pink-800 rounded text-xs">
+                                          {getSkillNameById(skillItem.skill || skillItem, 'soft')}
+                                        </span>
+                                      ))}
                                     </div>
                                   </div>
                                 )}
@@ -1055,19 +1065,6 @@ function RepMatchingPanel() {
                                     </div>
                                   )}
                                 </div>
-
-                                {/* Availability */}
-                                {gig.availability && (
-                                  <div>
-                                    <span className="text-gray-600 font-medium">Availability:</span>
-                                    <p className="font-semibold">
-                                      {gig.availability.schedule ? `${gig.availability.schedule.length} days/week` : 
-                                       gig.availability.hoursPerWeek ? `${gig.availability.hoursPerWeek}h/week` :
-                                       gig.availability.workingHours ? gig.availability.workingHours :
-                                       'Flexible'}
-                                    </p>
-                                  </div>
-                                )}
 
                               </div>
                             </div>
