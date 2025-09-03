@@ -71,7 +71,11 @@ function RepMatchingPanel() {
   }>({ professional: [], technical: [], soft: [] });
   const [languages, setLanguages] = useState<Language[]>([]);
   const [gigHasWeights, setGigHasWeights] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [originalWeights, setOriginalWeights] = useState<MatchingWeights | null>(null);
   const [activeSection, setActiveSection] = useState<'matching' | 'invited' | 'enrollment' | 'active'>('matching');
+  const [expandedReps, setExpandedReps] = useState<Set<string>>(new Set());
+  const [expandedGigs, setExpandedGigs] = useState<Set<string>>(new Set());
   const [invitedAgentsList, setInvitedAgentsList] = useState<any[]>([]);
   const [enrollmentRequests, setEnrollmentRequests] = useState<any[]>([]);
   const [activeAgentsList, setActiveAgentsList] = useState<any[]>([]);
@@ -104,14 +108,14 @@ function RepMatchingPanel() {
         setActiveAgentsList(activeAgentsData);
         
         // Then load secondary data
-        const [repsData, skillsData, languagesData] = await Promise.all([
+        const [representativesData, skillsData, languagesData] = await Promise.all([
           getReps(),
           getAllSkills(),
           getLanguages()
         ]);
         
         // Set secondary data
-        setReps(repsData);
+        setReps(representativesData);
         setSkills(skillsData);
         setLanguages(languagesData);
         
@@ -153,6 +157,8 @@ function RepMatchingPanel() {
     
     // Reset weights state
     setGigHasWeights(false);
+    setHasUnsavedChanges(false);
+    setOriginalWeights(null);
     
     let currentWeights = weights;
     
@@ -161,7 +167,9 @@ function RepMatchingPanel() {
       try {
         const savedWeights = await getGigWeights(gig._id || '');
         setWeights(savedWeights.matchingWeights);
+        setOriginalWeights(savedWeights.matchingWeights);
         setGigHasWeights(true);
+        setHasUnsavedChanges(false);
         currentWeights = savedWeights.matchingWeights;
         console.log('✅ Gig has saved weights, loaded:', savedWeights.matchingWeights);
       } catch (error) {
@@ -170,11 +178,11 @@ function RepMatchingPanel() {
         // Keep current weights
       }
       
-      // Fetch invited agents for this gig
+      // Fetch invited reps for this gig
       const gigAgents = await getGigAgentsForGig(gig._id || '');
       const invitedAgentIds = new Set<string>(gigAgents.map((ga: any) => ga.agentId as string));
       setInvitedAgents(invitedAgentIds);
-      console.log('📧 Invited agents for gig:', invitedAgentIds);
+      console.log('📧 Invited reps for gig:', invitedAgentIds);
       
       // Find matches for the selected gig using current or loaded weights
       console.log("Searching for reps matching gig:", gig.title);
@@ -229,14 +237,54 @@ function RepMatchingPanel() {
   };
 
   const handleWeightChange = (key: string, value: number) => {
-    setWeights(prev => ({
-      ...prev,
+    const newWeights = {
+      ...weights,
       [key]: value,
-    }));
+    };
     
-    // Auto-search when weights change if a gig is selected
+    setWeights(newWeights);
+    
+    // Check if weights have been modified from original
+    if (originalWeights && gigHasWeights) {
+      const hasChanges = Object.keys(newWeights).some(
+        k => Math.abs(newWeights[k as keyof MatchingWeights] - originalWeights[k as keyof MatchingWeights]) > 0.001
+      );
+      setHasUnsavedChanges(hasChanges);
+    }
+    
+    // Auto-search when weights change if a gig is selected (without reloading saved weights)
     if (selectedGig) {
-      handleGigSelect(selectedGig);
+      searchWithCurrentWeights();
+    }
+  };
+
+  // New function to search with current weights without reloading from DB
+  const searchWithCurrentWeights = async () => {
+    if (!selectedGig) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      console.log("Searching with current weights (no DB reload):", weights);
+      const matchesData = await findMatchesForGig(selectedGig._id || '', weights);
+      console.log("=== MATCHES DATA WITH CURRENT WEIGHTS ===", matchesData);
+      
+      setMatches(matchesData.preferedmatches || matchesData.matches || []);
+      setMatchStats(matchesData);
+      
+      // Fetch invited reps for this gig
+      const gigAgents = await getGigAgentsForGig(selectedGig._id || '');
+      const invitedAgentIds = new Set<string>(gigAgents.map((ga: any) => ga.agentId as string));
+      setInvitedAgents(invitedAgentIds);
+      
+    } catch (error) {
+      console.error("Error searching with current weights:", error);
+      setError("Failed to get matches. Please try again.");
+      setMatches([]);
+      setMatchStats(null);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -253,9 +301,17 @@ function RepMatchingPanel() {
     };
     setWeights(defaultWeights);
     
-    // Auto-search when weights are reset if a gig is selected
+    // Check if we have unsaved changes after reset
+    if (originalWeights && gigHasWeights) {
+      const hasChanges = Object.keys(defaultWeights).some(
+        k => Math.abs(defaultWeights[k as keyof MatchingWeights] - originalWeights[k as keyof MatchingWeights]) > 0.001
+      );
+      setHasUnsavedChanges(hasChanges);
+    }
+    
+    // Auto-search when weights are reset if a gig is selected (without reloading saved weights)
     if (selectedGig) {
-      handleGigSelect(selectedGig);
+      searchWithCurrentWeights();
     }
   };
 
@@ -278,41 +334,11 @@ function RepMatchingPanel() {
       await saveGigWeights(selectedGig._id || '', weights);
       console.log('✅ Weights saved successfully for gig:', selectedGig._id);
       setGigHasWeights(true);
+      setOriginalWeights(weights);
+      setHasUnsavedChanges(false);
       
-      // Trigger new search with saved weights
-      console.log("Searching for reps with saved weights:", selectedGig.title);
-      console.log("🎯 SAVED WEIGHTS BEING SENT TO API:", weights);
-      const matchesData = await findMatchesForGig(selectedGig._id || '', weights);
-      console.log("=== MATCHES DATA AFTER SAVE ===", matchesData);
-      
-      // Debug first match score calculation after save
-      if (matchesData.preferedmatches && matchesData.preferedmatches.length > 0) {
-        const firstMatch = matchesData.preferedmatches[0];
-        console.log("🔍 SCORE BREAKDOWN AFTER SAVE:");
-        console.log("- Agent:", firstMatch.agentInfo?.name);
-        console.log("- Total Score from API:", firstMatch.totalMatchingScore);
-        
-        const calculatedTotal = 
-          (firstMatch.skillsMatch?.score || 0) * weights.skills +
-          (firstMatch.languageMatch?.score || 0) * weights.languages +
-          (firstMatch.industryMatch?.score || 0) * weights.industry +
-          (firstMatch.activityMatch?.score || 0) * weights.activities +
-          (firstMatch.experienceMatch?.score || 0) * weights.experience +
-          (firstMatch.timezoneMatch?.score || 0) * weights.timezone +
-          (firstMatch.regionMatch?.score || 0) * weights.region +
-          (firstMatch.availabilityMatch?.score || 0) * weights.availability;
-          
-        console.log("🧮 CALCULATED TOTAL AFTER SAVE:", calculatedTotal);
-        console.log("📊 API TOTAL AFTER SAVE:", firstMatch.totalMatchingScore);
-      }
-      
-      setMatches(matchesData.preferedmatches || matchesData.matches || []);
-      setMatchStats(matchesData);
-      
-      // Fetch invited agents
-      const gigAgents = await getGigAgentsForGig(selectedGig._id || '');
-      const invitedAgentIds = new Set<string>(gigAgents.map((ga: any) => ga.agentId as string));
-      setInvitedAgents(invitedAgentIds);
+      // Trigger new search with saved weights using the new function
+      await searchWithCurrentWeights();
       
     } catch (error) {
       console.error('❌ Error saving weights or searching:', error);
@@ -322,7 +348,7 @@ function RepMatchingPanel() {
     }
   };
 
-  // Handle creating gig-agent (inviting agent to gig)
+  // Handle creating gig-rep (inviting rep to gig)
   const handleCreateGigAgent = async (match: Match) => {
     if (!selectedGig) {
       setGigAgentError("No gig selected");
@@ -333,7 +359,7 @@ function RepMatchingPanel() {
     setGigAgentError(null);
     setGigAgentSuccess(null);
 
-    console.log('Creating gig-agent with data:', {
+    console.log('Creating gig-rep with data:', {
       agentId: match.agentId,
       gigId: selectedGig._id,
       match: match
@@ -347,9 +373,9 @@ function RepMatchingPanel() {
     
     try {
       const response = await createGigAgent(requestData);
-      console.log('Gig-Agent created successfully:', response);
+      console.log('Gig-Rep created successfully:', response);
       
-      // Add agent to invited list
+      // Add rep to invited list
       setInvitedAgents(prev => new Set([...prev, match.agentId]));
       
       // Update the match object to mark it as invited
@@ -391,26 +417,26 @@ function RepMatchingPanel() {
       }
 
     } catch (error) {
-      console.error('Error creating gig-agent:', error);
-      setGigAgentError('Failed to invite agent to gig. Please try again.');
+      console.error('Error creating gig-rep:', error);
+      setGigAgentError('Failed to invite rep to gig. Please try again.');
     } finally {
       setCreatingGigAgent(false);
     }
   };
 
-  // Helper functions to organize agents by status
+  // Helper functions to organize reps by status
   const organizeAgentsByStatus = () => {
     console.log('🔍 DEBUG: All matches data:', matches);
     console.log('🔍 DEBUG: invitedAgents Set:', invitedAgents);
-    console.log('🔍 DEBUG: Company Invited Agents:', companyInvitedAgents);
+    console.log('🔍 DEBUG: Company Invited Reps:', companyInvitedAgents);
     
-    // Use company invited agents from API endpoint
+    // Use company invited reps from API endpoint
     const invited = companyInvitedAgents.filter(agent => {
-      // Show all agents who are not yet active, regardless of their status
+      // Show all reps who are not yet active, regardless of their status
       const isInvited = !agent.isActive && 
                        !agent.hasCompletedOnboarding;
       
-      console.log(`🔍 Company Invited Agent ${agent.personalInfo?.name}:`, {
+      console.log(`🔍 Company Invited Rep ${agent.personalInfo?.name}:`, {
         status: agent.status,
         isActive: agent.isActive,
         hasCompletedOnboarding: agent.hasCompletedOnboarding,
@@ -425,11 +451,11 @@ function RepMatchingPanel() {
     const enrollmentReqs = enrollmentRequests;
     console.log('📋 Enrollment Requests from API:', enrollmentReqs);
     
-    // Use active agents from API endpoint
+    // Use active reps from API endpoint
     const active = activeAgentsList;
-    console.log('✅ Active Agents from API:', active);
+    console.log('✅ Active Reps from API:', active);
 
-    console.log('🔄 Organizing agents by status:');
+    console.log('🔄 Organizing reps by status:');
     console.log('📧 Invited:', invited.length, invited.map(a => ({ name: a.personalInfo?.name, id: a._id })));
     console.log('📋 Enrollment Requests:', enrollmentReqs.length, enrollmentReqs.map(a => ({ name: a.personalInfo?.name, id: a._id })));
     console.log('✅ Active:', active.length, active.map(a => ({ name: a.personalInfo?.name, id: a._id })));
@@ -440,24 +466,83 @@ function RepMatchingPanel() {
   };
 
   // Helper functions to get skill and language names
-  const getSkillNameById = (skillId: string, skillType: 'professional' | 'technical' | 'soft') => {
-    const skillArray = skills[skillType];
-    const skill = skillArray.find(s => s._id === skillId);
-    return skill ? skill.name : skillId;
+  const getSkillNameById = (skillId: string | any, skillType: 'professional' | 'technical' | 'soft') => {
+    if (!skillId) return 'Unknown Skill';
+    
+    // If it's already an object with name, return the name
+    if (typeof skillId === 'object' && skillId.name) {
+      return skillId.name;
+    }
+    
+    // Convert to string if it's an ObjectId
+    const idString = typeof skillId === 'string' ? skillId : skillId.toString();
+    
+    // Don't display ObjectIds
+    if (idString.match(/^[0-9a-fA-F]{24}$/)) {
+      const skillArray = skills[skillType];
+      const skill = skillArray.find(s => s._id === idString);
+      return skill ? skill.name : `${skillType.charAt(0).toUpperCase() + skillType.slice(1)} Skill`;
+    }
+    
+    return idString;
   };
 
-  const getLanguageNameByCode = (languageCode: string) => {
-    let language = languages.find(l => l.code === languageCode);
+  const getLanguageNameByCode = (languageCode: string | any) => {
+    if (!languageCode) return 'Unknown Language';
+    
+    // If it's already an object with name, return the name
+    if (typeof languageCode === 'object' && languageCode.name) {
+      return languageCode.name;
+    }
+    
+    // Convert to string if it's an ObjectId
+    const codeString = typeof languageCode === 'string' ? languageCode : languageCode.toString();
+    
+    // Don't display ObjectIds
+    if (codeString.match(/^[0-9a-fA-F]{24}$/)) {
+      let language = languages.find(l => l._id === codeString);
+      if (language) return language.name;
+      return 'Language';
+    }
+    
+    // Try to find by code
+    let language = languages.find(l => l.code === codeString);
     
     if (!language) {
-      language = languages.find(l => l._id === languageCode);
+      language = languages.find(l => l._id === codeString);
     }
     
     if (!language) {
-      language = languages.find(l => l.name.toLowerCase() === languageCode.toLowerCase());
+      language = languages.find(l => l.name?.toLowerCase() === codeString.toLowerCase());
     }
     
-    return language ? language.name : languageCode;
+    return language ? language.name : codeString;
+  };
+
+  // Toggle rep details expansion
+  const toggleRepDetails = (agentId: string) => {
+    setExpandedReps(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(agentId)) {
+        newSet.delete(agentId);
+      } else {
+        newSet.add(agentId);
+      }
+      return newSet;
+    });
+  };
+
+  // Toggle gig details expansion
+  const toggleGigDetails = (gigId: string) => {
+    setExpandedGigs(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(gigId)) {
+        newSet.delete(gigId);
+      } else {
+        newSet.add(gigId);
+      }
+      return newSet;
+    });
   };
 
   return (
@@ -472,8 +557,8 @@ function RepMatchingPanel() {
                 <Users size={24} className="text-yellow-300" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">Representative Management System</h1>
-                <p className="text-orange-200 text-sm">Manage agents through their complete lifecycle</p>
+                <h1 className="text-2xl font-bold">Reps Management System</h1>
+                <p className="text-orange-200 text-sm">Manage reps through their complete lifecycle</p>
               </div>
             </div>
             
@@ -505,9 +590,9 @@ function RepMatchingPanel() {
             <nav className="flex space-x-0">
               {[
                 { id: 'matching', label: 'Smart Matching System', icon: '🎯', description: 'Find & match perfect reps' },
-                { id: 'invited', label: 'Invited Agents', icon: '📧', description: 'Pending invitations' },
-                { id: 'enrollment', label: 'Enrollment Requests', icon: '📋', description: 'Agent applications' },
-                { id: 'active', label: 'Active Agents', icon: '✅', description: 'Working agents' }
+                { id: 'invited', label: 'Invited Reps', icon: '📧', description: 'Pending invitations' },
+                { id: 'enrollment', label: 'Enrollment Requests', icon: '📋', description: 'Rep applications' },
+                { id: 'active', label: 'Active Reps', icon: '✅', description: 'Working reps' }
               ].map(section => (
                 <button
                   key={section.id}
@@ -570,7 +655,7 @@ function RepMatchingPanel() {
                 <div className="flex justify-between items-center">
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900">🎯 Smart Matching System</h2>
-                    <p className="text-gray-600">Find and match the perfect representatives for your gigs</p>
+                    <p className="text-gray-600">Find and match the perfect reps for your gigs</p>
             </div>
                   <button
                         onClick={() => setShowWeights(!showWeights)}
@@ -594,7 +679,17 @@ function RepMatchingPanel() {
                   <Settings size={24} className="text-white" />
                 </div>
                 <div>
+                  <div className="flex items-center space-x-3">
                   <h2 className="text-2xl font-bold text-gray-900">Matching Weights Configuration</h2>
+                    {hasUnsavedChanges && (
+                      <span className="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium animate-pulse">
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                        Unsaved changes
+                      </span>
+                    )}
+                  </div>
                   <p className="text-gray-600 text-sm mt-1">Customize how each factor influences the matching algorithm</p>
                 </div>
               </div>
@@ -703,7 +798,7 @@ function RepMatchingPanel() {
                   <h4 className="text-sm font-bold text-blue-900 mb-1">How Weights Work</h4>
                   <p className="text-sm text-blue-700">
                     These weights determine how much each factor contributes to the overall matching score. 
-                    Higher weights give more importance to that criteria when ranking representatives.
+                    Higher weights give more importance to that criteria when ranking reps.
                   </p>
                 </div>
               </div>
@@ -719,7 +814,9 @@ function RepMatchingPanel() {
                   }}
                   disabled={loading}
                   className={`group relative px-10 py-4 rounded-2xl transition-all duration-300 flex items-center space-x-3 shadow-2xl transform hover:-translate-y-1 hover:shadow-3xl font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed ${
-                    gigHasWeights 
+                    hasUnsavedChanges
+                      ? 'bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white animate-pulse'
+                      : gigHasWeights 
                       ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white' 
                       : 'bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white'
                   }`}
@@ -738,12 +835,17 @@ function RepMatchingPanel() {
                   
                   {/* Text */}
                   <span className="relative z-10">
-                    {loading ? 'Saving weights...' : (gigHasWeights ? `Update Weights for ${selectedGig.title}` : `Save Weights for ${selectedGig.title}`)}
+                    {loading ? 'Saving weights...' : 
+                     hasUnsavedChanges ? `Save Changes for ${selectedGig.title}` :
+                     gigHasWeights ? `Update Weights for ${selectedGig.title}` : 
+                     `Save Weights for ${selectedGig.title}`}
                   </span>
                   
                   {/* Glow Effect */}
                   <div className={`absolute inset-0 rounded-2xl blur-xl opacity-30 group-hover:opacity-60 transition-opacity duration-300 ${
-                    gigHasWeights 
+                    hasUnsavedChanges
+                      ? 'bg-gradient-to-r from-yellow-500 to-orange-600'
+                      : gigHasWeights 
                       ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
                       : 'bg-gradient-to-r from-orange-500 to-red-600'
                   }`}></div>
@@ -757,67 +859,220 @@ function RepMatchingPanel() {
                 <div className="bg-white rounded-xl shadow-lg p-6">
                   <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center space-x-2">
                     <Briefcase size={20} className="text-orange-600" />
-                    <span>Select a Gig to Find Matching Representatives</span>
+                    <span>Select a Gig to Find Matching Reps</span>
                   </h3>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {gigs.map((gig) => (
-                      <div
-                        key={gig._id}
-                        className={`cursor-pointer transition-all duration-200 ${
-                          selectedGig?._id === gig._id ? "scale-102" : "hover:scale-101"
-                        }`}
-                        onClick={() => handleGigSelect(gig)}
-                      >
-                        <div className={`relative bg-white rounded-lg p-4 border-2 transition-all duration-200 ${
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {gigs.map((gig) => {
+                      const isGigExpanded = expandedGigs.has(gig._id || '');
+                      
+                      return (
+                        <div key={gig._id} className={`bg-white rounded-lg border-2 transition-all duration-200 ${
                           selectedGig?._id === gig._id
                             ? "border-orange-400 shadow-lg bg-orange-50"
                             : "border-gray-200 hover:border-orange-300 hover:shadow-md"
                         }`}>
-                          <div className="flex justify-between items-start mb-3">
-                            <div className="flex items-center space-x-2">
-                              <div className={`p-2 rounded-lg ${
-                                selectedGig?._id === gig._id ? "bg-orange-500" : "bg-gray-400"
-                              }`}>
-                                <Briefcase size={16} className="text-white" />
-                              </div>
-                              <div>
-                                <h4 className={`font-bold text-base ${
-                                  selectedGig?._id === gig._id ? "text-orange-900" : "text-gray-800"
+                          {/* Gig Header - Clickable for selection */}
+                          <div
+                            className="cursor-pointer p-4"
+                            onClick={() => handleGigSelect(gig)}
+                          >
+                            <div className="flex justify-between items-start mb-3">
+                              <div className="flex items-center space-x-2 flex-1">
+                                <div className={`p-2 rounded-lg ${
+                                  selectedGig?._id === gig._id ? "bg-orange-500" : "bg-gray-400"
                                 }`}>
-                                  {gig.title}
-                                </h4>
-                                <p className="text-xs text-gray-600">{gig.companyName}</p>
+                                  <Briefcase size={16} className="text-white" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className={`font-bold text-sm truncate ${
+                                    selectedGig?._id === gig._id ? "text-orange-900" : "text-gray-800"
+                                  }`}>
+                                    {gig.title}
+                                  </h4>
+                                  <p className="text-xs text-gray-600 truncate">{gig.companyName}</p>
+                                </div>
                               </div>
-            </div>
+                              
+                              <span className={`px-2 py-1 rounded text-xs font-medium flex-shrink-0 ml-2 ${
+                                selectedGig?._id === gig._id
+                                  ? "bg-orange-500 text-white"
+                                  : "bg-blue-100 text-blue-800"
+                              }`}>
+                                {gig.category}
+                              </span>
+                            </div>
                             
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              selectedGig?._id === gig._id
-                                ? "bg-orange-500 text-white"
-                                : "bg-blue-100 text-blue-800"
-                            }`}>
-                              {gig.category}
-                            </span>
-          </div>
+                            {selectedGig?._id === gig._id && (
+                              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
 
-                          <div className="space-y-2 text-sm">
-                            <div className="flex items-center justify-between">
-                              <span className="text-gray-600">Experience:</span>
-                              <span className="font-medium">{gig.seniority?.yearsExperience} years</span>
-            </div>
-          </div>
-
-                          {selectedGig?._id === gig._id && (
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          {/* View Details Button */}
+                          <div className="px-4 pb-4">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleGigDetails(gig._id || '');
+                              }}
+                              className="w-full flex items-center justify-center space-x-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all duration-200 text-sm font-medium text-gray-700"
+                            >
+                              <span>View Details</span>
+                              <svg 
+                                className={`w-4 h-4 transform transition-transform duration-200 ${isGigExpanded ? 'rotate-180' : ''}`} 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                               </svg>
-            </div>
+                            </button>
+                          </div>
+
+                                                    {/* Expanded Details */}
+                          {isGigExpanded && (
+                            <div className="px-4 pb-4 border-t border-gray-200 bg-gray-50">
+                              <div className="pt-4 space-y-4 text-sm">
+                                
+                                {/* 1. Industries */}
+                                {gig.industries && gig.industries.length > 0 && (
+                                  <div>
+                                    <p className="text-gray-700 font-medium mb-2">Industries:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {gig.industries.map((industry: any, i: number) => {
+                                        const displayName = industry.name || 
+                                                           (typeof industry === 'string' && !industry.match(/^[0-9a-fA-F]{24}$/) ? industry : 'Industry');
+                                        return (
+                                          <span key={i} className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs">
+                                            {displayName}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* 2. Activities */}
+                                {gig.activities && gig.activities.length > 0 && (
+                                  <div>
+                                    <p className="text-gray-700 font-medium mb-2">Activities:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {gig.activities.map((activity: any, i: number) => {
+                                        const displayName = activity.name || 
+                                                           (typeof activity === 'string' && !activity.match(/^[0-9a-fA-F]{24}$/) ? activity : 'Activity');
+                                        return (
+                                          <span key={i} className="px-2 py-1 bg-teal-100 text-teal-800 rounded text-xs">
+                                            {displayName}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* 3. Experience */}
+                                <div className="flex items-center justify-between">
+                                  <span className="text-gray-600 font-medium">Experience:</span>
+                                  <span className="font-semibold">{gig.seniority?.yearsExperience || 'N/A'} years</span>
+                                </div>
+
+                                {/* 4. Languages */}
+                                {gig.skills?.languages && gig.skills.languages.length > 0 && (
+                                  <div>
+                                    <p className="text-gray-700 font-medium mb-2">Languages:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {gig.skills.languages.map((lang: any, i: number) => (
+                                        <span key={i} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                                          {getLanguageNameByCode(lang.language || lang.iso639_1 || lang)}
+                                          {lang.proficiency && <span className="ml-1 text-purple-600">({lang.proficiency})</span>}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* 5. Availability */}
+                                {gig.availability && (
+                                  <div>
+                                    <span className="text-gray-600 font-medium">Availability:</span>
+                                    <p className="font-semibold">
+                                      {gig.availability.schedule ? `${gig.availability.schedule.length} days/week` : 
+                                       gig.availability.hoursPerWeek ? `${gig.availability.hoursPerWeek}h/week` :
+                                       gig.availability.workingHours ? gig.availability.workingHours :
+                                       'Flexible'}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* 6. Skills - Professional */}
+                                {gig.skills?.professional && gig.skills.professional.length > 0 && (
+                                  <div>
+                                    <p className="text-gray-700 font-medium mb-2">Professional Skills:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {gig.skills.professional.map((skillItem: any, i: number) => (
+                                        <span key={`prof-${i}`} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                          {getSkillNameById(skillItem.skill || skillItem, 'professional')}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* 6. Skills - Technical */}
+                                {gig.skills?.technical && gig.skills.technical.length > 0 && (
+                                  <div>
+                                    <p className="text-gray-700 font-medium mb-2">Technical Skills:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {gig.skills.technical.map((skillItem: any, i: number) => (
+                                        <span key={`tech-${i}`} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                                          {getSkillNameById(skillItem.skill || skillItem, 'technical')}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* 6. Skills - Soft */}
+                                {gig.skills?.soft && gig.skills.soft.length > 0 && (
+                                  <div>
+                                    <p className="text-gray-700 font-medium mb-2">Soft Skills:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {gig.skills.soft.map((skillItem: any, i: number) => (
+                                        <span key={`soft-${i}`} className="px-2 py-1 bg-pink-100 text-pink-800 rounded text-xs">
+                                          {getSkillNameById(skillItem.skill || skillItem, 'soft')}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Region & Timezone */}
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                  {gig.region && (
+                                    <div>
+                                      <span className="text-gray-600 font-medium">Region:</span>
+                                      <p className="font-semibold">{gig.region}</p>
+                                    </div>
+                                  )}
+                                  {gig.timezone && (
+                                    <div>
+                                      <span className="text-gray-600 font-medium">Timezone:</span>
+                                      <p className="font-semibold">{gig.timezone}</p>
+                                    </div>
+                                  )}
+                                </div>
+
+                              </div>
+                            </div>
                           )}
-          </div>
-            </div>
-                    ))}
-          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
         </div>
 
                 {/* Matching Results */}
@@ -864,9 +1119,11 @@ function RepMatchingPanel() {
                                             matchScore >= 50 ? 'bg-yellow-50 border-yellow-200' :
                                             'bg-red-50 border-red-200';
                           
+                          const isExpanded = expandedReps.has(match.agentId);
+                          
                           return (
                             <div key={`match-${match.agentId}-${index}`} className={`rounded-xl p-6 border-2 hover:shadow-lg transition-all duration-300 ${cardBgColor}`}>
-                              {/* Agent Header */}
+                              {/* Rep Header */}
                               <div className="flex items-center justify-between mb-4">
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-3 mb-2">
@@ -890,7 +1147,28 @@ function RepMatchingPanel() {
                                     {match.agentInfo?.professionalSummary?.yearsOfExperience && (
                                       <span>💼 {match.agentInfo.professionalSummary.yearsOfExperience.toString().replace(/\s+years?/gi, '')} years exp.</span>
                                     )}
+                                    {match.agentInfo?.personalInfo?.languages && match.agentInfo.personalInfo.languages.length > 0 && (
+                                      <span>🗣️ {match.agentInfo.personalInfo.languages.length} languages</span>
+                                    )}
                                   </div>
+
+                                  {/* Rep Languages */}
+                                  {match.agentInfo?.personalInfo?.languages && match.agentInfo.personalInfo.languages.length > 0 && (
+                                    <div className="mt-2">
+                                      <div className="flex flex-wrap gap-1">
+                                        {match.agentInfo.personalInfo.languages.slice(0, 4).map((lang: any, i: number) => (
+                                          <span key={i} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                                            {getLanguageNameByCode(lang.language || lang.code || lang)}
+                                          </span>
+                                        ))}
+                                        {match.agentInfo.personalInfo.languages.length > 4 && (
+                                          <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                            +{match.agentInfo.personalInfo.languages.length - 4}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                                 
                                 <div className="flex-shrink-0 ml-4">
@@ -918,6 +1196,248 @@ function RepMatchingPanel() {
                                   )}
                                 </div>
                               </div>
+
+                              {/* View Details Button */}
+                              <div className="flex justify-center mt-4">
+                                <button
+                                  onClick={() => toggleRepDetails(match.agentId)}
+                                  className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all duration-200 text-sm font-medium text-gray-700"
+                                >
+                                  <span>View Details</span>
+                                  <svg 
+                                    className={`w-4 h-4 transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} 
+                                    fill="none" 
+                                    stroke="currentColor" 
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                </button>
+                              </div>
+
+                              {/* Expanded Details */}
+                              {isExpanded && (
+                                <div className="mt-6 pt-6 border-t border-gray-200 space-y-6">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    
+                                    {/* Skills Match */}
+                                    {match.skillsMatch && (
+                                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <h5 className="font-semibold text-gray-800">Skills Match</h5>
+                                          <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                            Math.round((match.skillsMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
+                                            Math.round((match.skillsMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-red-100 text-red-800'
+                                          }`}>
+                                            {Math.round((match.skillsMatch.score || 0) * 100)}%
+                                          </span>
+                                        </div>
+                                        {match.skillsMatch.matchedSkills && match.skillsMatch.matchedSkills.length > 0 && (
+                                          <div className="space-y-1">
+                                            <p className="text-xs text-gray-600 mb-2">Matched Skills:</p>
+                                            <div className="flex flex-wrap gap-1">
+                                              {match.skillsMatch.matchedSkills.slice(0, 3).map((skill: any, i: number) => (
+                                                <span key={i} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                                  {getSkillNameById(skill._id || skill.skillId || skill, skill.category || 'professional')}
+                                                </span>
+                                              ))}
+                                              {match.skillsMatch.matchedSkills.length > 3 && (
+                                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                                  +{match.skillsMatch.matchedSkills.length - 3}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Languages Match */}
+                                    {match.languageMatch && (
+                                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <h5 className="font-semibold text-gray-800">Languages</h5>
+                                          <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                            Math.round((match.languageMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
+                                            Math.round((match.languageMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-red-100 text-red-800'
+                                          }`}>
+                                            {Math.round((match.languageMatch.score || 0) * 100)}%
+                                          </span>
+                                        </div>
+                                        {match.languageMatch.matchedLanguages && match.languageMatch.matchedLanguages.length > 0 && (
+                                          <div className="space-y-1">
+                                            <p className="text-xs text-gray-600 mb-2">Matched Languages:</p>
+                                            <div className="flex flex-wrap gap-1">
+                                              {match.languageMatch.matchedLanguages.slice(0, 3).map((lang: any, i: number) => (
+                                                <span key={i} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                                                  {getLanguageNameByCode(lang.language || lang.code || lang)}
+                                                </span>
+                                              ))}
+                                              {match.languageMatch.matchedLanguages.length > 3 && (
+                                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                                  +{match.languageMatch.matchedLanguages.length - 3}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Industry Match */}
+                                    {match.industryMatch && (
+                                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <h5 className="font-semibold text-gray-800">Industry</h5>
+                                          <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                            Math.round((match.industryMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
+                                            Math.round((match.industryMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-red-100 text-red-800'
+                                          }`}>
+                                            {Math.round((match.industryMatch.score || 0) * 100)}%
+                                          </span>
+                                        </div>
+                                        {match.industryMatch.matchedIndustries && match.industryMatch.matchedIndustries.length > 0 && (
+                                          <div className="space-y-1">
+                                            <p className="text-xs text-gray-600 mb-2">Industries:</p>
+                                            <div className="flex flex-wrap gap-1">
+                                              {match.industryMatch.matchedIndustries.slice(0, 2).map((industry: any, i: number) => (
+                                                <span key={i} className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs">
+                                                  {industry.name || industry}
+                                                </span>
+                                              ))}
+                                              {match.industryMatch.matchedIndustries.length > 2 && (
+                                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                                  +{match.industryMatch.matchedIndustries.length - 2}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Experience Match */}
+                                    {match.experienceMatch && (
+                                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <h5 className="font-semibold text-gray-800">Experience</h5>
+                                          <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                            Math.round((match.experienceMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
+                                            Math.round((match.experienceMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-red-100 text-red-800'
+                                          }`}>
+                                            {Math.round((match.experienceMatch.score || 0) * 100)}%
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-gray-600">
+                                          <p>Rep: {match.agentInfo?.professionalSummary?.yearsOfExperience || 'N/A'} years</p>
+                                          <p>Required: {selectedGig?.seniority?.yearsExperience || 'N/A'} years</p>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                  </div>
+
+                                  {/* Second Row */}
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    
+                                    {/* Timezone Match */}
+                                    {match.timezoneMatch && (
+                                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <h5 className="font-semibold text-gray-800">Timezone</h5>
+                                          <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                            Math.round((match.timezoneMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
+                                            Math.round((match.timezoneMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-red-100 text-red-800'
+                                          }`}>
+                                            {Math.round((match.timezoneMatch.score || 0) * 100)}%
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-gray-600">
+                                          <p>Rep: {match.agentInfo?.timezone?.gmtDisplay || 'N/A'}</p>
+                                          <p>Location: {match.agentInfo?.timezone?.countryName || match.agentInfo?.location || 'N/A'}</p>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Region Match */}
+                                    {match.regionMatch && (
+                                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <h5 className="font-semibold text-gray-800">Region</h5>
+                                          <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                            Math.round((match.regionMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
+                                            Math.round((match.regionMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-red-100 text-red-800'
+                                          }`}>
+                                            {Math.round((match.regionMatch.score || 0) * 100)}%
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-gray-600">
+                                          <p>{match.agentInfo?.timezone?.countryName || match.agentInfo?.location || 'N/A'}</p>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Availability Match */}
+                                    {match.availabilityMatch && (
+                                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <h5 className="font-semibold text-gray-800">Availability</h5>
+                                          <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                            Math.round((match.availabilityMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
+                                            Math.round((match.availabilityMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-red-100 text-red-800'
+                                          }`}>
+                                            {Math.round((match.availabilityMatch.score || 0) * 100)}%
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-gray-600">
+                                          <p>Schedule: {match.agentInfo?.availability?.schedule?.length || 0} days/week</p>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Activity Match */}
+                                    {match.activityMatch && (
+                                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <h5 className="font-semibold text-gray-800">Activities</h5>
+                                          <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                            Math.round((match.activityMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
+                                            Math.round((match.activityMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-red-100 text-red-800'
+                                          }`}>
+                                            {Math.round((match.activityMatch.score || 0) * 100)}%
+                                          </span>
+                                        </div>
+                                        {match.activityMatch.matchedActivities && match.activityMatch.matchedActivities.length > 0 && (
+                                          <div className="space-y-1">
+                                            <p className="text-xs text-gray-600 mb-2">Activities:</p>
+                                            <div className="flex flex-wrap gap-1">
+                                              {match.activityMatch.matchedActivities.slice(0, 2).map((activity: any, i: number) => (
+                                                <span key={i} className="px-2 py-1 bg-teal-100 text-teal-800 rounded text-xs">
+                                                  {activity.name || activity}
+                                                </span>
+                                              ))}
+                                              {match.activityMatch.matchedActivities.length > 2 && (
+                                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                                  +{match.activityMatch.matchedActivities.length - 2}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
@@ -958,12 +1478,12 @@ function RepMatchingPanel() {
               </div>
             )}
 
-            {/* 2. INVITED AGENTS */}
+            {/* 2. INVITED REPS */}
             {activeSection === 'invited' && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">📧 Invited Agents</h2>
-                  <p className="text-gray-600">Agents who have been invited but haven't responded yet</p>
+                  <h2 className="text-2xl font-bold text-gray-900">📧 Invited Reps</h2>
+                  <p className="text-gray-600">Reps who have been invited but haven't responded yet</p>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-lg p-6">
@@ -1006,7 +1526,7 @@ function RepMatchingPanel() {
               <div className="space-y-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">📋 Enrollment Requests</h2>
-                  <p className="text-gray-600">Agents who accepted invitations and are requesting to join</p>
+                  <p className="text-gray-600">Reps who accepted invitations and are requesting to join</p>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-lg p-6">
@@ -1036,7 +1556,7 @@ function RepMatchingPanel() {
                               <button 
                                 onClick={async () => {
                                   try {
-                                    await acceptEnrollmentRequest(agent._id, "Bienvenue dans l'équipe ! Nous sommes ravis de vous avoir.");
+                                    await acceptEnrollmentRequest(agent._id, "Welcome to the team! We are delighted to have you.");
                                     // Refresh data
                                     const companyId = Cookies.get('companyId') || '';
                                     const [invitedAgentsData, enrollmentRequestsData, activeAgentsData] = await Promise.all([
@@ -1059,7 +1579,7 @@ function RepMatchingPanel() {
                               <button 
                                 onClick={async () => {
                                   try {
-                                    await rejectEnrollmentRequest(agent._id, "Désolé, nous ne pouvons pas donner suite à votre candidature pour le moment.");
+                                    await rejectEnrollmentRequest(agent._id, "Sorry, we cannot proceed with your application at this time.");
                                     // Refresh data
                                     const companyId = Cookies.get('companyId') || '';
                                     const [invitedAgentsData, enrollmentRequestsData, activeAgentsData] = await Promise.all([
@@ -1089,7 +1609,7 @@ function RepMatchingPanel() {
                       <div className="bg-gray-50 rounded-xl p-8 max-w-md mx-auto">
                         <div className="text-6xl mb-4">📋</div>
                         <p className="text-gray-600 text-lg mb-2">No enrollment requests</p>
-                        <p className="text-sm text-gray-400">No agents are waiting for approval.</p>
+                        <p className="text-sm text-gray-400">No reps are waiting for approval.</p>
                       </div>
                     </div>
                   )}
@@ -1097,12 +1617,12 @@ function RepMatchingPanel() {
               </div>
             )}
 
-            {/* 4. ACTIVE AGENTS */}
+            {/* 4. ACTIVE REPS */}
             {activeSection === 'active' && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">✅ Active Agents</h2>
-                  <p className="text-gray-600">Agents who are approved and actively working</p>
+                  <h2 className="text-2xl font-bold text-gray-900">✅ Active Reps</h2>
+                  <p className="text-gray-600">Reps who are approved and actively working</p>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-lg p-6">
@@ -1170,8 +1690,8 @@ function RepMatchingPanel() {
                     <div className="text-center py-12">
                       <div className="bg-gray-50 rounded-xl p-8 max-w-md mx-auto">
                         <div className="text-6xl mb-4">✅</div>
-                        <p className="text-gray-600 text-lg mb-2">No active agents</p>
-                        <p className="text-sm text-gray-400">Start by finding matches and inviting agents.</p>
+                        <p className="text-gray-600 text-lg mb-2">No active reps</p>
+                        <p className="text-sm text-gray-400">Start by finding matches and inviting reps.</p>
                       </div>
                     </div>
                   )}
