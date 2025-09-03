@@ -1053,7 +1053,28 @@ function RepMatchingPanel() {
                                     {match.agentInfo?.professionalSummary?.yearsOfExperience && (
                                       <span>💼 {match.agentInfo.professionalSummary.yearsOfExperience.toString().replace(/\s+years?/gi, '')} years exp.</span>
                                     )}
+                                    {match.agentInfo?.personalInfo?.languages && match.agentInfo.personalInfo.languages.length > 0 && (
+                                      <span>🗣️ {match.agentInfo.personalInfo.languages.length} languages</span>
+                                    )}
                                   </div>
+
+                                  {/* Rep Languages */}
+                                  {match.agentInfo?.personalInfo?.languages && match.agentInfo.personalInfo.languages.length > 0 && (
+                                    <div className="mt-2">
+                                      <div className="flex flex-wrap gap-1">
+                                        {match.agentInfo.personalInfo.languages.slice(0, 4).map((lang: any, i: number) => (
+                                          <span key={i} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                                            {getLanguageNameByCode(lang.language || lang.code || lang)}
+                                          </span>
+                                        ))}
+                                        {match.agentInfo.personalInfo.languages.length > 4 && (
+                                          <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                            +{match.agentInfo.personalInfo.languages.length - 4}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                                 
                                 <div className="flex-shrink-0 ml-4">
