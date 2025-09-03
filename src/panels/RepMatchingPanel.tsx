@@ -39,10 +39,9 @@ import {
 } from '../api/matching';
 import Cookies from 'js-cookie';
 
-  function RepMatchingPanel() {
-    const [reps, setReps] = useState<Rep[]>([]);
-    const [allReps, setAllReps] = useState<Rep[]>([]); // Store all reps for display when no gig selected
-    const [gigs, setGigs] = useState<Gig[]>([]);
+function RepMatchingPanel() {
+  const [reps, setReps] = useState<Rep[]>([]);
+  const [gigs, setGigs] = useState<Gig[]>([]);
   const [selectedGig, setSelectedGig] = useState<Gig | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(false);
@@ -115,11 +114,10 @@ import Cookies from 'js-cookie';
           getLanguages()
         ]);
         
-                  // Set secondary data
-          setReps(representativesData);
-          setAllReps(representativesData); // Store all reps for display when no gig selected
-          setSkills(skillsData);
-          setLanguages(languagesData);
+        // Set secondary data
+        setReps(representativesData);
+        setSkills(skillsData);
+        setLanguages(languagesData);
         
         console.log("=== BACKEND DATA ===");
         console.log("Gigs:", gigsData);
@@ -378,7 +376,7 @@ import Cookies from 'js-cookie';
     
     try {
       const response = await createGigAgent(requestData);
-      console.log('✅ Gig-Rep created successfully:', response);
+      console.log('Gig-Rep created successfully:', response);
       
       // Add rep to invited list
       setInvitedAgents(prev => new Set([...prev, match.agentId]));
@@ -1080,13 +1078,14 @@ import Cookies from 'js-cookie';
           </div>
         </div>
 
-                                 {/* Matching Results */}
-                 <div className="bg-white rounded-xl shadow-lg p-6">
-                   <div className="mb-6">
-                     <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
-                       <Users size={20} className="text-orange-600" />
-                       <span>{selectedGig ? `Matches for "${selectedGig.title}"` : 'All Representatives'}</span>
-                     </h3>
+                {/* Matching Results */}
+                {selectedGig && (
+                  <div className="bg-white rounded-xl shadow-lg p-6">
+                    <div className="mb-6">
+                      <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                        <Users size={20} className="text-orange-600" />
+                        <span>Matches for "{selectedGig?.title}"</span>
+                      </h3>
                       
 
                     </div>
@@ -1098,131 +1097,9 @@ import Cookies from 'js-cookie';
                           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                             <Zap size={16} className="text-orange-500 animate-pulse" />
                           </div>
-                                                 </div>
-                       </div>
-                     ) : !selectedGig ? (
-                       // Show all reps when no gig is selected
-                       <div className="space-y-4">
-                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                           <div className="flex items-center gap-2">
-                             <Users size={20} className="text-blue-600" />
-                             <h3 className="text-lg font-semibold text-blue-800">All Representatives ({allReps.length})</h3>
-                           </div>
-                           <p className="text-blue-600 text-sm mt-1">Select a gig above to see matching representatives</p>
-                         </div>
-                         
-                         {/* Scrollable table for all reps */}
-                         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                           <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: '600px' }}>
-                             <table className="min-w-full divide-y divide-gray-200">
-                               <thead className="bg-gray-50 sticky top-0 z-10">
-                                 <tr>
-                                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Representative</th>
-                                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Languages</th>
-                                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Industries</th>
-                                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activities</th>
-                                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Experience</th>
-                                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Skills</th>
-                                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Availability</th>
-                                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                 </tr>
-                               </thead>
-                               <tbody className="bg-white divide-y divide-gray-200">
-                                 {allReps.map((rep, index) => (
-                                   <tr key={rep._id || index} className="hover:bg-gray-50">
-                                     <td className="px-6 py-4 whitespace-nowrap">
-                                       <div className="flex items-center">
-                                         <div>
-                                           <div className="text-sm font-medium text-gray-900">
-                                             {rep.personalInfo?.name || 'Unknown'}
-                                           </div>
-                                           <div className="text-sm text-gray-500">
-                                             {rep.personalInfo?.email || 'No email'}
-                                           </div>
-                                         </div>
-                                       </div>
-                                     </td>
-                                     <td className="px-6 py-4 whitespace-nowrap">
-                                       <div className="text-sm text-gray-900">
-                                         {rep.personalInfo?.timezone?.countryName || rep.personalInfo?.location || 'Unknown'}
-                                       </div>
-                                       <div className="text-sm text-gray-500">
-                                         {rep.personalInfo?.timezone?.gmtDisplay || ''}
-                                       </div>
-                                     </td>
-                                     <td className="px-6 py-4">
-                                       <div className="text-sm text-gray-900">
-                                         {rep.personalInfo?.languages?.length || 0} languages
-                                       </div>
-                                       <div className="text-xs text-gray-500 max-w-32 truncate">
-                                         {rep.personalInfo?.languages?.slice(0, 3).map(lang => 
-                                           typeof lang === 'string' ? lang : lang.languageName || lang.language || 'Unknown'
-                                         ).join(', ')}
-                                         {rep.personalInfo?.languages?.length > 3 && '...'}
-                                       </div>
-                                     </td>
-                                     <td className="px-6 py-4">
-                                       <div className="text-sm text-gray-900">
-                                         {rep.professionalSummary?.industries?.length || 0} industries
-                                       </div>
-                                       <div className="text-xs text-gray-500 max-w-32 truncate">
-                                         {rep.professionalSummary?.industries?.slice(0, 2).join(', ')}
-                                         {rep.professionalSummary?.industries?.length > 2 && '...'}
-                                       </div>
-                                     </td>
-                                     <td className="px-6 py-4">
-                                       <div className="text-sm text-gray-900">
-                                         {rep.professionalSummary?.activities?.length || 0} activities
-                                       </div>
-                                       <div className="text-xs text-gray-500 max-w-32 truncate">
-                                         {rep.professionalSummary?.activities?.slice(0, 2).join(', ')}
-                                         {rep.professionalSummary?.activities?.length > 2 && '...'}
-                                       </div>
-                                     </td>
-                                     <td className="px-6 py-4 whitespace-nowrap">
-                                       <div className="text-sm text-gray-900">
-                                         {rep.professionalSummary?.yearsOfExperience || 'N/A'} years
-                                       </div>
-                                     </td>
-                                     <td className="px-6 py-4">
-                                       <div className="text-sm text-gray-900">
-                                         {((rep.skills?.technical?.length || 0) + 
-                                           (rep.skills?.professional?.length || 0) + 
-                                           (rep.skills?.soft?.length || 0) + 
-                                           (rep.skills?.contactCenter?.length || 0))} skills
-                                       </div>
-                                       <div className="text-xs text-gray-500">
-                                         {rep.skills?.technical?.slice(0, 2).map(skill => skill.name || skill.skill).join(', ')}
-                                         {(rep.skills?.technical?.length || 0) > 2 && '...'}
-                                       </div>
-                                     </td>
-                                     <td className="px-6 py-4">
-                                       <div className="text-sm text-gray-900">
-                                         {rep.availability?.workingDays?.length || 0} days
-                                       </div>
-                                       <div className="text-xs text-gray-500">
-                                         {rep.availability?.workingDays?.slice(0, 3).join(', ')}
-                                         {(rep.availability?.workingDays?.length || 0) > 3 && '...'}
-                                       </div>
-                                     </td>
-                                     <td className="px-6 py-4 whitespace-nowrap">
-                                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                         rep.status === 'active' ? 'bg-green-100 text-green-800' :
-                                         rep.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                         'bg-gray-100 text-gray-800'
-                                       }`}>
-                                         {rep.status || 'Unknown'}
-                                       </span>
-                                     </td>
-                                   </tr>
-                                 ))}
-                               </tbody>
-                             </table>
-                           </div>
-                         </div>
-                       </div>
-                     ) : matches.length > 0 ? (
+                        </div>
+                      </div>
+                    ) : matches.length > 0 ? (
                       <div className="space-y-3">
                         {matches.map((match, index) => {
                           // Check if agent is already enrolled in this specific gig
@@ -1598,11 +1475,11 @@ import Cookies from 'js-cookie';
                           {gigAgentError}
                         </div>
                       </div>
-                                         )}
-                   </div>
-                 </div>
-               </div>
-             )
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* 2. INVITED REPS */}
             {activeSection === 'invited' && (
