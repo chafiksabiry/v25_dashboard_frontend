@@ -815,7 +815,7 @@ function RepMatchingPanel() {
                     <span>Select a Gig to Find Matching Reps</span>
                   </h3>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                     {gigs.map((gig) => (
                       <div
                         key={gig._id}
@@ -824,7 +824,7 @@ function RepMatchingPanel() {
                         }`}
                         onClick={() => handleGigSelect(gig)}
                       >
-                        <div className={`relative bg-white rounded-lg p-4 border-2 transition-all duration-200 ${
+                        <div className={`relative bg-white rounded-lg p-5 border-2 transition-all duration-200 min-h-[280px] ${
                           selectedGig?._id === gig._id
                             ? "border-orange-400 shadow-lg bg-orange-50"
                             : "border-gray-200 hover:border-orange-300 hover:shadow-md"
@@ -855,12 +855,118 @@ function RepMatchingPanel() {
                             </span>
           </div>
 
-                          <div className="space-y-2 text-sm">
+                          <div className="space-y-3 text-sm">
+                            {/* Experience */}
                             <div className="flex items-center justify-between">
                               <span className="text-gray-600">Experience:</span>
-                              <span className="font-medium">{gig.seniority?.yearsExperience} years</span>
-            </div>
-          </div>
+                              <span className="font-medium">{gig.seniority?.yearsExperience || 'N/A'} years</span>
+                            </div>
+
+                            {/* Skills */}
+                            {gig.skills && gig.skills.length > 0 && (
+                              <div>
+                                <p className="text-gray-600 mb-1">Skills:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {gig.skills.slice(0, 3).map((skill: any, i: number) => (
+                                    <span key={i} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                      {getSkillNameById(skill._id || skill.skillId || skill, skill.category || 'professional')}
+                                    </span>
+                                  ))}
+                                  {gig.skills.length > 3 && (
+                                    <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                      +{gig.skills.length - 3}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Languages */}
+                            {gig.languages && gig.languages.length > 0 && (
+                              <div>
+                                <p className="text-gray-600 mb-1">Languages:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {gig.languages.slice(0, 3).map((lang: any, i: number) => (
+                                    <span key={i} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                                      {getLanguageNameByCode(lang.language || lang.code || lang)}
+                                    </span>
+                                  ))}
+                                  {gig.languages.length > 3 && (
+                                    <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                      +{gig.languages.length - 3}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Industries */}
+                            {gig.industries && gig.industries.length > 0 && (
+                              <div>
+                                <p className="text-gray-600 mb-1">Industries:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {gig.industries.slice(0, 2).map((industry: any, i: number) => (
+                                    <span key={i} className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs">
+                                      {industry.name || industry}
+                                    </span>
+                                  ))}
+                                  {gig.industries.length > 2 && (
+                                    <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                      +{gig.industries.length - 2}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Activities */}
+                            {gig.activities && gig.activities.length > 0 && (
+                              <div>
+                                <p className="text-gray-600 mb-1">Activities:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {gig.activities.slice(0, 2).map((activity: any, i: number) => (
+                                    <span key={i} className="px-2 py-1 bg-teal-100 text-teal-800 rounded text-xs">
+                                      {activity.name || activity}
+                                    </span>
+                                  ))}
+                                  {gig.activities.length > 2 && (
+                                    <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                      +{gig.activities.length - 2}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Region & Timezone */}
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              {gig.region && (
+                                <div>
+                                  <span className="text-gray-600">Region:</span>
+                                  <p className="font-medium truncate">{gig.region}</p>
+                                </div>
+                              )}
+                              {gig.timezone && (
+                                <div>
+                                  <span className="text-gray-600">Timezone:</span>
+                                  <p className="font-medium truncate">{gig.timezone}</p>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Availability */}
+                            {gig.availability && (
+                              <div className="text-xs">
+                                <span className="text-gray-600">Availability:</span>
+                                <p className="font-medium">
+                                  {gig.availability.schedule ? `${gig.availability.schedule.length} days/week` : 
+                                   gig.availability.hoursPerWeek ? `${gig.availability.hoursPerWeek}h/week` :
+                                   gig.availability.workingHours ? gig.availability.workingHours :
+                                   'Flexible'}
+                                </p>
+                              </div>
+                            )}
+                          </div>
 
                           {selectedGig?._id === gig._id && (
                             <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
