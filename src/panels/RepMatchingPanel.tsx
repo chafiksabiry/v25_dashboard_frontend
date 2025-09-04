@@ -376,7 +376,7 @@ function RepMatchingPanel() {
     
     try {
       const response = await createGigAgent(requestData);
-      console.log('✅ Gig-Rep created successfully:', response);
+      console.log('Gig-Rep created successfully:', response);
       
       // Add rep to invited list
       setInvitedAgents(prev => new Set([...prev, match.agentId]));
@@ -482,7 +482,7 @@ function RepMatchingPanel() {
     
     // Don't display ObjectIds
     if (idString.match(/^[0-9a-fA-F]{24}$/)) {
-      const skillArray = skills[skillType];
+    const skillArray = skills[skillType];
       const skill = skillArray.find(s => s._id === idString);
       return skill ? skill.name : `${skillType.charAt(0).toUpperCase() + skillType.slice(1)} Skill`;
     }
@@ -880,40 +880,40 @@ function RepMatchingPanel() {
                             className="cursor-pointer p-4"
                             onClick={() => handleGigSelect(gig)}
                           >
-                            <div className="flex justify-between items-start mb-3">
+                          <div className="flex justify-between items-start mb-3">
                               <div className="flex items-center space-x-2 flex-1">
-                                <div className={`p-2 rounded-lg ${
-                                  selectedGig?._id === gig._id ? "bg-orange-500" : "bg-gray-400"
-                                }`}>
-                                  <Briefcase size={16} className="text-white" />
-                                </div>
+                              <div className={`p-2 rounded-lg ${
+                                selectedGig?._id === gig._id ? "bg-orange-500" : "bg-gray-400"
+                              }`}>
+                                <Briefcase size={16} className="text-white" />
+                              </div>
                                 <div className="flex-1 min-w-0">
                                   <h4 className={`font-bold text-sm truncate ${
-                                    selectedGig?._id === gig._id ? "text-orange-900" : "text-gray-800"
-                                  }`}>
-                                    {gig.title}
-                                  </h4>
+                                  selectedGig?._id === gig._id ? "text-orange-900" : "text-gray-800"
+                                }`}>
+                                  {gig.title}
+                                </h4>
                                   <p className="text-xs text-gray-600 truncate">{gig.companyName}</p>
-                                </div>
                               </div>
-                              
-                              <span className={`px-2 py-1 rounded text-xs font-medium flex-shrink-0 ml-2 ${
-                                selectedGig?._id === gig._id
-                                  ? "bg-orange-500 text-white"
-                                  : "bg-blue-100 text-blue-800"
-                              }`}>
-                                {gig.category}
-                              </span>
-                            </div>
+            </div>
                             
-                            {selectedGig?._id === gig._id && (
-                              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                                </svg>
-                              </div>
-                            )}
-                          </div>
+                              <span className={`px-2 py-1 rounded text-xs font-medium flex-shrink-0 ml-2 ${
+                              selectedGig?._id === gig._id
+                                ? "bg-orange-500 text-white"
+                                : "bg-blue-100 text-blue-800"
+                            }`}>
+                              {gig.category}
+                            </span>
+          </div>
+
+                          {selectedGig?._id === gig._id && (
+                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                              </svg>
+            </div>
+                          )}
+          </div>
 
                           {/* View Details Button */}
                           <div className="px-4 pb-4">
@@ -934,7 +934,7 @@ function RepMatchingPanel() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                               </svg>
                             </button>
-                          </div>
+            </div>
 
                                                     {/* Expanded Details */}
                           {isGigExpanded && (
@@ -1075,7 +1075,7 @@ function RepMatchingPanel() {
                         </div>
                       );
                     })}
-                  </div>
+          </div>
         </div>
 
                 {/* Matching Results */}
@@ -1161,7 +1161,8 @@ function RepMatchingPanel() {
                                       <div className="flex flex-wrap gap-1">
                                         {match.agentInfo.personalInfo.languages.slice(0, 4).map((lang: any, i: number) => (
                                           <span key={i} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
-                                            {getLanguageNameByCode(lang.language || lang.code || lang)}
+                                            {lang.language?.name || lang.languageName || getLanguageNameByCode(lang.language || lang.code || lang)}
+                                            {lang.proficiency && <span className="ml-1 text-purple-600">({lang.proficiency})</span>}
                                           </span>
                                         ))}
                                         {match.agentInfo.personalInfo.languages.length > 4 && (
@@ -1236,7 +1237,25 @@ function RepMatchingPanel() {
                                             {Math.round((match.skillsMatch.score || 0) * 100)}%
                                           </span>
                                         </div>
-                                        {match.skillsMatch.matchedSkills && match.skillsMatch.matchedSkills.length > 0 && (
+                                        {match.skillsMatch.details?.matchingSkills && match.skillsMatch.details.matchingSkills.length > 0 && (
+                                          <div className="space-y-1">
+                                            <p className="text-xs text-gray-600 mb-2">Matched Skills:</p>
+                                            <div className="flex flex-wrap gap-1">
+                                              {match.skillsMatch.details.matchingSkills.slice(0, 3).map((skill: any, i: number) => (
+                                                <span key={i} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                                  {skill.skill?.name || skill.skillName || getSkillNameById(skill._id || skill.skillId || skill, skill.category || 'professional')}
+                                                </span>
+                                              ))}
+                                              {match.skillsMatch.details.matchingSkills.length > 3 && (
+                                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                                  +{match.skillsMatch.details.matchingSkills.length - 3}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {/* Fallback for old API structure */}
+                                        {!match.skillsMatch.details?.matchingSkills && match.skillsMatch.matchedSkills && match.skillsMatch.matchedSkills.length > 0 && (
                                           <div className="space-y-1">
                                             <p className="text-xs text-gray-600 mb-2">Matched Skills:</p>
                                             <div className="flex flex-wrap gap-1">
@@ -1269,7 +1288,26 @@ function RepMatchingPanel() {
                                             {Math.round((match.languageMatch.score || 0) * 100)}%
                                           </span>
                                         </div>
-                                        {match.languageMatch.matchedLanguages && match.languageMatch.matchedLanguages.length > 0 && (
+                                        {match.languageMatch.details?.matchingLanguages && match.languageMatch.details.matchingLanguages.length > 0 && (
+                                          <div className="space-y-1">
+                                            <p className="text-xs text-gray-600 mb-2">Matched Languages:</p>
+                                            <div className="flex flex-wrap gap-1">
+                                              {match.languageMatch.details.matchingLanguages.slice(0, 3).map((lang: any, i: number) => (
+                                                <span key={i} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                                                  {lang.language?.name || lang.languageName || getLanguageNameByCode(lang.language || lang.code || lang)}
+                                                  {lang.agentLevel && <span className="ml-1 text-purple-600">({lang.agentLevel})</span>}
+                                                </span>
+                                              ))}
+                                              {match.languageMatch.details.matchingLanguages.length > 3 && (
+                                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                                  +{match.languageMatch.details.matchingLanguages.length - 3}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {/* Fallback for old API structure */}
+                                        {!match.languageMatch.details?.matchingLanguages && match.languageMatch.matchedLanguages && match.languageMatch.matchedLanguages.length > 0 && (
                                           <div className="space-y-1">
                                             <p className="text-xs text-gray-600 mb-2">Matched Languages:</p>
                                             <div className="flex flex-wrap gap-1">
@@ -1302,7 +1340,25 @@ function RepMatchingPanel() {
                                             {Math.round((match.industryMatch.score || 0) * 100)}%
                                           </span>
                                         </div>
-                                        {match.industryMatch.matchedIndustries && match.industryMatch.matchedIndustries.length > 0 && (
+                                        {match.industryMatch.details?.matchingIndustries && match.industryMatch.details.matchingIndustries.length > 0 && (
+                                          <div className="space-y-1">
+                                            <p className="text-xs text-gray-600 mb-2">Matched Industries:</p>
+                                            <div className="flex flex-wrap gap-1">
+                                              {match.industryMatch.details.matchingIndustries.slice(0, 2).map((industry: any, i: number) => (
+                                                <span key={i} className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs">
+                                                  {industry.industry?.name || industry.industryName || industry.name || industry}
+                                                </span>
+                                              ))}
+                                              {match.industryMatch.details.matchingIndustries.length > 2 && (
+                                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                                  +{match.industryMatch.details.matchingIndustries.length - 2}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {/* Fallback for old API structure */}
+                                        {!match.industryMatch.details?.matchingIndustries && match.industryMatch.matchedIndustries && match.industryMatch.matchedIndustries.length > 0 && (
                                           <div className="space-y-1">
                                             <p className="text-xs text-gray-600 mb-2">Industries:</p>
                                             <div className="flex flex-wrap gap-1">
@@ -1362,7 +1418,8 @@ function RepMatchingPanel() {
                                         </div>
                                         <div className="text-xs text-gray-600">
                                           <p>Rep: {match.agentInfo?.timezone?.gmtDisplay || 'N/A'}</p>
-                                          <p>Location: {match.agentInfo?.timezone?.countryName || match.agentInfo?.location || 'N/A'}</p>
+                                          <p>Zone: {match.agentInfo?.timezone?.timezoneName || match.agentInfo?.availability?.timeZone?.zoneName || 'N/A'}</p>
+                                          <p>Location: {match.agentInfo?.timezone?.countryName || match.agentInfo?.personalInfo?.country?.name || match.agentInfo?.location || 'N/A'}</p>
                                         </div>
                                       </div>
                                     )}
@@ -1381,7 +1438,8 @@ function RepMatchingPanel() {
                                           </span>
                                         </div>
                                         <div className="text-xs text-gray-600">
-                                          <p>{match.agentInfo?.timezone?.countryName || match.agentInfo?.location || 'N/A'}</p>
+                                          <p>Country: {match.agentInfo?.timezone?.countryName || match.agentInfo?.personalInfo?.country?.name || 'N/A'}</p>
+                                          <p>Code: {match.agentInfo?.timezone?.countryCode || match.agentInfo?.personalInfo?.country?.code || 'N/A'}</p>
                                         </div>
                                       </div>
                                     )}
@@ -1418,7 +1476,25 @@ function RepMatchingPanel() {
                                             {Math.round((match.activityMatch.score || 0) * 100)}%
                                           </span>
                                         </div>
-                                        {match.activityMatch.matchedActivities && match.activityMatch.matchedActivities.length > 0 && (
+                                        {match.activityMatch.details?.matchingActivities && match.activityMatch.details.matchingActivities.length > 0 && (
+                                          <div className="space-y-1">
+                                            <p className="text-xs text-gray-600 mb-2">Matched Activities:</p>
+                                            <div className="flex flex-wrap gap-1">
+                                              {match.activityMatch.details.matchingActivities.slice(0, 2).map((activity: any, i: number) => (
+                                                <span key={i} className="px-2 py-1 bg-teal-100 text-teal-800 rounded text-xs">
+                                                  {activity.activity?.name || activity.activityName || activity.name || activity}
+                                                </span>
+                                              ))}
+                                              {match.activityMatch.details.matchingActivities.length > 2 && (
+                                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                                  +{match.activityMatch.details.matchingActivities.length - 2}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {/* Fallback for old API structure */}
+                                        {!match.activityMatch.details?.matchingActivities && match.activityMatch.matchedActivities && match.activityMatch.matchedActivities.length > 0 && (
                                           <div className="space-y-1">
                                             <p className="text-xs text-gray-600 mb-2">Activities:</p>
                                             <div className="flex flex-wrap gap-1">
