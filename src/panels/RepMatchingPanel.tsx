@@ -1161,7 +1161,8 @@ function RepMatchingPanel() {
                                       <div className="flex flex-wrap gap-1">
                                         {match.agentInfo.personalInfo.languages.slice(0, 4).map((lang: any, i: number) => (
                                           <span key={i} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
-                                            {getLanguageNameByCode(lang.language || lang.code || lang)}
+                                            {lang.language?.name || lang.languageName || getLanguageNameByCode(lang.language || lang.code || lang)}
+                                            {lang.proficiency && <span className="ml-1 text-purple-600">({lang.proficiency})</span>}
                                           </span>
                                         ))}
                                         {match.agentInfo.personalInfo.languages.length > 4 && (
@@ -1221,6 +1222,143 @@ function RepMatchingPanel() {
                               {/* Expanded Details */}
                               {isExpanded && (
                                 <div className="mt-6 pt-6 border-t border-gray-200 space-y-6">
+                                  
+                                  {/* Agent Profile Information */}
+                                  <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+                                    <h5 className="font-semibold text-gray-800 mb-3">Agent Profile</h5>
+                                    
+                                    {/* Agent Industries */}
+                                    {match.agentInfo?.professionalSummary?.industries && match.agentInfo.professionalSummary.industries.length > 0 && (
+                                      <div>
+                                        <p className="text-sm font-medium text-gray-700 mb-2">Industries:</p>
+                                        <div className="flex flex-wrap gap-1">
+                                          {match.agentInfo.professionalSummary.industries.map((industry: any, i: number) => (
+                                            <span key={i} className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs">
+                                              {industry.name || industry}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Agent Activities */}
+                                    {match.agentInfo?.professionalSummary?.activities && match.agentInfo.professionalSummary.activities.length > 0 && (
+                                      <div>
+                                        <p className="text-sm font-medium text-gray-700 mb-2">Activities:</p>
+                                        <div className="flex flex-wrap gap-1">
+                                          {match.agentInfo.professionalSummary.activities.map((activity: any, i: number) => (
+                                            <span key={i} className="px-2 py-1 bg-teal-100 text-teal-800 rounded text-xs">
+                                              {activity.name || activity}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Agent Skills */}
+                                    {match.agentInfo?.skills && (
+                                      <div className="space-y-2">
+                                        {match.agentInfo.skills.professional && match.agentInfo.skills.professional.length > 0 && (
+                                          <div>
+                                            <p className="text-sm font-medium text-gray-700 mb-2">Professional Skills:</p>
+                                            <div className="flex flex-wrap gap-1">
+                                              {match.agentInfo.skills.professional.map((skillItem: any, i: number) => (
+                                                <span key={`agent-prof-${i}`} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                                  {skillItem.name || getSkillNameById(skillItem.skill || skillItem, 'professional')}
+                                                </span>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                        
+                                        {match.agentInfo.skills.technical && match.agentInfo.skills.technical.length > 0 && (
+                                          <div>
+                                            <p className="text-sm font-medium text-gray-700 mb-2">Technical Skills:</p>
+                                            <div className="flex flex-wrap gap-1">
+                                              {match.agentInfo.skills.technical.map((skillItem: any, i: number) => (
+                                                <span key={`agent-tech-${i}`} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                                                  {skillItem.name || getSkillNameById(skillItem.skill || skillItem, 'technical')}
+                                                </span>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                        
+                                        {match.agentInfo.skills.soft && match.agentInfo.skills.soft.length > 0 && (
+                                          <div>
+                                            <p className="text-sm font-medium text-gray-700 mb-2">Soft Skills:</p>
+                                            <div className="flex flex-wrap gap-1">
+                                              {match.agentInfo.skills.soft.map((skillItem: any, i: number) => (
+                                                <span key={`agent-soft-${i}`} className="px-2 py-1 bg-pink-100 text-pink-800 rounded text-xs">
+                                                  {skillItem.name || getSkillNameById(skillItem.skill || skillItem, 'soft')}
+                                                </span>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Agent Key Expertise */}
+                                    {match.agentInfo?.professionalSummary?.keyExpertise && match.agentInfo.professionalSummary.keyExpertise.length > 0 && (
+                                      <div>
+                                        <p className="text-sm font-medium text-gray-700 mb-2">Key Expertise:</p>
+                                        <div className="flex flex-wrap gap-1">
+                                          {match.agentInfo.professionalSummary.keyExpertise.map((expertise: string, i: number) => (
+                                            <span key={`expertise-${i}`} className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded text-xs">
+                                              {expertise}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Agent Experience & Role */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                      <div>
+                                        <p className="font-medium text-gray-700">Experience:</p>
+                                        <p className="text-gray-600">{match.agentInfo?.professionalSummary?.yearsOfExperience || 'N/A'} years</p>
+                                      </div>
+                                      <div>
+                                        <p className="font-medium text-gray-700">Current Role:</p>
+                                        <p className="text-gray-600">{match.agentInfo?.professionalSummary?.currentRole || 'N/A'}</p>
+                                      </div>
+                                    </div>
+
+                                    {/* Agent Availability Details */}
+                                    {match.agentInfo?.availability && (
+                                      <div>
+                                        <p className="text-sm font-medium text-gray-700 mb-2">Availability Details:</p>
+                                        <div className="space-y-2 text-sm">
+                                          {match.agentInfo.availability.schedule && match.agentInfo.availability.schedule.length > 0 && (
+                                            <div>
+                                              <p className="text-gray-600">Schedule: {match.agentInfo.availability.schedule.length} days/week</p>
+                                              <div className="flex flex-wrap gap-1 mt-1">
+                                                {match.agentInfo.availability.schedule.map((scheduleItem: any, i: number) => (
+                                                  <span key={`schedule-${i}`} className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
+                                                    {scheduleItem.day}: {scheduleItem.hours?.start || 'N/A'} - {scheduleItem.hours?.end || 'N/A'}
+                                                  </span>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+                                          {match.agentInfo.availability.flexibility && match.agentInfo.availability.flexibility.length > 0 && (
+                                            <div>
+                                              <p className="text-gray-600">Flexibility:</p>
+                                              <div className="flex flex-wrap gap-1 mt-1">
+                                                {match.agentInfo.availability.flexibility.map((flex: string, i: number) => (
+                                                  <span key={`flex-${i}`} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                                    {flex}
+                                                  </span>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+
                                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                     
                                     {/* Skills Match */}
@@ -1236,7 +1374,25 @@ function RepMatchingPanel() {
                                             {Math.round((match.skillsMatch.score || 0) * 100)}%
                                           </span>
                                         </div>
-                                        {match.skillsMatch.matchedSkills && match.skillsMatch.matchedSkills.length > 0 && (
+                                        {match.skillsMatch.details?.matchingSkills && match.skillsMatch.details.matchingSkills.length > 0 && (
+                                          <div className="space-y-1">
+                                            <p className="text-xs text-gray-600 mb-2">Matched Skills:</p>
+                                            <div className="flex flex-wrap gap-1">
+                                              {match.skillsMatch.details.matchingSkills.slice(0, 3).map((skill: any, i: number) => (
+                                                <span key={i} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                                  {skill.skill?.name || skill.skillName || getSkillNameById(skill._id || skill.skillId || skill, skill.category || 'professional')}
+                                                </span>
+                                              ))}
+                                              {match.skillsMatch.details.matchingSkills.length > 3 && (
+                                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                                  +{match.skillsMatch.details.matchingSkills.length - 3}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {/* Fallback for old API structure */}
+                                        {!match.skillsMatch.details?.matchingSkills && match.skillsMatch.matchedSkills && match.skillsMatch.matchedSkills.length > 0 && (
                                           <div className="space-y-1">
                                             <p className="text-xs text-gray-600 mb-2">Matched Skills:</p>
                                             <div className="flex flex-wrap gap-1">
@@ -1269,7 +1425,26 @@ function RepMatchingPanel() {
                                             {Math.round((match.languageMatch.score || 0) * 100)}%
                                           </span>
                                         </div>
-                                        {match.languageMatch.matchedLanguages && match.languageMatch.matchedLanguages.length > 0 && (
+                                        {match.languageMatch.details?.matchingLanguages && match.languageMatch.details.matchingLanguages.length > 0 && (
+                                          <div className="space-y-1">
+                                            <p className="text-xs text-gray-600 mb-2">Matched Languages:</p>
+                                            <div className="flex flex-wrap gap-1">
+                                              {match.languageMatch.details.matchingLanguages.slice(0, 3).map((lang: any, i: number) => (
+                                                <span key={i} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                                                  {lang.language?.name || lang.languageName || getLanguageNameByCode(lang.language || lang.code || lang)}
+                                                  {lang.agentLevel && <span className="ml-1 text-purple-600">({lang.agentLevel})</span>}
+                                                </span>
+                                              ))}
+                                              {match.languageMatch.details.matchingLanguages.length > 3 && (
+                                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                                  +{match.languageMatch.details.matchingLanguages.length - 3}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {/* Fallback for old API structure */}
+                                        {!match.languageMatch.details?.matchingLanguages && match.languageMatch.matchedLanguages && match.languageMatch.matchedLanguages.length > 0 && (
                                           <div className="space-y-1">
                                             <p className="text-xs text-gray-600 mb-2">Matched Languages:</p>
                                             <div className="flex flex-wrap gap-1">
@@ -1302,7 +1477,25 @@ function RepMatchingPanel() {
                                             {Math.round((match.industryMatch.score || 0) * 100)}%
                                           </span>
                                         </div>
-                                        {match.industryMatch.matchedIndustries && match.industryMatch.matchedIndustries.length > 0 && (
+                                        {match.industryMatch.details?.matchingIndustries && match.industryMatch.details.matchingIndustries.length > 0 && (
+                                          <div className="space-y-1">
+                                            <p className="text-xs text-gray-600 mb-2">Matched Industries:</p>
+                                            <div className="flex flex-wrap gap-1">
+                                              {match.industryMatch.details.matchingIndustries.slice(0, 2).map((industry: any, i: number) => (
+                                                <span key={i} className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs">
+                                                  {industry.industry?.name || industry.industryName || industry.name || industry}
+                                                </span>
+                                              ))}
+                                              {match.industryMatch.details.matchingIndustries.length > 2 && (
+                                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                                  +{match.industryMatch.details.matchingIndustries.length - 2}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {/* Fallback for old API structure */}
+                                        {!match.industryMatch.details?.matchingIndustries && match.industryMatch.matchedIndustries && match.industryMatch.matchedIndustries.length > 0 && (
                                           <div className="space-y-1">
                                             <p className="text-xs text-gray-600 mb-2">Industries:</p>
                                             <div className="flex flex-wrap gap-1">
@@ -1362,7 +1555,8 @@ function RepMatchingPanel() {
                                         </div>
                                         <div className="text-xs text-gray-600">
                                           <p>Rep: {match.agentInfo?.timezone?.gmtDisplay || 'N/A'}</p>
-                                          <p>Location: {match.agentInfo?.timezone?.countryName || match.agentInfo?.location || 'N/A'}</p>
+                                          <p>Zone: {match.agentInfo?.timezone?.timezoneName || match.agentInfo?.availability?.timeZone?.zoneName || 'N/A'}</p>
+                                          <p>Location: {match.agentInfo?.timezone?.countryName || match.agentInfo?.personalInfo?.country?.name || match.agentInfo?.location || 'N/A'}</p>
                                         </div>
                                       </div>
                                     )}
@@ -1381,7 +1575,8 @@ function RepMatchingPanel() {
                                           </span>
                                         </div>
                                         <div className="text-xs text-gray-600">
-                                          <p>{match.agentInfo?.timezone?.countryName || match.agentInfo?.location || 'N/A'}</p>
+                                          <p>Country: {match.agentInfo?.timezone?.countryName || match.agentInfo?.personalInfo?.country?.name || 'N/A'}</p>
+                                          <p>Code: {match.agentInfo?.timezone?.countryCode || match.agentInfo?.personalInfo?.country?.code || 'N/A'}</p>
                                         </div>
                                       </div>
                                     )}
@@ -1418,7 +1613,25 @@ function RepMatchingPanel() {
                                             {Math.round((match.activityMatch.score || 0) * 100)}%
                                           </span>
                                         </div>
-                                        {match.activityMatch.matchedActivities && match.activityMatch.matchedActivities.length > 0 && (
+                                        {match.activityMatch.details?.matchingActivities && match.activityMatch.details.matchingActivities.length > 0 && (
+                                          <div className="space-y-1">
+                                            <p className="text-xs text-gray-600 mb-2">Matched Activities:</p>
+                                            <div className="flex flex-wrap gap-1">
+                                              {match.activityMatch.details.matchingActivities.slice(0, 2).map((activity: any, i: number) => (
+                                                <span key={i} className="px-2 py-1 bg-teal-100 text-teal-800 rounded text-xs">
+                                                  {activity.activity?.name || activity.activityName || activity.name || activity}
+                                                </span>
+                                              ))}
+                                              {match.activityMatch.details.matchingActivities.length > 2 && (
+                                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                                  +{match.activityMatch.details.matchingActivities.length - 2}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {/* Fallback for old API structure */}
+                                        {!match.activityMatch.details?.matchingActivities && match.activityMatch.matchedActivities && match.activityMatch.matchedActivities.length > 0 && (
                                           <div className="space-y-1">
                                             <p className="text-xs text-gray-600 mb-2">Activities:</p>
                                             <div className="flex flex-wrap gap-1">
