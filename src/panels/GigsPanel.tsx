@@ -743,7 +743,7 @@ function GigsPanel() {
                         </div>
                       ) : (
                         <p className="text-gray-800 font-medium">
-                          {selectedGig.commission.currency} {selectedGig.commission.baseAmount}/{selectedGig.commission.base}
+                          {selectedGig.commission.currency?.symbol || selectedGig.commission.currency?.code || '€'} {selectedGig.commission.baseAmount}/{selectedGig.commission.base}
                         </p>
                       )}
                     </div>
@@ -796,11 +796,44 @@ function GigsPanel() {
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-2">Professional Skills</label>
                     <div className="flex flex-wrap gap-2">
-                      {selectedGig.skills.professional.map((skill, index) => (
+                      {selectedGig.skills?.professional?.map((skill, index) => (
                         <span key={index} className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
-                          {skill}
+                          {skill.skill?.name || skill.name || 'Unknown skill'}
                         </span>
-                      ))}
+                      )) || <span className="text-gray-500">No professional skills specified</span>}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-2">Technical Skills</label>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedGig.skills?.technical?.map((skill, index) => (
+                        <span key={index} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+                          {skill.skill?.name || skill.name || 'Unknown skill'}
+                        </span>
+                      )) || <span className="text-gray-500">No technical skills specified</span>}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-2">Soft Skills</label>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedGig.skills?.soft?.map((skill, index) => (
+                        <span key={index} className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
+                          {skill.skill?.name || skill.name || 'Unknown skill'}
+                        </span>
+                      )) || <span className="text-gray-500">No soft skills specified</span>}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-2">Languages</label>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedGig.skills?.languages?.map((lang, index) => (
+                        <span key={index} className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm">
+                          {lang.language?.name || lang.languageName || 'Unknown language'} ({lang.proficiency || 'N/A'})
+                        </span>
+                      )) || <span className="text-gray-500">No languages specified</span>}
                     </div>
                   </div>
                 </div>
@@ -813,11 +846,39 @@ function GigsPanel() {
                 </h3>
                 <div className="flex items-center gap-2">
                   <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
-                    {selectedGig.seniority.level}
+                    {selectedGig.seniority?.level || 'Not specified'}
                   </span>
                   <span className="text-gray-600">
-                    ({selectedGig.seniority.yearsExperience} years experience)
+                    ({selectedGig.seniority?.yearsExperience || '0'} years experience)
                   </span>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-indigo-500" />
+                  Industries
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {selectedGig.industries?.map((industry, index) => (
+                    <span key={index} className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm">
+                      {industry.name || 'Unknown industry'}
+                    </span>
+                  )) || <span className="text-gray-500">No industries specified</span>}
+                </div>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <Briefcase className="w-5 h-5 text-green-500" />
+                  Activities
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {selectedGig.activities?.map((activity, index) => (
+                    <span key={index} className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
+                      {activity.name || 'Unknown activity'}
+                    </span>
+                  )) || <span className="text-gray-500">No activities specified</span>}
                 </div>
               </div>
 
