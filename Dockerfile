@@ -46,7 +46,7 @@ ENV VITE_TELNYX_CALLER_ID=your_caller_id_here
 ENV VITE_TELNYX_USERNAME=oumaimakarouma82533
 ENV VITE_TELNYX_PASSWORD=TnPun5Hd
 
-ENV VITE_HIDE_SECTIONS=scheduler,emails,quality-assurance,operations,analytics,integrations
+ENV VITE_HIDE_SECTIONS=scheduler,emails,quality-assurance,operations,analytics,integrations,live-chat
 
 RUN npm run build
 
