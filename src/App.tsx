@@ -15,6 +15,7 @@ import EmailsPanel from './panels/EmailsPanel';
 import ChatPanel from './panels/ChatPanel';
 import CallReportCard from './components/CallReport';
 import GigsPanel from './panels/GigsPanel';
+import GigDetailsPanel from './panels/GigDetailsPanel';
 import QualityAssurancePanel from './panels/QualityAssurancePanel';
 import OperationsPanel from './panels/OperationsPanel';
 import AnalyticsPanel from './panels/AnalyticsPanel';
@@ -47,6 +48,7 @@ function App() {
                   <Route path="/emails" element={<EmailsPanel />} />
                   <Route path="/chat" element={<ChatPanel />} />
                   <Route path="/gigs" element={<GigsPanel />} />
+                  <Route path="/gigs/:gigId" element={<GigDetailsPanel />} />
                   <Route path="/quality-assurance" element={<QualityAssurancePanel />} />
                   <Route path="/operations" element={<OperationsPanel />} />
                   <Route path="/analytics" element={<AnalyticsPanel />} />
