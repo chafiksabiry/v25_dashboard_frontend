@@ -127,20 +127,6 @@ export function Sidebar() {
             )}
           </div>
 
-          {/* Settings */}
-          <NavLink
-            to="/settings"
-            className={({ isActive }) =>
-              `flex items-center gap-3 w-full p-3 rounded-lg transition-colors ${
-                isActive
-                  ? "bg-blue-600 text-white"
-                  : "hover:bg-gray-800 text-gray-300 hover:text-white"
-              }`
-            }
-          >
-            <Settings size={20} />
-            <span>Settings</span>
-          </NavLink>
         </nav>
       </div>
     </div>
