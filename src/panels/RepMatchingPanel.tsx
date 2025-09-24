@@ -605,7 +605,7 @@ function RepMatchingPanel() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 w-full max-w-full overflow-x-hidden">
       {/* Header with Navigation Tabs */}
-      <header className="bg-gradient-to-r from-harx-600 to-harx-700 text-white shadow-lg">
+      <header className="bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg">
         {/* Top Header */}
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
@@ -621,11 +621,11 @@ function RepMatchingPanel() {
               </button>
               
               <div className="p-2 bg-white/20 rounded-lg">
-                <Users size={24} className="text-harx-accent-300" />
+                <Users size={24} className="text-blue-200" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold">Reps Management System</h1>
-                <p className="text-harx-200 text-sm">Manage reps through their complete lifecycle</p>
+                <p className="text-blue-200 text-sm">Manage reps through their complete lifecycle</p>
               </div>
             </div>
             
@@ -633,19 +633,19 @@ function RepMatchingPanel() {
             <div className="hidden lg:flex items-center space-x-6 px-4 py-2 bg-white/10 rounded-lg text-sm">
               <div className="text-center">
                 <div className="font-bold text-lg">{reps.length}</div>
-                <div className="text-harx-200 text-xs">Total Reps</div>
+                <div className="text-blue-200 text-xs">Total Reps</div>
               </div>
               <div className="text-center">
                 <div className="font-bold text-lg">{invitedAgentsList.length}</div>
-                <div className="text-harx-200 text-xs">Invited</div>
+                <div className="text-blue-200 text-xs">Invited</div>
               </div>
               <div className="text-center">
                 <div className="font-bold text-lg">{enrollmentRequests.length}</div>
-                <div className="text-harx-200 text-xs">Requests</div>
+                <div className="text-blue-200 text-xs">Requests</div>
               </div>
               <div className="text-center">
                 <div className="font-bold text-lg">{activeAgentsList.length}</div>
-                <div className="text-harx-200 text-xs">Active</div>
+                <div className="text-blue-200 text-xs">Active</div>
               </div>
             </div>
           </div>
@@ -666,17 +666,17 @@ function RepMatchingPanel() {
                   onClick={() => setActiveSection(section.id as any)}
                   className={`flex-1 px-4 py-4 text-left transition-all duration-200 border-b-2 ${
                     activeSection === section.id
-                      ? 'border-harx-accent-300 bg-white/10'
+                      ? 'border-blue-300 bg-white/10'
                       : 'border-transparent hover:bg-white/5'
                   }`}
                 >
                   <div className="flex items-center space-x-3">
                     <span className="text-xl">{section.icon}</span>
                     <div>
-                      <div className={`font-medium ${activeSection === section.id ? 'text-harx-accent-300' : 'text-white'}`}>
+                      <div className={`font-medium ${activeSection === section.id ? 'text-blue-300' : 'text-white'}`}>
                         {section.label}
                       </div>
-                      <div className="text-harx-200 text-xs">{section.description}</div>
+                      <div className="text-blue-200 text-xs">{section.description}</div>
                     </div>
                   </div>
                 </button>
@@ -728,7 +728,7 @@ function RepMatchingPanel() {
                         onClick={() => setShowWeights(!showWeights)}
                         className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 text-sm font-medium ${
                           showWeights 
-                            ? 'bg-harx-600 text-white' 
+                            ? 'bg-blue-600 text-white' 
                             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                         }`}
                       >
@@ -742,7 +742,7 @@ function RepMatchingPanel() {
           <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg p-6 mb-6 transform transition-all duration-300 ease-in-out border border-gray-200 overflow-hidden">
             <div className="flex justify-between items-center mb-6">
               <div className="flex items-center space-x-4">
-                <div className="p-3 bg-gradient-to-r from-harx-500 to-harx-600 rounded-lg shadow-md">
+                <div className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-md">
                   <Settings size={24} className="text-white" />
                 </div>
                 <div>
@@ -809,8 +809,8 @@ function RepMatchingPanel() {
                       {key}
                     </label>
                     <div className={`px-3 py-1 rounded text-sm font-bold ${
-                      Math.round((value as number) * 100) >= 20 ? 'bg-gradient-to-r from-harx-500 to-harx-600 text-white' :
-                      Math.round((value as number) * 100) >= 10 ? 'bg-harx-100 text-harx-800' :
+                      Math.round((value as number) * 100) >= 20 ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' :
+                      Math.round((value as number) * 100) >= 10 ? 'bg-blue-100 text-blue-800' :
                       'bg-gray-100 text-gray-600'
                     }`}>
                       {Math.round((value as number) * 100)}%
@@ -834,7 +834,7 @@ function RepMatchingPanel() {
                       }}
                     />
                     <div 
-                      className="absolute top-1/2 transform -translate-y-1/2 w-6 h-6 bg-gradient-to-r from-harx-500 to-harx-600 rounded-full shadow-md border-2 border-white pointer-events-none transition-all duration-200 group-hover:scale-110"
+                      className="absolute top-1/2 transform -translate-y-1/2 w-6 h-6 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full shadow-md border-2 border-white pointer-events-none transition-all duration-200 group-hover:scale-110"
                       style={{ left: `calc(${(value as number) * 100}% - 12px)` }}
                     ></div>
                   </div>
@@ -854,10 +854,10 @@ function RepMatchingPanel() {
                   disabled={loading}
                   className={`group relative px-8 py-3 rounded-lg transition-all duration-200 flex items-center space-x-3 shadow-lg transform hover:-translate-y-0.5 hover:shadow-xl font-semibold text-base disabled:opacity-50 disabled:cursor-not-allowed ${
                     hasUnsavedChanges
-                      ? 'bg-gradient-to-r from-harx-accent-500 to-harx-600 hover:from-harx-accent-600 hover:to-harx-700 text-white animate-pulse'
+                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white animate-pulse'
                       : gigHasWeights 
                       ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white' 
-                      : 'bg-gradient-to-r from-harx-500 to-harx-600 hover:from-harx-600 hover:to-harx-700 text-white'
+                      : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white'
                   }`}
                 >
                   {/* Animated Background */}
@@ -883,10 +883,10 @@ function RepMatchingPanel() {
                   {/* Glow Effect */}
                   <div className={`absolute inset-0 rounded-lg blur-lg opacity-20 group-hover:opacity-40 transition-opacity duration-200 ${
                     hasUnsavedChanges
-                      ? 'bg-gradient-to-r from-harx-accent-500 to-harx-600'
+                      ? 'bg-gradient-to-r from-blue-500 to-blue-600'
                       : gigHasWeights 
                       ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
-                      : 'bg-gradient-to-r from-harx-500 to-harx-600'
+                      : 'bg-gradient-to-r from-blue-500 to-blue-600'
                   }`}></div>
                 </button>
               </div>
@@ -932,7 +932,7 @@ function RepMatchingPanel() {
                   style={{ width: `${leftColumnWidth}%`, minWidth: '320px', maxWidth: '60%' }}
                 >
                   <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center space-x-2">
-                    <Briefcase size={20} className="text-harx-600" />
+                    <Briefcase size={20} className="text-blue-600" />
                       <span>Available Gigs</span>
                   </h3>
                   
@@ -943,8 +943,8 @@ function RepMatchingPanel() {
                       return (
                         <div key={gig._id} className={`bg-white rounded-lg border-2 transition-all duration-200 ${
                           selectedGig?._id === gig._id
-                            ? "border-harx-400 shadow-lg bg-harx-50"
-                            : "border-gray-200 hover:border-harx-300 hover:shadow-md"
+                            ? "border-blue-400 shadow-lg bg-blue-50"
+                            : "border-gray-200 hover:border-blue-300 hover:shadow-md"
                         }`}>
                           {/* Gig Header - Clickable for selection */}
                           <div
@@ -954,13 +954,13 @@ function RepMatchingPanel() {
                           <div className="flex justify-between items-start mb-3">
                               <div className="flex items-center space-x-2 flex-1">
                               <div className={`p-2 rounded-lg ${
-                                selectedGig?._id === gig._id ? "bg-harx-500" : "bg-gray-400"
+                                selectedGig?._id === gig._id ? "bg-blue-500" : "bg-gray-400"
                               }`}>
                                 <Briefcase size={16} className="text-white" />
                               </div>
                                 <div className="flex-1 min-w-0">
                                   <h4 className={`font-bold text-sm ${
-                                  selectedGig?._id === gig._id ? "text-harx-900" : "text-gray-800"
+                                  selectedGig?._id === gig._id ? "text-blue-900" : "text-gray-800"
                                 }`}>
                                   {gig.title}
                                 </h4>
@@ -1151,7 +1151,7 @@ function RepMatchingPanel() {
 
                   {/* Resize Handle */}
                   <div 
-                    className={`flex-shrink-0 w-1 bg-gray-200 hover:bg-harx-400 cursor-col-resize transition-colors duration-200 rounded-full flex items-center justify-center group relative ${isResizing ? 'bg-harx-500' : ''}`}
+                    className={`flex-shrink-0 w-1 bg-gray-200 hover:bg-blue-400 cursor-col-resize transition-colors duration-200 rounded-full flex items-center justify-center group relative ${isResizing ? 'bg-blue-500' : ''}`}
                     onMouseDown={handleMouseDown}
                     title="Drag to resize"
                   >
@@ -1167,7 +1167,7 @@ function RepMatchingPanel() {
                     className="bg-white rounded-xl shadow-lg p-6 overflow-hidden transition-all duration-200 flex-1 min-w-0"
                   >
                     <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center space-x-2">
-                        <Users size={20} className="text-harx-600" />
+                        <Users size={20} className="text-blue-600" />
                       <span>{selectedGig ? `Matches for "${selectedGig.title}"` : 'Select a Gig to See Matches'}</span>
                       </h3>
                     
@@ -1182,9 +1182,9 @@ function RepMatchingPanel() {
                     ) : loading ? (
                       <div className="flex justify-center items-center py-12">
                         <div className="relative">
-                          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-harx-500"></div>
+                          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                            <Zap size={16} className="text-harx-500 animate-pulse" />
+                            <Zap size={16} className="text-blue-500 animate-pulse" />
                           </div>
                         </div>
                       </div>
@@ -1279,7 +1279,7 @@ function RepMatchingPanel() {
                                     </span>
                                   ) : (
                                     <button
-                                      className="inline-flex items-center px-3 py-1 bg-harx-600 text-white rounded-lg hover:bg-harx-700 transition-all duration-200 text-sm font-medium gap-1"
+                                      className="inline-flex items-center px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 text-sm font-medium gap-1"
                                       onClick={() => handleCreateGigAgent(match)}
                                       disabled={creatingGigAgent}
                                     >
