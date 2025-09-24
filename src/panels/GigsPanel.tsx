@@ -549,12 +549,9 @@ function GigsPanel() {
                           <div className="font-semibold text-gray-900 text-base mb-1">
                             {gig?.title || 'No title'}
                           </div>
-                          <div className="text-sm text-gray-500 flex items-center gap-1 mb-1">
+                          <div className="text-sm text-gray-500 flex items-center gap-1">
                             <MapPin className="w-4 h-4 text-indigo-400" />
                             {gig?.destination_zone ? getCountryName(gig.destination_zone) : 'No location specified'}
-                          </div>
-                          <div className="text-sm text-gray-600 max-w-md">
-                            {gig?.description || 'No description available'}
                           </div>
                         </div>
                       </td>
