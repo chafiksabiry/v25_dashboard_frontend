@@ -275,10 +275,8 @@ function GigsPanel() {
   };
 
   const handleEdit = (gig: Gig) => {
-    setSelectedGig(gig);
-    setEditedGig({ ...gig });
-    setModalMode('edit');
-    setIsModalOpen(true);
+    // Rediriger vers le microfrontend GigCreation en mode édition
+    window.location.href = `/app6?edit=true&gigId=${gig._id}`;
   };
 
   const handleInputChange = (field: string, value: any) => {
