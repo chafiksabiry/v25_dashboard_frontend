@@ -742,8 +742,22 @@ function ComplianceSection() {
 }
 
 export function DashboardPanel() {
+  const handleOrchestratorClick = () => {
+    window.location.href = '/app11';
+  };
+
   return (
     <div className="space-y-6">
+      {/* Orchestrator Button */}
+      <div className="flex justify-center items-center py-8">
+        <button
+          onClick={handleOrchestratorClick}
+          className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-4 px-8 rounded-xl shadow-lg transform transition-all duration-200 hover:scale-105 hover:shadow-xl text-xl"
+        >
+          🎼 Orchestrator
+        </button>
+      </div>
+
       <PaymentManagement />
       <AICoachingSection />
       <LeadManagementSection />
