@@ -747,11 +747,11 @@ export function DashboardPanel() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="h-screen flex items-center justify-center overflow-hidden">
       {/* Orchestrator Button - Centered */}
       <button
         onClick={handleOrchestratorClick}
-        className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-6 px-12 rounded-xl shadow-lg transform transition-all duration-200 hover:scale-105 hover:shadow-xl text-2xl"
+        className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 px-6 rounded-lg shadow-lg transform transition-all duration-200 hover:scale-105 hover:shadow-xl text-xl"
       >
         Orchestrator
       </button>
