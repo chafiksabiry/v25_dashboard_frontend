@@ -32,9 +32,9 @@ function SettingsPanel() {
   const sections = [
     {
       id: 'general',
-      title: 'General Settings',
+      title: 'Settings',
       icon: <Settings className="w-5 h-5" />,
-      description: 'Configure basic organization settings',
+      description: 'Configure your organization settings',
       fields: [
         {
           key: 'company_logo',
@@ -72,105 +72,6 @@ function SettingsPanel() {
             { value: 'fr', label: 'French' }
           ],
           required: true
-        }
-      ]
-    },
-    {
-      id: 'security',
-      title: 'Security Settings',
-      icon: <Shield className="w-5 h-5" />,
-      description: 'Configure security and authentication settings',
-      fields: [
-        {
-          key: 'mfa_enabled',
-          label: 'Require Two-Factor Authentication',
-          type: 'toggle',
-          description: 'Enforce 2FA for all users'
-        },
-        {
-          key: 'session_timeout',
-          label: 'Session Timeout (minutes)',
-          type: 'number',
-          description: 'Time before users are automatically logged out'
-        },
-        {
-          key: 'password_policy',
-          label: 'Password Policy',
-          type: 'select',
-          options: [
-            { value: 'basic', label: 'Basic (8 characters min)' },
-            { value: 'standard', label: 'Standard (8 chars, 1 number, 1 special)' },
-            { value: 'strict', label: 'Strict (12 chars, numbers, special, caps)' }
-          ]
-        }
-      ]
-    },
-    {
-      id: 'communications',
-      title: 'Communication Settings',
-      icon: <Globe className="w-5 h-5" />,
-      description: 'Configure communication channels',
-      fields: [
-        {
-          key: 'default_phone_system',
-          label: 'Default Phone System',
-          type: 'select',
-          options: [
-            { value: 'twilio', label: 'Twilio' },
-            { value: 'ovh', label: 'OVH' }
-          ]
-        },
-        {
-          key: 'default_email_provider',
-          label: 'Default Email Provider',
-          type: 'select',
-          options: [
-            { value: 'gmail', label: 'Gmail' },
-            { value: 'outlook', label: 'Outlook' },
-            { value: 'zoho', label: 'Zoho' }
-          ]
-        },
-        {
-          key: 'default_chat_platform',
-          label: 'Default Chat Platform',
-          type: 'select',
-          options: [
-            { value: 'teams', label: 'Microsoft Teams' },
-            { value: 'slack', label: 'Slack' }
-          ]
-        }
-      ]
-    },
-    {
-      id: 'ai',
-      title: 'AI Settings',
-      icon: <Bot className="w-5 h-5" />,
-      description: 'Configure AI features and behavior',
-      fields: [
-        {
-          key: 'ai_provider',
-          label: 'AI Provider',
-          type: 'select',
-          options: [
-            { value: 'vertex', label: 'Google Vertex AI' },
-            { value: 'openai', label: 'OpenAI' }
-          ]
-        },
-        {
-          key: 'ai_features',
-          label: 'Enabled AI Features',
-          type: 'select',
-          options: [
-            { value: 'all', label: 'All Features' },
-            { value: 'analysis', label: 'Analysis Only' },
-            { value: 'suggestions', label: 'Suggestions Only' }
-          ]
-        },
-        {
-          key: 'ai_confidence_threshold',
-          label: 'AI Confidence Threshold',
-          type: 'number',
-          description: 'Minimum confidence score for AI actions (0-100)'
         }
       ]
     }
@@ -411,47 +312,27 @@ function SettingsPanel() {
           </div>
         )}
 
-        <div className="grid grid-cols-4 gap-6">
-          {/* Settings Navigation */}
-          <div className="space-y-2">
-            {sections.map(section => (
-              <button
-                key={section.id}
-                onClick={() => setActiveSection(section.id)}
-                className={`w-full text-left p-3 rounded-lg flex items-center gap-3 ${
-                  activeSection === section.id
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'hover:bg-gray-50'
-                }`}
-              >
-                {section.icon}
-                <span>{section.title}</span>
-              </button>
+        {/* Settings Fields */}
+        <div className="space-y-6">
+          <div className="border rounded-lg divide-y">
+            {activeFields.map(field => (
+              <div key={field.key} className="p-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {field.label}
+                  {field.required && <span className="text-red-500 ml-1">*</span>}
+                </label>
+                
+                {field.description && (
+                  <p className="text-sm text-gray-500 mb-2">{field.description}</p>
+                )}
+
+                {renderField(field)}
+
+                {errors[field.key] && (
+                  <p className="mt-1 text-sm text-red-500">{errors[field.key]}</p>
+                )}
+              </div>
             ))}
-          </div>
-
-          {/* Settings Fields */}
-          <div className="col-span-3 space-y-6">
-            <div className="border rounded-lg divide-y">
-              {activeFields.map(field => (
-                <div key={field.key} className="p-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {field.label}
-                    {field.required && <span className="text-red-500 ml-1">*</span>}
-                  </label>
-                  
-                  {field.description && (
-                    <p className="text-sm text-gray-500 mb-2">{field.description}</p>
-                  )}
-
-                  {renderField(field)}
-
-                  {errors[field.key] && (
-                    <p className="mt-1 text-sm text-red-500">{errors[field.key]}</p>
-                  )}
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </div>

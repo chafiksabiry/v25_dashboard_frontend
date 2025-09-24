@@ -4,6 +4,7 @@ interface ImportMetaEnv {
     readonly VITE_API_URL: string;
     readonly VITE_QIANKUN: string;
     readonly VITE_API_URL_CALL: string;
+    readonly VITE_HIDE_SECTIONS: string;
   }
   
   interface ImportMeta {

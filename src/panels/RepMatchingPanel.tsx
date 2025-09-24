@@ -1170,14 +1170,14 @@ function RepMatchingPanel() {
                         <Users size={20} className="text-blue-600" />
                       <span>{selectedGig ? `Matches for "${selectedGig.title}"` : 'Select a Gig to See Matches'}</span>
                       </h3>
-                    
+                      
                     {!selectedGig ? (
                       <div className="text-center py-8">
                         <div className="bg-gray-50 rounded-xl p-6 max-w-md mx-auto">
                           <Briefcase size={40} className="text-gray-400 mx-auto mb-3" />
                           <p className="text-gray-600 text-base mb-1.5">No gig selected</p>
                           <p className="text-sm text-gray-400">Choose a gig from the left to see matching reps</p>
-                        </div>
+                    </div>
                       </div>
                     ) : loading ? (
                       <div className="flex justify-center items-center py-8">
