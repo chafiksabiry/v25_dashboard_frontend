@@ -260,8 +260,17 @@ function GigsPanel() {
     "WF": "Wallis and Futuna"
   };
 
-  const getCountryName = (code: string) => {
-    return countryNames[code] || code;
+  const getCountryName = (destinationZone: any) => {
+    if (typeof destinationZone === 'string') {
+      return countryNames[destinationZone] || destinationZone;
+    }
+    if (destinationZone?.name?.common) {
+      return destinationZone.name.common;
+    }
+    if (destinationZone?.cca2) {
+      return countryNames[destinationZone.cca2] || destinationZone.cca2;
+    }
+    return 'Unknown location';
   };
 
   const handleEdit = (gig: Gig) => {
@@ -563,13 +572,13 @@ function GigsPanel() {
                           <div className="flex items-center gap-1 font-medium">
                             <DollarSign className="w-4 h-4 text-green-600" />
                             {gig?.commission?.baseAmount 
-                              ? `${gig.commission.currency} ${gig.commission.baseAmount}/${gig.commission.base}`
+                              ? `${gig.commission.currency?.symbol || gig.commission.currency?.code || '€'} ${gig.commission.baseAmount}/${gig.commission.base}`
                               : 'Not specified'
                             }
                           </div>
                           {gig?.commission?.bonusAmount && (
                             <div className="text-xs text-green-700">
-                              Bonus: {gig.commission.currency} {gig.commission.bonusAmount}
+                              Bonus: {gig.commission.currency?.symbol || gig.commission.currency?.code || '€'} {gig.commission.bonusAmount}
                             </div>
                           )}
                         </div>
@@ -579,11 +588,14 @@ function GigsPanel() {
                           <div className="flex items-center gap-1 text-sm">
                             <Calendar className="w-4 h-4 text-indigo-400" />
                             <span>
-                              {gig?.schedule?.days?.join(', ') || 'Not specified'}
+                              {gig?.availability?.schedule?.map(s => s.day).join(', ') || 'Not specified'}
                             </span>
                           </div>
                           <div className="text-xs text-gray-500">
-                            {gig?.schedule?.hours || 'Hours not specified'}
+                            {gig?.availability?.schedule?.[0]?.hours ? 
+                              `${gig.availability.schedule[0].hours.start} - ${gig.availability.schedule[0].hours.end}` : 
+                              'Hours not specified'
+                            }
                           </div>
                         </div>
                       </td>
@@ -772,25 +784,28 @@ function GigsPanel() {
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">Working Days</label>
                     <div className="flex flex-wrap gap-2">
-                      {selectedGig.schedule.days.map((day, index) => (
+                      {selectedGig.availability?.schedule?.map((schedule, index) => (
                         <span key={index} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
-                          {day}
+                          {schedule.day}
                         </span>
-                      ))}
+                      )) || <span className="text-gray-500">No schedule specified</span>}
                     </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">Hours</label>
-                    <p className="text-gray-800">{selectedGig.schedule.hours}</p>
+                    <p className="text-gray-800">
+                      {selectedGig.availability?.schedule?.[0]?.hours ? 
+                        `${selectedGig.availability.schedule[0].hours.start} - ${selectedGig.availability.schedule[0].hours.end}` : 
+                        'Hours not specified'
+                      }
+                    </p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Time Zones</label>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">Time Zone</label>
                     <div className="flex flex-wrap gap-2">
-                      {selectedGig.schedule.timeZones.map((zone, index) => (
-                        <span key={index} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
-                          {zone}
-                        </span>
-                      ))}
+                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+                        {selectedGig.availability?.time_zone?.zoneName || 'Not specified'}
+                      </span>
                     </div>
                   </div>
                 </div>
