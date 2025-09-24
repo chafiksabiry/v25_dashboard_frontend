@@ -393,10 +393,35 @@ function GigsPanel() {
     }
   };
 
-  const handleShow = (gig: Gig) => {
-    setSelectedGig(gig);
-    setModalMode('show');
-    setIsModalOpen(true);
+  const handleShow = async (gig: Gig) => {
+    try {
+      setLoading(true);
+      // Fetch detailed gig data from the specific API endpoint
+      const response = await fetch(`https://api-gigsmanual.harx.ai/api/gigs/${gig._id}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch gig details: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('Detailed gig data:', data);
+      
+      if (data.message === "Gig retrieved successfully" && data.data) {
+        setSelectedGig(data.data);
+        setModalMode('show');
+        setIsModalOpen(true);
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (error) {
+      console.error('Error fetching gig details:', error);
+      // Fallback to using the existing gig data if API call fails
+      setSelectedGig(gig);
+      setModalMode('show');
+      setIsModalOpen(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const closeModal = () => {
