@@ -134,7 +134,7 @@ function GigsPanel() {
       }
 
       console.log("Fetching gigs for user:", userId);
-      const response = await fetch(`${import.meta.env.VITE_API_URL_GIGS}/user/${userId}`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL_GIGS}/company/${userId}`);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
