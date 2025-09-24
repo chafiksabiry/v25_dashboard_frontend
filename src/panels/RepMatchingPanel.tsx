@@ -196,7 +196,6 @@ function RepMatchingPanel() {
     setLoading(true);
     setError(null);
     setMatches([]);
-    setMatchStats(null);
     setSearchTerm(''); // Clear search when selecting a new gig
     
     // Reset weights state
@@ -1654,8 +1653,6 @@ function RepMatchingPanel() {
                     )}
                   </div>
                 </div>
-              </div>
-            )}
               </div>
             )}
 
