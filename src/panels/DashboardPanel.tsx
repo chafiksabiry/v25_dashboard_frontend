@@ -747,23 +747,14 @@ export function DashboardPanel() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Orchestrator Button */}
-      <div className="flex justify-center items-center py-8">
-        <button
-          onClick={handleOrchestratorClick}
-          className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-4 px-8 rounded-xl shadow-lg transform transition-all duration-200 hover:scale-105 hover:shadow-xl text-xl"
-        >
-          🎼 Orchestrator
-        </button>
-      </div>
-
-      <PaymentManagement />
-      <AICoachingSection />
-      <LeadManagementSection />
-      <TeamCollaborationSection />
-      <IntegrationsSection />
-      <ComplianceSection />
+    <div className="min-h-screen flex items-center justify-center">
+      {/* Orchestrator Button - Centered */}
+      <button
+        onClick={handleOrchestratorClick}
+        className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-6 px-12 rounded-xl shadow-lg transform transition-all duration-200 hover:scale-105 hover:shadow-xl text-2xl"
+      >
+        Orchestrator
+      </button>
     </div>
   );
 }
