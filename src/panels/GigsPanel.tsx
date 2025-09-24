@@ -537,10 +537,6 @@ function GigsPanel() {
                 <tr className="text-left border-b bg-gray-50">
                   <th className="pb-4 pt-4 px-4 font-semibold text-gray-700">Gig Details</th>
                   <th className="pb-4 pt-4 px-4 font-semibold text-gray-700">Category</th>
-                  <th className="pb-4 pt-4 px-4 font-semibold text-gray-700">Rate</th>
-                  <th className="pb-4 pt-4 px-4 font-semibold text-gray-700">Schedule</th>
-                  <th className="pb-4 pt-4 px-4 font-semibold text-gray-700">Seniority</th>
-                  {/* <th className="pb-4 pt-4 px-4 font-semibold text-gray-700">Skills</th> */}
                   <th className="pb-4 pt-4 px-4 font-semibold text-gray-700">Actions</th>
                 </tr>
               </thead>
@@ -566,48 +562,6 @@ function GigsPanel() {
                         <span className="inline-block px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-medium shadow-sm">
                           {gig?.category || 'Not specified'}
                         </span>
-                      </td>
-                      <td className="py-4 px-4 align-middle">
-                        <div className="flex flex-col gap-1 text-gray-900">
-                          <div className="flex items-center gap-1 font-medium">
-                            <DollarSign className="w-4 h-4 text-green-600" />
-                            {gig?.commission?.baseAmount 
-                              ? `${gig.commission.currency?.symbol || gig.commission.currency?.code || '€'} ${gig.commission.baseAmount}/${gig.commission.base}`
-                              : 'Not specified'
-                            }
-                          </div>
-                          {gig?.commission?.bonusAmount && (
-                            <div className="text-xs text-green-700">
-                              Bonus: {gig.commission.currency?.symbol || gig.commission.currency?.code || '€'} {gig.commission.bonusAmount}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 align-middle">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-1 text-sm">
-                            <Calendar className="w-4 h-4 text-indigo-400" />
-                            <span>
-                              {gig?.availability?.schedule?.map(s => s.day).join(', ') || 'Not specified'}
-                            </span>
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {gig?.availability?.schedule?.[0]?.hours ? 
-                              `${gig.availability.schedule[0].hours.start} - ${gig.availability.schedule[0].hours.end}` : 
-                              'Hours not specified'
-                            }
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 align-middle">
-                        <div className="flex flex-col gap-1 items-start">
-                          <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700 font-semibold">
-                            {gig?.seniority?.level || 'Level not specified'}
-                          </span>
-                          <div className="text-xs text-gray-500">
-                            {gig?.seniority?.yearsExperience ? `${gig.seniority.yearsExperience} years` : 'Years not specified'}
-                          </div>
-                        </div>
                       </td>
                       {/* <td className="py-4 px-4 align-middle">
                         <div className="flex flex-wrap gap-1">
