@@ -275,8 +275,8 @@ function GigsPanel() {
   };
 
   const handleEdit = (gig: Gig) => {
-    // Rediriger vers le microfrontend GigCreation en mode édition
-    window.location.href = `/app6?edit=true&gigId=${gig._id}`;
+    // Rediriger directement vers le formulaire de création en mode édition
+    window.location.href = `/app6?edit=true&gigId=${gig._id}&section=basic`;
   };
 
   const handleInputChange = (field: string, value: any) => {
