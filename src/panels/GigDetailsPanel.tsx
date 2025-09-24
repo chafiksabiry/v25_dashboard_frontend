@@ -117,7 +117,7 @@ function GigDetailsPanel() {
 
       try {
         setLoading(true);
-        const response = await fetch(`${import.meta.env.VITE_API_URL_GIGS}/api/gigs/${gigId}`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL_GIGS}/gigs/${gigId}`);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch gig details: ${response.status} ${response.statusText}`);
