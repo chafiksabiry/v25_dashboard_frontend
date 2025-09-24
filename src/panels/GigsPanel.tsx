@@ -134,7 +134,7 @@ function GigsPanel() {
       }
 
       console.log("Fetching gigs for user:", userId);
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL_GIGS}/user/${userId}`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL_GIGS}/user/${userId}`);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
@@ -306,7 +306,7 @@ function GigsPanel() {
     try {
       console.log('Sending update request for gig:', editedGig);
       
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL_GIGS}/${editedGig._id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL_GIGS}/${editedGig._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -366,7 +366,7 @@ function GigsPanel() {
 
     if (result.isConfirmed) {
       try {
-        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL_GIGS}/${gigId}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL_GIGS}/${gigId}`, {
           method: 'DELETE',
         });
 

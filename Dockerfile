@@ -19,7 +19,6 @@ ENV VITE_API_URL=https://api-dashboard.harx.ai/api
 ENV VITE_ZOHO_API_URL=https://api-dashboard.harx.ai/api/zoho
 ENV VITE_GOOGLE_API_KEY=AIzaSyCHEKiraViKIrgvloZI-ZBIJqtDMeBuQD0
 ENV VITE_BACKEND_URL_COMPANY=https://api-companysearchwizard.harx.ai/api
-ENV VITE_BACKEND_URL_GIGS=https://api-gigsmanual.harx.ai/api
 ENV TWILIO_ACCOUNT_SID=AC8a453959a6cb01cbbd1c819b00c5782f
 ENV VITE_BACKEND_URL_INTEGRATIONS=https://api-integration.harx.ai/api
 ENV TWILIO_AUTH_TOKEN=7ade91a170bff98bc625543287ee62c8
@@ -34,7 +33,6 @@ ENV VITE_BACKEND_KNOWLEDGEBASE_BACKEND=https://api-knowledge-base.harx.ai
 ENV VITE_MATCHING_API_URL=https://api-matching.harx.ai/api
 ENV VITE_API_URL_GIGS=https://api-gigsmanual.harx.ai/api
 ENV VITE_ZOHO_API_URL=https://api-dashboard.harx.ai/api/zoho
-ENV VITE_BACKEND_URL_GIGS=https://api-gigsmanual.harx.ai/api/gigs
 
 # WebSocket URL for Speech-to-Text
 #ENV VITE_WS_URL=ws://38.242.208.242:5006
