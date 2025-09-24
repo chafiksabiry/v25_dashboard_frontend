@@ -678,9 +678,9 @@ function RepMatchingPanel() {
         {initialLoading && (
           <div className="flex justify-center items-center py-20">
             <div className="relative">
-              <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-orange-500"></div>
+              <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-harx-500"></div>
               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                <Zap size={24} className="text-orange-500 animate-pulse" />
+                <Zap size={24} className="text-harx-500 animate-pulse" />
               </div>
             </div>
           </div>
@@ -762,7 +762,7 @@ function RepMatchingPanel() {
                       }
                     }}
                     disabled={loading}
-                    className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl shadow-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 hover:shadow-xl"
+                    className="px-6 py-3 bg-gradient-to-r from-harx-500 to-harx-600 text-white rounded-xl shadow-lg hover:from-harx-600 hover:to-harx-700 transition-all duration-200 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 hover:shadow-xl"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -881,7 +881,7 @@ function RepMatchingPanel() {
                         placeholder="Search reps..."
                         value={searchTerm}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-                        className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+                        className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-harx-500 focus:border-harx-500 text-sm"
                       />
                       {searchTerm && (
                         <button
@@ -940,14 +940,6 @@ function RepMatchingPanel() {
                                   <p className="text-xs text-gray-600 truncate">{gig.companyName}</p>
                               </div>
             </div>
-                            
-                              <span className={`px-2 py-1 rounded text-xs font-medium flex-shrink-0 ml-2 ${
-                              selectedGig?._id === gig._id
-                                ? "bg-orange-500 text-white"
-                                : "bg-blue-100 text-blue-800"
-                            }`}>
-                              {gig.category}
-                            </span>
           </div>
 
                           {selectedGig?._id === gig._id && (
@@ -994,7 +986,7 @@ function RepMatchingPanel() {
                                         const displayName = industry.name || 
                                                            (typeof industry === 'string' && !industry.match(/^[0-9a-fA-F]{24}$/) ? industry : 'Industry');
                                         return (
-                                          <span key={i} className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs">
+                                          <span key={i} className="px-2 py-1 bg-harx-100 text-harx-800 rounded text-xs">
                                             {displayName}
                                           </span>
                                         );
@@ -1178,7 +1170,7 @@ function RepMatchingPanel() {
                           const matchScore = Math.round((match.totalMatchingScore || 0) * 100);
                           const cardBgColor = matchScore >= 70 ? 'bg-green-50 border-green-200' :
                                             matchScore >= 50 ? 'bg-yellow-50 border-yellow-200' :
-                                            'bg-red-50 border-red-200';
+                                            'bg-harx-50 border-harx-200';
                           
                           const isExpanded = expandedReps.has(match.agentId);
                           
@@ -1192,7 +1184,7 @@ function RepMatchingPanel() {
                                     <div className={`px-4 py-2 rounded-full text-sm font-bold shadow-sm ${
                                       matchScore >= 70 ? 'bg-green-500 text-white' :
                                       matchScore >= 50 ? 'bg-yellow-500 text-white' :
-                                      'bg-red-500 text-white'
+                                      'bg-harx-500 text-white'
                                     }`}>
                                       {matchScore}% Match
                                     </div>
@@ -1290,7 +1282,7 @@ function RepMatchingPanel() {
                                           <span className={`px-2 py-1 rounded text-xs font-bold ${
                                             Math.round((match.skillsMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
                                             Math.round((match.skillsMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
-                                            'bg-red-100 text-red-800'
+                                            'bg-harx-100 text-harx-800'
                                           }`}>
                                             {Math.round((match.skillsMatch.score || 0) * 100)}%
                                           </span>
@@ -1341,7 +1333,7 @@ function RepMatchingPanel() {
                                           <span className={`px-2 py-1 rounded text-xs font-bold ${
                                             Math.round((match.languageMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
                                             Math.round((match.languageMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
-                                            'bg-red-100 text-red-800'
+                                            'bg-harx-100 text-harx-800'
                                           }`}>
                                             {Math.round((match.languageMatch.score || 0) * 100)}%
                                           </span>
@@ -1393,7 +1385,7 @@ function RepMatchingPanel() {
                                           <span className={`px-2 py-1 rounded text-xs font-bold ${
                                             Math.round((match.industryMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
                                             Math.round((match.industryMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
-                                            'bg-red-100 text-red-800'
+                                            'bg-harx-100 text-harx-800'
                                           }`}>
                                             {Math.round((match.industryMatch.score || 0) * 100)}%
                                           </span>
@@ -1403,7 +1395,7 @@ function RepMatchingPanel() {
                                             <p className="text-xs text-gray-600 mb-2">Matched Industries:</p>
                                             <div className="flex flex-wrap gap-1">
                                               {match.industryMatch.details.matchingIndustries.slice(0, 2).map((industry: any, i: number) => (
-                                                <span key={i} className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs">
+                                                <span key={i} className="px-2 py-1 bg-harx-100 text-harx-800 rounded text-xs">
                                                   {industry.industry?.name || industry.industryName || industry.name || industry}
                                                 </span>
                                               ))}
@@ -1421,7 +1413,7 @@ function RepMatchingPanel() {
                                             <p className="text-xs text-gray-600 mb-2">Industries:</p>
                                             <div className="flex flex-wrap gap-1">
                                               {match.industryMatch.matchedIndustries.slice(0, 2).map((industry: any, i: number) => (
-                                                <span key={i} className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs">
+                                                <span key={i} className="px-2 py-1 bg-harx-100 text-harx-800 rounded text-xs">
                                                   {industry.name || industry}
                                                 </span>
                                               ))}
@@ -1444,7 +1436,7 @@ function RepMatchingPanel() {
                                           <span className={`px-2 py-1 rounded text-xs font-bold ${
                                             Math.round((match.experienceMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
                                             Math.round((match.experienceMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
-                                            'bg-red-100 text-red-800'
+                                            'bg-harx-100 text-harx-800'
                                           }`}>
                                             {Math.round((match.experienceMatch.score || 0) * 100)}%
                                           </span>
@@ -1469,7 +1461,7 @@ function RepMatchingPanel() {
                                           <span className={`px-2 py-1 rounded text-xs font-bold ${
                                             Math.round((match.timezoneMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
                                             Math.round((match.timezoneMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
-                                            'bg-red-100 text-red-800'
+                                            'bg-harx-100 text-harx-800'
                                           }`}>
                                             {Math.round((match.timezoneMatch.score || 0) * 100)}%
                                           </span>
@@ -1490,7 +1482,7 @@ function RepMatchingPanel() {
                                           <span className={`px-2 py-1 rounded text-xs font-bold ${
                                             Math.round((match.regionMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
                                             Math.round((match.regionMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
-                                            'bg-red-100 text-red-800'
+                                            'bg-harx-100 text-harx-800'
                                           }`}>
                                             {Math.round((match.regionMatch.score || 0) * 100)}%
                                           </span>
@@ -1510,7 +1502,7 @@ function RepMatchingPanel() {
                                           <span className={`px-2 py-1 rounded text-xs font-bold ${
                                             Math.round((match.availabilityMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
                                             Math.round((match.availabilityMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
-                                            'bg-red-100 text-red-800'
+                                            'bg-harx-100 text-harx-800'
                                           }`}>
                                             {Math.round((match.availabilityMatch.score || 0) * 100)}%
                                           </span>
@@ -1529,7 +1521,7 @@ function RepMatchingPanel() {
                                           <span className={`px-2 py-1 rounded text-xs font-bold ${
                                             Math.round((match.activityMatch.score || 0) * 100) >= 70 ? 'bg-green-100 text-green-800' :
                                             Math.round((match.activityMatch.score || 0) * 100) >= 50 ? 'bg-yellow-100 text-yellow-800' :
-                                            'bg-red-100 text-red-800'
+                                            'bg-harx-100 text-harx-800'
                                           }`}>
                                             {Math.round((match.activityMatch.score || 0) * 100)}%
                                           </span>
@@ -1742,7 +1734,7 @@ function RepMatchingPanel() {
                                     // TODO: Show error toast
                                   }
                                 }}
-                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 text-sm font-medium"
+                                className="px-4 py-2 bg-harx-600 text-white rounded-lg hover:bg-harx-700 transition-all duration-200 text-sm font-medium"
                               >
                                 ❌ Reject
                               </button>
