@@ -1140,7 +1140,7 @@ function RepMatchingPanel() {
                         <Users size={20} className="text-harx-600" />
                       <span>{selectedGig ? `Matches for "${selectedGig.title}"` : 'Select a Gig to See Matches'}</span>
                       </h3>
-                    
+                      
                     {!selectedGig ? (
                       <div className="text-center py-12">
                         <div className="bg-gray-50 rounded-xl p-8 max-w-md mx-auto">
@@ -1623,8 +1623,6 @@ function RepMatchingPanel() {
                     )}
                   </div>
                 </div>
-              </div>
-            )}
               </div>
             )}
 
