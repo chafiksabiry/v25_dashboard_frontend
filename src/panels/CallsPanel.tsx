@@ -154,40 +154,6 @@ function CallsPanel() {
             </div>
           )}
 
-          <div className="grid grid-cols-4 gap-4 mb-6">
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <PhoneIncoming className="w-5 h-5 text-green-600" />
-                <span className="font-medium">Incoming</span>
-              </div>
-              <div className="text-2xl font-bold">24</div>
-              <div className="text-sm text-green-600">Last 24 hours</div>
-            </div>
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <PhoneOutgoing className="w-5 h-5 text-blue-600" />
-                <span className="font-medium">Outgoing</span>
-              </div>
-              <div className="text-2xl font-bold">18</div>
-              <div className="text-sm text-blue-600">Last 24 hours</div>
-            </div>
-            <div className="bg-yellow-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <Clock className="w-5 h-5 text-yellow-600" />
-                <span className="font-medium">Average Duration</span>
-              </div>
-              <div className="text-2xl font-bold">5m 23s</div>
-              <div className="text-sm text-yellow-600">This week</div>
-            </div>
-            <div className="bg-red-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <PhoneMissed className="w-5 h-5 text-red-600" />
-                <span className="font-medium">Missed</span>
-              </div>
-              <div className="text-2xl font-bold">3</div>
-              <div className="text-sm text-red-600">Today</div>
-            </div>
-          </div>
 
           <div className="flex items-center gap-4 mb-6">
             <button
