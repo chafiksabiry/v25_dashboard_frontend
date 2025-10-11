@@ -603,16 +603,17 @@ function LeadManagementPanel() {
         return;
       }
   
-      // Sauvegarder l'URL actuelle pour y revenir après l'authentification
-      const currentPath = window.location.pathname + window.location.search + window.location.hash;
-      sessionStorage.setItem('zoho_redirect_after_auth', currentPath);
-      console.log('💾 Saved current path for return after auth:', currentPath);
+      // Construire l'URL complète actuelle pour y revenir après l'authentification
+      const currentUrl = window.location.href;
+      console.log('💾 Current URL for return after auth:', currentUrl);
   
+      // Construire le callback URI avec l'URL de redirection
       const redirectUri = `${import.meta.env.VITE_DASHBOARD_API}/zoho/auth/callback`;
       const encodedRedirectUri = encodeURIComponent(redirectUri);
       const encodedState = encodeURIComponent(userId);
+      const encodedReturnUrl = encodeURIComponent(currentUrl);
   
-      const authUrl = `${import.meta.env.VITE_DASHBOARD_API}/zoho/auth?redirect_uri=${encodedRedirectUri}&state=${encodedState}`;
+      const authUrl = `${import.meta.env.VITE_DASHBOARD_API}/zoho/auth?redirect_uri=${encodedRedirectUri}&state=${encodedState}&redirect_url=${encodedReturnUrl}`;
   
       console.log('Calling Zoho auth URL:', authUrl);
   
@@ -754,20 +755,6 @@ function LeadManagementPanel() {
       setHasZohoConfig(true);
       setHasZohoAccessToken(true);
       toast.success('Connected to Zoho CRM successfully!');
-  
-      // Récupérer l'URL sauvegardée et rediriger
-      const savedPath = sessionStorage.getItem('zoho_redirect_after_auth');
-      if (savedPath) {
-        console.log('🔙 Redirecting back to saved path:', savedPath);
-        sessionStorage.removeItem('zoho_redirect_after_auth');
-        
-        // Utiliser un délai court pour permettre au toast de s'afficher
-        setTimeout(() => {
-          window.location.href = savedPath;
-        }, 1500);
-      } else {
-        console.log('ℹ️ No saved path found, staying on current page');
-      }
   
     } catch (error: any) {
       console.error('Error handling OAuth callback:', error);
