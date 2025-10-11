@@ -384,7 +384,11 @@ function LeadManagementPanel() {
             const data = await response.json();
             console.log('Zoho config data:', data);
             
-            if (data.success && data.data) {
+            // L'API retourne directement l'objet config OU { success: true, data: {...} }
+            // Vérifier si on a un access_token (config directe) ou si data.success est true
+            const hasConfig = (data.access_token && data.userId) || (data.success && data.data);
+            
+            if (hasConfig) {
               console.log('✅ Zoho config found for user');
               setHasZohoConfig(true);
               setHasZohoAccessToken(true);
