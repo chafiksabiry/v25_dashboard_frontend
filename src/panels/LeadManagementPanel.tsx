@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Users,
   Search,
@@ -6,7 +6,6 @@ import {
   Clock,
   DollarSign,
   Building2,
-  MapPin,
   Tags,
   ArrowUpRight,
   ArrowDownRight,
@@ -20,10 +19,8 @@ import {
   Mail,
 } from "lucide-react";
 import { LeadUploader } from "../components/LeadUploader";
-import { ZohoTokenService } from '../services/zohoService';
 import { useNavigate } from 'react-router-dom';
-import Cookies from 'js-cookie';
-import { leadsApi, LeadsResponse } from '../services/api/leads';
+import { leadsApi } from '../services/api/leads';
 import { gigsApi } from '../services/api/endpoints';
 
 const zohoApiUrl = import.meta.env.VITE_ZOHO_API_URL;
@@ -101,13 +98,9 @@ interface Lead {
 function LeadManagementPanel() {
   const navigate = useNavigate();
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [isZohoConnected, setIsZohoConnected] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isZohoConnected] = useState(true); // Toujours connecté pour simplifier
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [zohoError, setZohoError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const maxRetries = 3;
-  const retryDelay = 5000; // 5 seconds
 
   interface Stage {
     display_value: string;
@@ -140,15 +133,13 @@ function LeadManagementPanel() {
   }
 
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [selectedPipeline, setSelectedPipeline] = useState<string>('all');
   const [selectedStage, setSelectedStage] = useState<string>('all');
-  const [hasMoreRecords, setHasMoreRecords] = useState(false);
+  const [hasMoreRecords] = useState(false);
   const LEADS_PER_PAGE = 20; // Réduire à 20 leads par page pour une meilleure performance
   const [totalLeads, setTotalLeads] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [currentViewIndex, setCurrentViewIndex] = useState(0);
   const [allLeads, setAllLeads] = useState<Lead[]>([]);
   const [displayedLeads, setDisplayedLeads] = useState<Lead[]>([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -163,10 +154,6 @@ function LeadManagementPanel() {
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [searchText, setSearchText] = useState('');
   const debouncedSearchText = useDebounce(searchText, 300); // 300ms delay
-  // Reset the view index when changing page
-  useEffect(() => {
-    setCurrentViewIndex(0);
-  }, [currentPage]);
 
   // Calculate the leads to display for the current page
   const getCurrentPageLeads = () => {
@@ -211,9 +198,11 @@ function LeadManagementPanel() {
 
   const fetchPipelines = async () => {
     try {
-      setIsLoading(true);
-      const token = ZohoTokenService.getToken();
-      if (!token) throw new Error('No Zoho token found');
+      const token = localStorage.getItem('zoho_access_token');
+      if (!token) {
+        console.log('No Zoho token found, skipping pipelines fetch');
+        return;
+      }
 
       const response = await fetch(`${zohoApiUrl}/pipelines`, {
         headers: {
@@ -233,8 +222,6 @@ function LeadManagementPanel() {
     } catch (error) {
       console.error('Error fetching pipelines:', error);
       setError(error instanceof Error ? error.message : 'Failed to fetch pipelines');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -288,18 +275,11 @@ function LeadManagementPanel() {
     }
   };
 
-  // Modify the initial useEffect to not check configuration
+  // Charger les gigs et pipelines directement au démarrage
   useEffect(() => {
-    const token = localStorage.getItem('zoho_access_token');
-    
-    if (token) {
-      setIsZohoConnected(true);
-      fetchGigs();
-      fetchPipelines();
-    } else {
-      setIsZohoConnected(false);
-      setIsLoading(false);
-    }
+    fetchGigs();
+    fetchPipelines();
+    setIsLoading(false);
   }, []);
 
   // Effet pour récupérer les leads quand un gig est sélectionné
@@ -331,10 +311,7 @@ function LeadManagementPanel() {
 
   console.log("Leads:", leads);
 
-  const handleZohoConnect = async () => {
-    // Cette fonction ne sera appelée que manuellement depuis la page des intégrations
-    return;
-  };
+  // Fonction de connexion Zoho supprimée - non nécessaire
 
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showLeadDetails, setShowLeadDetails] = useState(false);
@@ -408,47 +385,20 @@ function LeadManagementPanel() {
       
     } catch (error: unknown) {
       console.error("Error updating lead:", error);
-      if (error instanceof Error && error.message === "Access token not found") {
-        setIsZohoConnected(false);
-      }
+      // Gérer l'erreur si nécessaire
     } finally {
       setIsUpdating(false);
     }
   };
 
-  const [showEditForm, setShowEditForm] = useState(false);
-  const [editableLead, setEditableLead] = useState<Lead | null>(null);
-
-  const handleEditClick = (e: React.MouseEvent, lead: Lead) => {
+  const handleEditClick = (e: React.MouseEvent, _lead: Lead) => {
     e.stopPropagation();  // Prevent click triggering on the line
-    setEditableLead(lead);
-    setShowEditForm(true);
+    // TODO: Implement lead editing functionality
   };
 
-  // Add a logout function
-  const handleZohoDisconnect = () => {
-    localStorage.removeItem('zoho_access_token');
-    setIsZohoConnected(false);
-    setLeads([]);
-    setPipelines([]);
-  };
+  // Fonction de déconnexion Zoho supprimée - non nécessaire
 
-  // Check if Zoho is connected
-  const checkZohoConnection = () => {
-    const token = ZohoTokenService.getToken();
-    if (!token) {
-      return false;
-    }
-    return true;
-  };
-
-  useEffect(() => {
-    if (!checkZohoConnection()) {
-      setError('Connection to Zoho CRM required');
-    } else {
-      fetchLeads();
-    }
-  }, []);
+  // Pas besoin de vérifier la connexion Zoho
 
 
   // Get stages of the selected pipeline
@@ -469,15 +419,9 @@ function LeadManagementPanel() {
   };
 
   const [isImporting, setIsImporting] = useState(false);
-  const [importedCount, setImportedCount] = useState(0);
   const [showImportModal, setShowImportModal] = useState(false);
 
   const handleImportFromZoho = async () => {
-    if (!isZohoConnected) {
-      setShowImportModal(true);
-      return;
-    }
-
     setIsImporting(true);
     try {
       const accessToken = localStorage.getItem('zoho_access_token');
@@ -515,7 +459,6 @@ function LeadManagementPanel() {
       }
 
       const saveResult = await saveResponse.json();
-      setImportedCount(saveResult.data.length);
       
       // Rafraîchir la liste des leads
       await fetchLeads(currentPage);
@@ -631,35 +574,6 @@ function LeadManagementPanel() {
     );
   }
 
-  if (!checkZohoConnection()) {
-    return (
-      <div className="space-y-6">
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center gap-2 text-amber-600">
-              <AlertCircle className="w-6 h-6" />
-              <h2 className="text-xl font-semibold">Connection Required</h2>
-            </div>
-            <p className="text-gray-600">
-              You need to connect to Zoho CRM to access leads. Please configure your Zoho CRM integration first.
-            </p>
-            {zohoError && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
-                {zohoError}
-              </div>
-            )}
-            <button
-              onClick={() => navigate('/integrations')}
-              className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700"
-            >
-              Configure Zoho CRM Integration
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm p-6">
@@ -671,33 +585,23 @@ function LeadManagementPanel() {
             <h2 className="text-xl font-semibold">Lead Management</h2>
           </div>
           <div className="flex gap-2">
-            {isZohoConnected && (
-              <>
-                <button
-                  onClick={handleImportFromZoho}
-                  disabled={isImporting}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 disabled:opacity-50"
-                >
-                  {isImporting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-                      Importing...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-5 h-5" />
-                      Import from Zoho
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={handleZohoDisconnect}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                >
-                  Disconnect Zoho
-                </button>
-              </>
-            )}
+            <button
+              onClick={handleImportFromZoho}
+              disabled={isImporting}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 disabled:opacity-50"
+            >
+              {isImporting ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                  Importing...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-5 h-5" />
+                  Import from Zoho
+                </>
+              )}
+            </button>
             <button
               onClick={() => setShowUploadModal(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
@@ -708,26 +612,8 @@ function LeadManagementPanel() {
           </div>
         </div>
 
-        {!isZohoConnected ? (
-          <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-            <div className="text-center mb-6">
-              <div className="p-4 bg-blue-100 rounded-full inline-block mb-4">
-                <Building2 className="w-10 h-10 text-blue-600" />
-              </div>
-              <h2 className="text-xl font-semibold mb-2">Connect to Zoho CRM</h2>
-              <p className="text-gray-600 max-w-md mb-6">
-                To access your leads and manage your leads, you must first connect to your Zoho CRM account.
-              </p>
-              <button
-                onClick={handleZohoConnect}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium flex items-center gap-2 mx-auto"
-              >
-                <Users className="w-5 h-5" />
-                Connect to Zoho CRM
-              </button>
-            </div>
-          </div>
-        ) : (
+        {/* Afficher directement le contenu des leads */}
+        {(
           <>
             <div className="grid grid-cols-4 gap-4 mb-6">
               <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100" style={{ backgroundColor: '#f3f4f6' }}>
@@ -814,13 +700,8 @@ function LeadManagementPanel() {
                   </button>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <span className="font-medium">{filteredLeads.length}</span>
+                  <span className="font-medium">{allLeads.length}</span>
                   <span>leads found</span>
-                  {filteredLeads.length !== allLeads.length && (
-                    <span className="text-gray-400">
-                      (filtered from {allLeads.length} total leads)
-                    </span>
-                  )}
                 </div>
               </div>
 
@@ -1096,7 +977,7 @@ function LeadManagementPanel() {
         )}
       </div>
       
-      {isZohoConnected && hasMoreRecords && (
+      {hasMoreRecords && (
         <div className="flex justify-center items-center mt-6">
           <button
             onClick={() => handlePageChange(currentPage + 1)}
