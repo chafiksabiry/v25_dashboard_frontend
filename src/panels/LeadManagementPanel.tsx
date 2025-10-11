@@ -172,6 +172,7 @@ function LeadManagementPanel() {
   const [searchText, setSearchText] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const debouncedSearchText = useDebounce(searchText, 300); // 300ms delay
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // File upload states
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -273,7 +274,7 @@ function LeadManagementPanel() {
     }
   };
 
-  const fetchLeads = async (page: number = 1) => {
+  const fetchLeads = async (page: number = 1, searchQuery: string = '') => {
     try {
       setIsLoadingMore(true);
       
@@ -285,33 +286,60 @@ function LeadManagementPanel() {
         return;
       }
 
-      // Utiliser le nouvel endpoint avec pagination
-      const result = await leadsApi.getByGig(selectedGig._id, page, LEADS_PER_PAGE);
+      let apiUrl: string;
       
-      if (result.success && result.data) {
-        let filteredData = result.data;
-        
-        // Appliquer les filtres côté client si nécessaire
-        if (selectedStage !== 'all') {
-          filteredData = filteredData.filter((lead: Lead) => lead.Stage === selectedStage);
-        }
-        
-        if (debouncedSearchText) {
-          filteredData = filteredData.filter((lead: Lead) => 
-            lead.Deal_Name.toLowerCase().includes(debouncedSearchText.toLowerCase()) ||
-            (lead.Email_1 && lead.Email_1.toLowerCase().includes(debouncedSearchText.toLowerCase())) ||
-            (lead.Phone && lead.Phone.includes(debouncedSearchText))
-          );
-        }
-        
-        setAllLeads(filteredData);
-        setTotalLeads(result.total);
-        setTotalPages(result.totalPages);
-        setCurrentPage(result.currentPage);
+      if (searchQuery.trim()) {
+        // Utiliser l'endpoint de recherche dédié
+        apiUrl = `${import.meta.env.VITE_DASHBOARD_API}/leads/gig/${selectedGig._id}/search?search=${encodeURIComponent(searchQuery.trim())}`;
+        console.log('🔍 Recherche leads avec URL:', apiUrl);
       } else {
-        setAllLeads([]);
-        setTotalLeads(0);
+        // Utiliser l'endpoint normal avec pagination
+        apiUrl = `${import.meta.env.VITE_DASHBOARD_API}/leads/gig/${selectedGig._id}?page=${page}&limit=${LEADS_PER_PAGE}`;
+        console.log('📄 Récupération leads avec URL:', apiUrl);
+      }
+      
+      const userId = Cookies.get('userId');
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Authorization': `Bearer ${selectedGig._id}:${userId}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch leads: ${response.statusText}`);
+      }
+
+      const responseData = await response.json();
+      console.log('📊 Réponse API leads:', responseData);
+      
+      if (!responseData.success) {
+        throw new Error('Failed to fetch leads: API returned unsuccessful response');
+      }
+
+      if (!Array.isArray(responseData.data)) {
+        throw new Error('Invalid response format: expected data to be an array');
+      }
+
+      let filteredData = responseData.data;
+      
+      // Appliquer les filtres côté client si nécessaire
+      if (selectedStage !== 'all') {
+        filteredData = filteredData.filter((lead: Lead) => lead.Stage === selectedStage);
+      }
+      
+      setAllLeads(filteredData);
+      
+      if (searchQuery.trim()) {
+        // Pour la recherche, afficher tous les résultats sur une seule page
         setTotalPages(1);
+        setCurrentPage(1);
+        setTotalLeads(filteredData.length);
+      } else {
+        // Pour la pagination normale
+        setTotalPages(responseData.totalPages);
+        setCurrentPage(responseData.currentPage);
+        setTotalLeads(responseData.total);
       }
     } catch (error) {
       console.error("Error retrieving leads:", error);
@@ -1128,6 +1156,27 @@ function LeadManagementPanel() {
     setParsedLeads(newLeads);
   };
 
+  // Fonction de recherche avec délai
+  const handleSearch = async (query: string) => {
+    setSearchText(query);
+    
+    // Annuler le timeout précédent s'il existe
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // Délai pour éviter trop d'appels API pendant la frappe
+    searchTimeoutRef.current = setTimeout(async () => {
+      // Si on a une requête de recherche, récupérer tous les résultats
+      if (query.trim()) {
+        await fetchLeads(1, query);
+      } else {
+        // Si pas de recherche, recharger les leads normaux avec pagination
+        await fetchLeads(1);
+      }
+    }, 500); // 500ms de délai
+  };
+
   // Render pagination buttons
   const renderPaginationButtons = () => {
     const buttons = [];
@@ -1138,7 +1187,7 @@ function LeadManagementPanel() {
         buttons.push(
           <button
             key={i}
-            onClick={() => fetchLeads(i)}
+            onClick={() => fetchLeads(i, searchText)}
             className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
               i === currentPage
                 ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
@@ -1156,7 +1205,7 @@ function LeadManagementPanel() {
     buttons.push(
       <button
         key={1}
-        onClick={() => fetchLeads(1)}
+        onClick={() => fetchLeads(1, searchText)}
         className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
           1 === currentPage
             ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
@@ -1188,7 +1237,7 @@ function LeadManagementPanel() {
       buttons.push(
         <button
           key={i}
-          onClick={() => fetchLeads(i)}
+          onClick={() => fetchLeads(i, searchText)}
           className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
             i === currentPage
               ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
@@ -1212,7 +1261,7 @@ function LeadManagementPanel() {
       buttons.push(
         <button
           key={totalPages}
-          onClick={() => fetchLeads(totalPages)}
+          onClick={() => fetchLeads(totalPages, searchText)}
           className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
             totalPages === currentPage
               ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
@@ -1692,7 +1741,7 @@ function LeadManagementPanel() {
                   className="block w-64 rounded-lg border-gray-300 pl-10 focus:border-blue-600 focus:ring-blue-600 sm:text-sm shadow-sm"
                   placeholder="Search leads..."
                   value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
+                  onChange={(e) => handleSearch(e.target.value)}
                 />
               </div>
               <select
@@ -1705,7 +1754,10 @@ function LeadManagementPanel() {
                 <option value="inactive">Inactive</option>
               </select>
               <button
-                onClick={() => fetchLeads(currentPage)}
+                onClick={() => {
+                  setSearchText('');
+                  fetchLeads(1);
+                }}
                 className="flex items-center rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-md hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 transform hover:scale-105"
                 disabled={isLoadingMore || !selectedGig}
               >
@@ -1810,7 +1862,7 @@ function LeadManagementPanel() {
               {totalPages > 1 && (
                 <div className="flex items-center space-x-2">
                   <button
-                    onClick={() => fetchLeads(currentPage - 1)}
+                    onClick={() => fetchLeads(currentPage - 1, searchText)}
                     disabled={currentPage === 1}
                     className="relative inline-flex items-center px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -1822,7 +1874,7 @@ function LeadManagementPanel() {
                   </div>
                   
                   <button
-                    onClick={() => fetchLeads(currentPage + 1)}
+                    onClick={() => fetchLeads(currentPage + 1, searchText)}
                     disabled={currentPage === totalPages}
                     className="relative inline-flex items-center px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
