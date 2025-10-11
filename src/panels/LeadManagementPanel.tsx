@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Users,
   Search,
@@ -28,6 +28,7 @@ import { useNavigate } from 'react-router-dom';
 import { leadsApi } from '../services/api/leads';
 import Cookies from 'js-cookie';
 import toast from 'react-hot-toast';
+import axios from 'axios';
 
 const zohoApiUrl = import.meta.env.VITE_ZOHO_API_URL;
 
@@ -104,9 +105,14 @@ interface Lead {
 function LeadManagementPanel() {
   const navigate = useNavigate();
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [isZohoConnected] = useState(true); // Toujours connecté pour simplifier
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Zoho CRM states
+  const [hasZohoConfig, setHasZohoConfig] = useState(false);
+  const [hasZohoAccessToken, setHasZohoAccessToken] = useState(false);
+  const [isDisconnectingZoho, setIsDisconnectingZoho] = useState(false);
+  const urlParamsProcessedRef = useRef(false);
 
   interface Stage {
     display_value: string;
@@ -316,6 +322,68 @@ function LeadManagementPanel() {
     setIsLoading(false);
   }, []);
 
+  // Détecter le callback OAuth de Zoho
+  useEffect(() => {
+    const runOnce = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      const state = urlParams.get('state');
+      const location = urlParams.get('location');
+      const accountsServer = urlParams.get('accounts-server');
+      
+      if (code && state) {
+        handleOAuthCallback(code, state, location || undefined, accountsServer || undefined);
+        
+        // Nettoyer l'URL après traitement
+        const params = new URLSearchParams(window.location.search);
+        params.delete('code');
+        params.delete('state');
+        params.delete('location');
+        params.delete('accounts-server');
+        const newSearch = params.toString();
+        window.history.replaceState({}, '', `${window.location.pathname}${newSearch ? '?' + newSearch : ''}`);
+      }
+    };
+
+    // Utiliser une ref pour s'assurer que ça ne s'exécute qu'une fois
+    if (!urlParamsProcessedRef.current) {
+      urlParamsProcessedRef.current = true;
+      runOnce();
+    }
+  }, []);
+
+  // Vérifier la configuration Zoho au montage
+  useEffect(() => {
+    const checkZohoConfig = async () => {
+      try {
+        const userId = Cookies.get('userId');
+        if (!userId) return;
+
+        const response = await fetch(
+          `${import.meta.env.VITE_DASHBOARD_API}/zoho/config/user/${userId}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${Cookies.get('gigId')}:${userId}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data) {
+            setHasZohoConfig(true);
+            setHasZohoAccessToken(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking Zoho config:', error);
+      }
+    };
+
+    checkZohoConfig();
+  }, []);
+
   // Effet pour récupérer les leads quand un gig est sélectionné
   useEffect(() => {
     if (selectedGig) {
@@ -455,52 +523,245 @@ function LeadManagementPanel() {
   const [isImporting, setIsImporting] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
 
-  const handleImportFromZoho = async () => {
-    setIsImporting(true);
-    try {
-      const accessToken = localStorage.getItem('zoho_access_token');
-      if (!accessToken) {
-        throw new Error("Access token not found");
-      }
-
-      // Récupérer les leads depuis Zoho
-      const response = await fetch(`${zohoApiUrl}/leads?page=${currentPage}`, {
-        method: "GET",
-        headers: {
-          "Authorization": `Zoho-oauthtoken ${accessToken}`,
-          "Content-Type": "application/json"
+  // Fonction pour refresh automatique du token Zoho
+  const fetchZohoWithAutoRefresh = async (url: string, options: RequestInit = {}) => {
+    const userId = Cookies.get('userId');
+    const gigId = selectedGig?._id || Cookies.get('gigId');
+    
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${gigId}:${userId}`,
+      ...options.headers,
+    };
+    
+    let response = await fetch(url, { ...options, headers });
+    
+    // Si le token est expiré (401)
+    if (response.status === 401) {
+      // Refresh automatique du token
+      const refreshRes = await fetch(
+        `${import.meta.env.VITE_DASHBOARD_API}/zoho/config/user/${userId}/refresh-token`,
+        {
+          method: 'POST',
+          headers,
         }
-      });
+      );
+      
+      if (refreshRes.ok) {
+        // Réessayer la requête initiale
+        response = await fetch(url, { ...options, headers });
+      } else {
+        toast.error('Session Zoho expirée. Veuillez vous reconnecter.');
+        throw new Error('Zoho token expired');
+      }
+    }
+    
+    return response;
+  };
 
+  // Connexion à Zoho CRM
+  const handleZohoConnect = async () => {
+    try {
+      const userId = Cookies.get('userId');
+  
+      if (!userId) {
+        console.error('No userId found in cookies');
+        toast.error('User ID not found. Please log in again.');
+        return;
+      }
+  
+      const redirectUri = `${import.meta.env.VITE_DASHBOARD_API}/zoho/auth/callback`;
+      const encodedRedirectUri = encodeURIComponent(redirectUri);
+      const encodedState = encodeURIComponent(userId);
+  
+      const authUrl = `${import.meta.env.VITE_DASHBOARD_API}/zoho/auth?redirect_uri=${encodedRedirectUri}&state=${encodedState}`;
+  
+      const response = await fetch(authUrl, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${userId}`,
+        },
+      });
+  
       if (!response.ok) {
-        throw new Error("Failed to fetch leads from Zoho");
+        const errorData = await response.json();
+        console.error('Error response:', errorData);
+        throw new Error(errorData.error || 'Failed to get Zoho auth URL');
+      }
+  
+      const data = await response.json();
+  
+      const redirectUrl = new URL(data.authUrl);
+      redirectUrl.searchParams.set('state', userId);
+      window.location.href = redirectUrl.toString();
+    } catch (error) {
+      console.error('Error in handleZohoConnect:', error);
+      toast.error((error as any)?.message || 'Failed to initiate Zoho authentication');
+    }
+  };
+
+  // Déconnexion de Zoho CRM
+  const handleZohoDisconnect = async () => {
+    setIsDisconnectingZoho(true);
+    try {
+      const userId = Cookies.get('userId');
+      const gigId = selectedGig?._id || Cookies.get('gigId');
+      
+      if (!userId) {
+        console.error('No userId found in cookies');
+        toast.error('User ID not found. Please log in again.');
+        return;
       }
 
-      const result = await response.json();
-      const zohoLeads = result.data?.data?.data || [];
-
-      // Sauvegarder les leads dans la base de données
-      const saveResponse = await fetch('/api/leads/save', {
+      const response = await fetch(`${import.meta.env.VITE_DASHBOARD_API}/zoho/disconnect`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${gigId}:${userId}`,
         },
-        body: JSON.stringify({ leads: zohoLeads }),
       });
 
-      if (!saveResponse.ok) {
-        throw new Error("Failed to save leads");
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error response:', errorData);
+        throw new Error(errorData.message || 'Failed to disconnect from Zoho');
       }
 
-      const saveResult = await saveResponse.json();
-      
-      // Rafraîchir la liste des leads
-      await fetchLeads(currentPage);
-      
-      // Afficher une notification de succès
-      console.log(`Successfully imported ${saveResult.data.length} leads`);
+      const data = await response.json();
+
+      if (data.success) {
+        setHasZohoConfig(false);
+        setHasZohoAccessToken(false);
+        toast.success('Disconnected from Zoho CRM successfully');
+      } else {
+        throw new Error(data.message || 'Failed to disconnect from Zoho');
+      }
     } catch (error) {
-      console.error("Error importing leads:", error);
+      console.error('Error in handleZohoDisconnect:', error);
+      toast.error((error as any)?.message || 'Failed to disconnect from Zoho');
+    } finally {
+      setIsDisconnectingZoho(false);
+    }
+  };
+
+  // Traitement du callback OAuth
+  const handleOAuthCallback = async (code: string, state: string, location?: string, accountsServer?: string) => {
+    try {
+      const userId = state || Cookies.get('userId');
+      
+      if (!userId) {
+        throw new Error('User ID not found in state parameter or cookies');
+      }
+
+      const queryParams = new URLSearchParams({
+        code,
+        state: userId,
+        ...(location && { location }),
+        ...(accountsServer && { accountsServer })
+      }).toString();
+  
+      const response = await fetch(
+        `${import.meta.env.VITE_DASHBOARD_API}/zoho/auth/callback?${queryParams}`,
+        {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${selectedGig?._id || Cookies.get('gigId')}:${userId}`
+          }
+        }
+      );
+  
+      const data = await response.json();
+  
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to exchange code for tokens');
+      }
+  
+      setHasZohoConfig(true);
+      setHasZohoAccessToken(true);
+      toast.success('Connected to Zoho CRM successfully!');
+  
+    } catch (error: any) {
+      console.error('Error handling OAuth callback:', error);
+      toast.error(error.message || 'Failed to complete Zoho authentication');
+    }
+  };
+
+  // Import des leads depuis Zoho
+  const handleImportFromZoho = async () => {
+    if (!selectedGig) {
+      toast.error('Please select a gig first');
+      return;
+    }
+    
+    setIsImporting(true);
+    try {
+      const userId = Cookies.get('userId');
+      const companyId = Cookies.get('companyId');
+      
+      if (!companyId) {
+        toast.error('Configuration de l\'entreprise non trouvée. Veuillez vous reconnecter.');
+        return;
+      }
+      
+      if (!hasZohoAccessToken) {
+        toast.error('Configuration Zoho non trouvée. Veuillez configurer Zoho CRM d\'abord.');
+        return;
+      }
+      
+      const apiUrl = `${import.meta.env.VITE_DASHBOARD_API}/zoho/leads/sync-all`;
+      
+      const checkResponse = await fetchZohoWithAutoRefresh(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          userId: userId,
+          companyId: companyId,
+          gigId: selectedGig._id
+        })
+      });
+      
+      if (!checkResponse.ok) {
+        const errorData = await checkResponse.json().catch(() => null);
+        throw new Error(errorData?.message || `Erreur lors de la synchronisation avec Zoho`);
+      }
+      
+      const data = await checkResponse.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || `Erreur lors de la synchronisation`);
+      }
+      
+      if (data.data && Array.isArray(data.data.leads) && data.data.leads.length > 0) {
+        toast.success(`Successfully imported ${data.data.leads.length} leads from Zoho CRM`);
+        // Rafraîchir la liste des leads
+        await fetchLeads(1);
+        
+        // Mettre à jour l'onboarding si des leads ont été importés
+        try {
+          const companyId = Cookies.get('companyId');
+          if (companyId) {
+            await axios.put(
+              `${import.meta.env.VITE_COMPANY_API_URL}/onboarding/companies/${companyId}/onboarding/phases/2/steps/6`,
+              { status: 'completed' }
+            );
+          }
+        } catch (error) {
+          console.error('Error updating onboarding progress after Zoho import:', error);
+        }
+      } else {
+        toast.info('No new leads to import from Zoho CRM');
+        await fetchLeads(1);
+      }
+    } catch (error: any) {
+      console.error('Error in handleImportFromZoho:', error);
+      toast.error(error.message || 'Une erreur est survenue lors de l\'importation');
     } finally {
       setIsImporting(false);
     }
@@ -583,24 +844,25 @@ function LeadManagementPanel() {
             
             {/* Connection Status */}
             <div className="mb-4">
-              {isZohoConnected ? (
+              {hasZohoAccessToken ? (
                 <div className="flex items-center justify-between bg-green-100 border border-green-200 rounded-lg p-3">
                   <span className="text-sm font-medium text-green-800 flex items-center">
                     <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
                     ✓ Connected to Zoho CRM
                   </span>
                   <button
-                    onClick={() => {/* Add disconnect handler */}}
-                    className="px-3 py-1 text-xs font-medium text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition-colors duration-200"
+                    onClick={handleZohoDisconnect}
+                    disabled={isDisconnectingZoho}
+                    className="px-3 py-1 text-xs font-medium text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition-colors duration-200 disabled:opacity-50"
                   >
-                    Disconnect
+                    {isDisconnectingZoho ? 'Disconnecting...' : 'Disconnect'}
                   </button>
                 </div>
               ) : (
                 <div className="flex items-center justify-between bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                   <span className="text-sm font-medium text-yellow-800">⚠ Not connected</span>
                   <button
-                    onClick={() => {/* Add connect handler */}}
+                    onClick={handleZohoConnect}
                     className="px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors duration-200"
                   >
                     Connect
@@ -619,7 +881,7 @@ function LeadManagementPanel() {
                   }
                   await handleImportFromZoho();
                 }}
-                disabled={!isZohoConnected || isImporting}
+                disabled={!hasZohoAccessToken || isImporting}
                 className="w-full bg-gradient-to-r from-green-600 to-teal-600 text-white font-bold py-4 px-6 rounded-xl hover:from-green-700 hover:to-teal-700 disabled:opacity-50 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center"
               >
                 {isImporting ? (
@@ -627,7 +889,7 @@ function LeadManagementPanel() {
                     <RefreshCw className="mr-3 h-5 w-5 animate-spin" />
                     Importing from Zoho...
                   </>
-                ) : !isZohoConnected ? (
+                ) : !hasZohoAccessToken ? (
                   <>
                     <Settings className="h-5 w-5 mr-3" />
                     Connect to Zoho CRM First
