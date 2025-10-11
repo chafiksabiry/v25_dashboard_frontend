@@ -189,7 +189,7 @@ function LeadManagementPanel() {
       }
 
       console.log("Fetching gigs for user:", userId);
-      const response = await fetch(`${import.meta.env.VITE_API_URL_GIGS}/user/${userId}`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL_GIGS}/gigs/user/${userId}`);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
