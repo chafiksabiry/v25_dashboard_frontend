@@ -576,6 +576,8 @@ function LeadManagementPanel() {
   
       const authUrl = `${import.meta.env.VITE_DASHBOARD_API}/zoho/auth?redirect_uri=${encodedRedirectUri}&state=${encodedState}`;
   
+      console.log('Calling Zoho auth URL:', authUrl);
+  
       const response = await fetch(authUrl, {
         method: 'GET',
         headers: {
@@ -584,16 +586,42 @@ function LeadManagementPanel() {
         },
       });
   
+      console.log('Response status:', response.status);
+      console.log('Response content-type:', response.headers.get('content-type'));
+  
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error response:', errorData);
-        throw new Error(errorData.error || 'Failed to get Zoho auth URL');
+        // Vérifier si c'est du JSON avant de parser
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          console.error('Error response:', errorData);
+          throw new Error(errorData.error || `HTTP ${response.status}: Failed to get Zoho auth URL`);
+        } else {
+          // Si ce n'est pas du JSON, c'est probablement une erreur HTML
+          const errorText = await response.text();
+          console.error('Non-JSON error response:', errorText.substring(0, 200));
+          throw new Error(`Server error (${response.status}): The endpoint may not exist or returned HTML instead of JSON`);
+        }
+      }
+  
+      // Vérifier le content-type avant de parser
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const responseText = await response.text();
+        console.error('Expected JSON but got:', responseText.substring(0, 200));
+        throw new Error('Server returned HTML instead of JSON. The API endpoint may not be correctly configured.');
       }
   
       const data = await response.json();
   
+      if (!data.authUrl) {
+        throw new Error('No auth URL received from server');
+      }
+  
       const redirectUrl = new URL(data.authUrl);
       redirectUrl.searchParams.set('state', userId);
+      
+      console.log('Redirecting to Zoho:', redirectUrl.toString());
       window.location.href = redirectUrl.toString();
     } catch (error) {
       console.error('Error in handleZohoConnect:', error);
