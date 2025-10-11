@@ -603,6 +603,11 @@ function LeadManagementPanel() {
         return;
       }
   
+      // Sauvegarder l'URL actuelle pour y revenir après l'authentification
+      const currentPath = window.location.pathname + window.location.search + window.location.hash;
+      sessionStorage.setItem('zoho_redirect_after_auth', currentPath);
+      console.log('💾 Saved current path for return after auth:', currentPath);
+  
       const redirectUri = `${import.meta.env.VITE_DASHBOARD_API}/zoho/auth/callback`;
       const encodedRedirectUri = encodeURIComponent(redirectUri);
       const encodedState = encodeURIComponent(userId);
@@ -621,7 +626,7 @@ function LeadManagementPanel() {
   
       console.log('Response status:', response.status);
       console.log('Response content-type:', response.headers.get('content-type'));
-  
+
       if (!response.ok) {
         // Vérifier si c'est du JSON avant de parser
         const contentType = response.headers.get('content-type');
@@ -750,6 +755,20 @@ function LeadManagementPanel() {
       setHasZohoAccessToken(true);
       toast.success('Connected to Zoho CRM successfully!');
   
+      // Récupérer l'URL sauvegardée et rediriger
+      const savedPath = sessionStorage.getItem('zoho_redirect_after_auth');
+      if (savedPath) {
+        console.log('🔙 Redirecting back to saved path:', savedPath);
+        sessionStorage.removeItem('zoho_redirect_after_auth');
+        
+        // Utiliser un délai court pour permettre au toast de s'afficher
+        setTimeout(() => {
+          window.location.href = savedPath;
+        }, 1500);
+      } else {
+        console.log('ℹ️ No saved path found, staying on current page');
+      }
+  
     } catch (error: any) {
       console.error('Error handling OAuth callback:', error);
       toast.error(error.message || 'Failed to complete Zoho authentication');
@@ -849,20 +868,20 @@ function LeadManagementPanel() {
         <div className="flex items-center mb-2">
           <div className="p-3 bg-blue-100 rounded-lg mr-3">
             <UserPlus className="w-6 h-6 text-blue-600" />
-          </div>
+            </div>
           <h2 className="text-2xl font-bold text-gray-900">Upload Contacts</h2>
-        </div>
+          </div>
         <p className="text-gray-600 ml-16">
           Import, manage, and organize your leads efficiently. Choose between connecting with your CRM system or uploading contact files directly.
         </p>
-      </div>
+        </div>
 
       {/* Select a Gig Section */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
         <div className="flex items-center mb-4">
           <Settings className="w-5 h-5 text-gray-700 mr-2" />
           <h3 className="text-xl font-semibold text-gray-900">Select a Gig</h3>
-        </div>
+                  </div>
         <select
           value={selectedGig?._id || ''}
           onChange={(e) => {
@@ -879,14 +898,14 @@ function LeadManagementPanel() {
             </option>
           ))}
         </select>
-      </div>
+                </div>
 
       {/* Import Leads Section */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
         <div className="flex items-center mb-2">
           <Upload className="w-5 h-5 text-blue-600 mr-2" />
           <h3 className="text-xl font-semibold text-gray-900">Import Leads</h3>
-        </div>
+                </div>
         <p className="text-gray-600 mb-6">
           Choose your preferred method to import leads into your selected gig.
         </p>
@@ -908,7 +927,7 @@ function LeadManagementPanel() {
                 <p className="text-sm text-green-700">Connect and sync with your Zoho CRM</p>
               </div>
             </div>
-            
+
             {/* Connection Status */}
             <div className="mb-4">
               {hasZohoAccessToken ? (
@@ -917,18 +936,18 @@ function LeadManagementPanel() {
                     <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
                     ✓ Connected to Zoho CRM
                   </span>
-                  <button
+                      <button
                     onClick={handleZohoDisconnect}
                     disabled={isDisconnectingZoho}
                     className="px-3 py-1 text-xs font-medium text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition-colors duration-200 disabled:opacity-50"
-                  >
+                      >
                     {isDisconnectingZoho ? 'Disconnecting...' : 'Disconnect'}
-                  </button>
-                </div>
+                      </button>
+                  </div>
               ) : (
                 <div className="flex items-center justify-between bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                   <span className="text-sm font-medium text-yellow-800">⚠ Not connected</span>
-                  <button
+                  <button 
                     onClick={handleZohoConnect}
                     className="px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors duration-200"
                   >
@@ -936,11 +955,11 @@ function LeadManagementPanel() {
                   </button>
                 </div>
               )}
-            </div>
-            
+              </div>
+
             {/* Action Button - Pushed to bottom */}
             <div className="mt-auto">
-              <button
+                    <button
                 onClick={async () => {
                   if (!selectedGig) {
                     toast.error('Please select a gig first');
@@ -967,10 +986,10 @@ function LeadManagementPanel() {
                     Sync with Zoho CRM
                   </>
                 )}
-              </button>
+                    </button>
             </div>
-          </div>
-
+                  </div>
+                  
           {/* File Upload Card */}
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] flex flex-col h-full">
             {/* Header */}
@@ -981,16 +1000,16 @@ function LeadManagementPanel() {
               <div className="flex-1">
                 <h4 className="text-xl font-bold text-blue-900">File Upload</h4>
                 <p className="text-sm text-blue-700">Upload and process contact files</p>
-              </div>
-            </div>
-            
+                      </div>
+                    </div>
+                    
             {/* File Info */}
             <div className="mb-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <span className="text-sm font-medium text-blue-800">📁 Supported: CSV, Excel, JSON, TXT</span>
-              </div>
-            </div>
-            
+                      </div>
+                    </div>
+                    
             {/* Upload Button - Pushed to bottom */}
             <div className="mt-auto">
               <button
@@ -1003,10 +1022,10 @@ function LeadManagementPanel() {
                 </span>
               </button>
             </div>
-          </div>
-        </div>
-      </div>
-
+                      </div>
+                    </div>
+                  </div>
+                  
       {/* Channel Filter Section */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
         <div className="flex items-center mb-4">
@@ -1014,20 +1033,20 @@ function LeadManagementPanel() {
           <h3 className="text-xl font-semibold text-gray-900">Channel Filter</h3>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
+                    <button
             className="flex items-center space-x-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 transform hover:scale-105 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg"
           >
             <Globe className="h-4 w-4" />
             <span>All Channels</span>
-          </button>
-          <button
+                    </button>
+                    <button
             className="flex items-center space-x-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 transform hover:scale-105 bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-md"
-          >
+                    >
             <Phone className="h-4 w-4" />
             <span>Voice Calls</span>
-          </button>
-        </div>
-      </div>
+                    </button>
+                  </div>
+                </div>
 
       {/* Leads List Section */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100">
@@ -1037,7 +1056,7 @@ function LeadManagementPanel() {
               <div className="flex items-center">
                 <Users className="w-5 h-5 text-blue-600 mr-2" />
                 <h3 className="text-xl font-semibold text-gray-900">Leads List</h3>
-              </div>
+                  </div>
               <div className="mt-2">
                 {selectedGig ? (
                   <span className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-xs font-medium">
@@ -1046,13 +1065,13 @@ function LeadManagementPanel() {
                 ) : (
                   <p className="text-sm text-gray-500">Please select a gig to view leads</p>
                 )}
-              </div>
-            </div>
+                  </div>
+                  </div>
             <div className="flex items-center space-x-2">
               <div className="relative">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                   <Search className="h-5 w-5 text-gray-400" />
-                </div>
+                  </div>
                 <input
                   type="text"
                   className="block w-64 rounded-lg border-gray-300 pl-10 focus:border-blue-600 focus:ring-blue-600 sm:text-sm shadow-sm"
@@ -1088,11 +1107,11 @@ function LeadManagementPanel() {
                 )}
               </button>
             </div>
-          </div>
-        </div>
+              </div>
+            </div>
 
         {/* Leads Table */}
-        <div className="overflow-x-auto">
+            <div className="overflow-x-auto">
           <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
@@ -1106,18 +1125,18 @@ function LeadManagementPanel() {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 bg-gray-50">
                     Pipeline
                   </th>
-                </tr>
-              </thead>
+                      </tr>
+                    </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
-                {isLoadingMore ? (
-                  <tr>
+                      {isLoadingMore ? (
+                        <tr>
                     <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
                       <div className="flex items-center justify-center py-8">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
                         Loading leads...
-                      </div>
-                    </td>
-                  </tr>
+                            </div>
+                          </td>
+                        </tr>
                 ) : displayedLeads.length === 0 ? (
                   <tr>
                     <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
@@ -1129,38 +1148,38 @@ function LeadManagementPanel() {
                     </td>
                   </tr>
                 ) : (
-                  displayedLeads.map((lead, index) => (
-                    <tr 
-                      key={`${lead._id}-${lead.id}-${index}`} 
+                        displayedLeads.map((lead, index) => (
+                          <tr 
+                            key={`${lead._id}-${lead.id}-${index}`}
                       className={`hover:bg-gray-50 cursor-pointer transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
-                      onClick={() => handleLeadClick(lead)}
-                    >
+                            onClick={() => handleLeadClick(lead)}
+                          >
                       <td className="whitespace-nowrap px-6 py-4">
                         <div className="flex items-center">
                           <div className="h-10 w-10 flex-shrink-0 rounded-full flex items-center justify-center bg-blue-100">
                             <UserPlus className="h-6 w-6 text-blue-700" />
-                          </div>
+                                </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900 flex items-center">
                               {lead.Email_1 || 'No Email'}
-                            </div>
+                                </div>
                             <div className="text-sm text-gray-500">{lead.Phone || 'No Phone'}</div>
-                          </div>
-                        </div>
-                      </td>
+                                </div>
+                              </div>
+                            </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
                         {lead.Deal_Name || 'N/A'}
-                      </td>
+                            </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                         {typeof lead.Pipeline === 'object' ? lead.Pipeline.name : lead.Pipeline || 'Reps Pipeline'}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
 
         {/* Pagination Controls */}
         {displayedLeads.length > 0 && (
@@ -1171,7 +1190,7 @@ function LeadManagementPanel() {
                   Showing <span className="font-medium">{displayedLeads.length}</span> of{' '}
                   <span className="font-medium">{totalLeads > 0 ? totalLeads : displayedLeads.length}</span> leads
                 </span>
-              </div>
+            </div>
               
               {totalPages > 1 && (
                 <div className="flex items-center space-x-2">
@@ -1187,17 +1206,17 @@ function LeadManagementPanel() {
                     <span className="px-3 py-2 text-sm text-gray-700">
                       Page {currentPage} of {totalPages}
                     </span>
-                  </div>
-                  
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
+      </div>
+      
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
                     className="relative inline-flex items-center px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
-                  >
+          >
                     Next
-                  </button>
-                </div>
-              )}
+          </button>
+        </div>
+      )}
             </div>
           </div>
         )}
