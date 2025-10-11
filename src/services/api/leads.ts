@@ -53,12 +53,12 @@ export const leadsApi = {
 
   // Nouvelle méthode pour récupérer les leads par gig avec pagination
   getByGig: async (gigId: string, page: number = 1, limit: number = 10) => {
-    const response = await api.get<LeadsResponse>(/leads/gig/${gigId}?page=${page}&limit=${limit});
+    const response = await api.get<LeadsResponse>(`/leads/gig/${gigId}?page=${page}&limit=${limit}`);
     return response.data;
   },
 
   getById: async (id: string) => {
-    const response = await api.get<Lead>(/leads/${id});
+    const response = await api.get<Lead>(`/leads/${id}`);
     return response.data;
   },
 
@@ -68,22 +68,22 @@ export const leadsApi = {
   },
 
   update: async (id: string, data: Partial<Lead>) => {
-    const response = await api.put(/leads/${id}, data);
+    const response = await api.put(`/leads/${id}`, data);
     return response.data;
   },
 
   delete: async (id: string) => {
-    const response = await api.delete(/leads/${id});
+    const response = await api.delete(`/leads/${id}`);
     return response.data;
   },
 
   analyze: async (id: string) => {
-    const response = await api.post(/leads/${id}/analyze);
+    const response = await api.post(`/leads/${id}/analyze`);
     return response.data;
   },
 
   generateScript: async (id: string, type: 'email' | 'call') => {
-    const response = await api.post(/leads/${id}/generate-script, { type });
+    const response = await api.post(`/leads/${id}/generate-script`, { type });
     return response.data;
   }
 };
