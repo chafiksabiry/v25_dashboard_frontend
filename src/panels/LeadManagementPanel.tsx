@@ -190,23 +190,14 @@ function LeadManagementPanel() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const processingRef = useRef(false);
 
-  // Calculate the leads to display for the current page
-  const getCurrentPageLeads = () => {
-    const startIndex = (currentPage - 1) * LEADS_PER_PAGE;
-    const endIndex = startIndex + LEADS_PER_PAGE;
-    return allLeads.slice(startIndex, endIndex);
-  };
-
-  // Update displayed leads when page changes
+  // Update displayed leads when allLeads changes
   useEffect(() => {
-    const currentPageLeads = getCurrentPageLeads();
-    setDisplayedLeads(currentPageLeads);
-    setTotalPages(Math.ceil(allLeads.length / LEADS_PER_PAGE));
-  }, [currentPage, allLeads]);
+    setDisplayedLeads(allLeads);
+  }, [allLeads]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
-    setCurrentPage(newPage);
+    fetchLeads(newPage);
   };
 
   const fetchGigs = async () => {
