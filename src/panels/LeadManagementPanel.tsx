@@ -21,7 +21,7 @@ import {
 import { LeadUploader } from "../components/LeadUploader";
 import { useNavigate } from 'react-router-dom';
 import { leadsApi } from '../services/api/leads';
-import { gigsApi } from '../services/api/endpoints';
+import Cookies from 'js-cookie';
 
 const zohoApiUrl = import.meta.env.VITE_ZOHO_API_URL;
 
@@ -177,19 +177,46 @@ function LeadManagementPanel() {
   const fetchGigs = async () => {
     try {
       setIsLoadingGigs(true);
-      const gigsData = await gigsApi.getAll();
       
-      if (gigsData && Array.isArray(gigsData)) {
-        setGigs(gigsData);
-        // Sélectionner le premier gig par défaut
-        if (gigsData.length > 0) {
-          setSelectedGig(gigsData[0]);
-        }
-      } else {
+      const userId: string = Cookies.get('userId') || '680a27ffefa3d29d628d0016';
+      console.log('Stored userId:', userId);
+      
+      if (!userId) {
+        console.error("No user ID found");
         setGigs([]);
+        setIsLoadingGigs(false);
+        return;
+      }
+
+      console.log("Fetching gigs for user:", userId);
+      const response = await fetch(`${import.meta.env.VITE_API_URL_GIGS}/user/${userId}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        console.error("Server response:", {
+          status: response.status,
+          statusText: response.statusText,
+          data: errorData
+        });
+        throw new Error(`Server error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("Received data:", data);
+      
+      if (!data.data || !Array.isArray(data.data)) {
+        throw new Error("Invalid data format");
+      }
+
+      const validGigs = data.data;
+      setGigs(validGigs);
+      
+      // Sélectionner le premier gig par défaut
+      if (validGigs.length > 0) {
+        setSelectedGig(validGigs[0]);
       }
     } catch (error) {
-      console.error("Error retrieving gigs:", error);
+      console.error("Detailed error:", error);
       setGigs([]);
     } finally {
       setIsLoadingGigs(false);
