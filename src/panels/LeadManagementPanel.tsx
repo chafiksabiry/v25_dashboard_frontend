@@ -357,32 +357,61 @@ function LeadManagementPanel() {
     const checkZohoConfig = async () => {
       try {
         const userId = Cookies.get('userId');
-        if (!userId) return;
+        if (!userId) {
+          console.log('No userId found, cannot check Zoho config');
+          return;
+        }
 
-        const response = await fetch(
-          `${import.meta.env.VITE_DASHBOARD_API}/zoho/config/user/${userId}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${Cookies.get('gigId')}:${userId}`,
-              'Content-Type': 'application/json'
-            }
+        const apiUrl = `${import.meta.env.VITE_DASHBOARD_API}/zoho/config/user/${userId}`;
+        console.log('Checking Zoho config for user:', userId);
+        console.log('API URL:', apiUrl);
+
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${selectedGig?._id || Cookies.get('gigId')}:${userId}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
           }
-        );
+        });
+
+        console.log('Zoho config check response status:', response.status);
+        console.log('Zoho config check response content-type:', response.headers.get('content-type'));
 
         if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.data) {
-            setHasZohoConfig(true);
-            setHasZohoAccessToken(true);
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const data = await response.json();
+            console.log('Zoho config data:', data);
+            
+            if (data.success && data.data) {
+              console.log('✅ Zoho config found for user');
+              setHasZohoConfig(true);
+              setHasZohoAccessToken(true);
+            } else {
+              console.log('❌ No Zoho config found for user');
+              setHasZohoConfig(false);
+              setHasZohoAccessToken(false);
+            }
+          } else {
+            console.error('Expected JSON response but got:', contentType);
+            setHasZohoConfig(false);
+            setHasZohoAccessToken(false);
           }
+        } else {
+          console.log(`Zoho config check failed with status ${response.status}`);
+          setHasZohoConfig(false);
+          setHasZohoAccessToken(false);
         }
       } catch (error) {
         console.error('Error checking Zoho config:', error);
+        setHasZohoConfig(false);
+        setHasZohoAccessToken(false);
       }
     };
 
     checkZohoConfig();
-  }, []);
+  }, [selectedGig]);
 
   // Effet pour récupérer les leads quand un gig est sélectionné
   useEffect(() => {
@@ -642,6 +671,8 @@ function LeadManagementPanel() {
         return;
       }
 
+      console.log('Disconnecting from Zoho for user:', userId);
+
       const response = await fetch(`${import.meta.env.VITE_DASHBOARD_API}/zoho/disconnect`, {
         method: 'POST',
         headers: {
@@ -659,6 +690,7 @@ function LeadManagementPanel() {
       const data = await response.json();
 
       if (data.success) {
+        console.log('✅ Successfully disconnected from Zoho, updating status');
         setHasZohoConfig(false);
         setHasZohoAccessToken(false);
         toast.success('Disconnected from Zoho CRM successfully');
@@ -689,6 +721,8 @@ function LeadManagementPanel() {
         ...(accountsServer && { accountsServer })
       }).toString();
   
+      console.log('Processing OAuth callback with params:', queryParams);
+  
       const response = await fetch(
         `${import.meta.env.VITE_DASHBOARD_API}/zoho/auth/callback?${queryParams}`,
         {
@@ -707,6 +741,7 @@ function LeadManagementPanel() {
         throw new Error(data.error || 'Failed to exchange code for tokens');
       }
   
+      console.log('✅ OAuth callback successful, updating Zoho config status');
       setHasZohoConfig(true);
       setHasZohoAccessToken(true);
       toast.success('Connected to Zoho CRM successfully!');
