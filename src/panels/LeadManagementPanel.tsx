@@ -23,9 +23,10 @@ import { LeadUploader } from "../components/LeadUploader";
 import { ZohoTokenService } from '../services/zohoService';
 import { useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
+import { leadsApi, LeadsResponse } from '../services/api/leads';
+import { gigsApi } from '../services/api/endpoints';
 
 const zohoApiUrl = import.meta.env.VITE_ZOHO_API_URL;
-const apiUrl = import.meta.env.VITE_API_URL;
 
 // Add this custom hook at the top of the file, after imports
 function useDebounce<T>(value: T, delay: number): T {
@@ -47,41 +48,45 @@ function useDebounce<T>(value: T, delay: number): T {
 // Update the Lead interface at the top of the file, after imports
 interface Lead {
   _id: string;
-  id: string;
   userId: string;
-  Owner: {
-    name: string;
-    id: string;
-    email: string;
-  };
-  Created_By: {
-    name: string;
-    id: string;
-    email: string;
-  };
-  Modified_By: {
-    name: string;
-    id: string;
-    email: string;
-  };
-  Contact_Name: {
-    name: string;
-    id: string;
-  };
+  gigId: string;
+  refreshToken: string;
+  id: string; // Zoho CRM ID
+  Last_Activity_Time: string | null;
   Deal_Name: string;
+  Stage: string;
   Email_1: string;
-  Phone: string | null;
-  Telephony: string | null;
-  Pipeline: {
+  Phone?: string;
+  updatedAt: string;
+  // Champs optionnels pour compatibilité
+  Owner?: {
+    name: string;
+    id: string;
+    email: string;
+  };
+  Created_By?: {
+    name: string;
+    id: string;
+    email: string;
+  };
+  Modified_By?: {
+    name: string;
+    id: string;
+    email: string;
+  };
+  Contact_Name?: {
+    name: string;
+    id: string;
+  };
+  Telephony?: string | null;
+  Pipeline?: {
     name: string;
     id: string;
   } | string;
-  Stage: string;
-  Created_Time: string;
-  Modified_Time: string;
-  Last_Activity_Time: string;
-  Description: string | null;
-  Tag: string[];
+  Created_Time?: string;
+  Modified_Time?: string;
+  Description?: string | null;
+  Tag?: string[];
   Amount?: number;
   Probability?: number;
   Type?: string;
@@ -147,6 +152,11 @@ function LeadManagementPanel() {
   const [allLeads, setAllLeads] = useState<Lead[]>([]);
   const [displayedLeads, setDisplayedLeads] = useState<Lead[]>([]);
   const [totalPages, setTotalPages] = useState(1);
+  
+  // États pour la gestion des gigs
+  const [gigs, setGigs] = useState<any[]>([]);
+  const [selectedGig, setSelectedGig] = useState<any>(null);
+  const [isLoadingGigs, setIsLoadingGigs] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Modify these new states to handle advanced filters
@@ -175,6 +185,28 @@ function LeadManagementPanel() {
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
     setCurrentPage(newPage);
+  };
+
+  const fetchGigs = async () => {
+    try {
+      setIsLoadingGigs(true);
+      const gigsData = await gigsApi.getAll();
+      
+      if (gigsData && Array.isArray(gigsData)) {
+        setGigs(gigsData);
+        // Sélectionner le premier gig par défaut
+        if (gigsData.length > 0) {
+          setSelectedGig(gigsData[0]);
+        }
+      } else {
+        setGigs([]);
+      }
+    } catch (error) {
+      console.error("Error retrieving gigs:", error);
+      setGigs([]);
+    } finally {
+      setIsLoadingGigs(false);
+    }
   };
 
   const fetchPipelines = async () => {
@@ -209,62 +241,48 @@ function LeadManagementPanel() {
   const fetchLeads = async (page: number = 1) => {
     try {
       setIsLoadingMore(true);
-      const userId = Cookies.get("userId") || "6807abfc2c1ca099fe2b13c5";
       
-      const queryParams = new URLSearchParams({
-        page: "1", // Always fetch first page
-        limit: "1000" // Fetch a larger number of leads
-      });
-
-      if (selectedPipeline !== 'all') {
-        const selectedPipelineData = pipelines.find(p => p.display_value === selectedPipeline);
-        if (selectedPipelineData) {
-          queryParams.append('pipeline', selectedPipelineData.actual_value);
-        }
-      }
-      if (selectedStage !== 'all') {
-        queryParams.append('stage', selectedStage);
-      }
-      if (debouncedSearchText) {
-        queryParams.append('search', debouncedSearchText);
+      // Vérifier qu'un gig est sélectionné
+      if (!selectedGig) {
+        console.log("No gig selected, skipping leads fetch");
+        setAllLeads([]);
+        setTotalLeads(0);
+        return;
       }
 
-      const response = await fetch(`${apiUrl}/leads/user/${userId}?${queryParams.toString()}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json"
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error("Error retrieving leads");
-      }
-
-      const result = await response.json();
+      // Utiliser le nouvel endpoint avec pagination
+      const result = await leadsApi.getByGig(selectedGig._id, page, LEADS_PER_PAGE);
       
       if (result.success && result.data) {
         let filteredData = result.data;
-        if (selectedPipeline !== 'all') {
-          const selectedPipelineData = pipelines.find(p => p.display_value === selectedPipeline);
-          if (selectedPipelineData) {
-            filteredData = result.data.filter((lead: Lead) => {
-              const leadPipeline = typeof lead.Pipeline === 'object' ? lead.Pipeline.name : lead.Pipeline;
-              return leadPipeline === selectedPipelineData.display_value;
-            });
-          }
+        
+        // Appliquer les filtres côté client si nécessaire
+        if (selectedStage !== 'all') {
+          filteredData = filteredData.filter((lead: Lead) => lead.Stage === selectedStage);
+        }
+        
+        if (debouncedSearchText) {
+          filteredData = filteredData.filter((lead: Lead) => 
+            lead.Deal_Name.toLowerCase().includes(debouncedSearchText.toLowerCase()) ||
+            (lead.Email_1 && lead.Email_1.toLowerCase().includes(debouncedSearchText.toLowerCase())) ||
+            (lead.Phone && lead.Phone.includes(debouncedSearchText))
+          );
         }
         
         setAllLeads(filteredData);
-        setTotalLeads(filteredData.length);
-        setCurrentPage(1); // Reset to first page when new data is loaded
+        setTotalLeads(result.total);
+        setTotalPages(result.totalPages);
+        setCurrentPage(result.currentPage);
       } else {
         setAllLeads([]);
         setTotalLeads(0);
+        setTotalPages(1);
       }
     } catch (error) {
       console.error("Error retrieving leads:", error);
       setAllLeads([]);
       setTotalLeads(0);
+      setTotalPages(1);
     } finally {
       setIsLoadingMore(false);
     }
@@ -276,13 +294,29 @@ function LeadManagementPanel() {
     
     if (token) {
       setIsZohoConnected(true);
-      fetchLeads(1);
+      fetchGigs();
       fetchPipelines();
     } else {
       setIsZohoConnected(false);
       setIsLoading(false);
     }
   }, []);
+
+  // Effet pour récupérer les leads quand un gig est sélectionné
+  useEffect(() => {
+    if (selectedGig) {
+      fetchLeads(1);
+    }
+  }, [selectedGig]);
+
+  // Gestionnaire pour le changement de gig
+  const handleGigChange = async (gig: any) => {
+    console.log('Gig sélectionné:', gig);
+    setSelectedGig(gig);
+    setSelectedPipeline('all');
+    setSelectedStage('all');
+    setCurrentPage(1);
+  };
 
   // Optimize pipeline change handler
   const handlePipelineChange = async (pipelineName: string) => {
@@ -805,7 +839,32 @@ function LeadManagementPanel() {
                     </button>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-3 gap-6">
+                    <div className="space-y-3">
+                      <h3 className="font-medium text-green-700 border-b border-green-200 pb-2 flex items-center gap-2">
+                        <Building2 className="w-4 h-4" />
+                        Gig
+                      </h3>
+                      <div className="w-full relative">
+                        <select
+                          value={selectedGig?._id || ''}
+                          onChange={(e) => {
+                            const gig = gigs.find(g => g._id === e.target.value);
+                            if (gig) handleGigChange(gig);
+                          }}
+                          className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                          disabled={isLoadingGigs}
+                        >
+                          <option value="">Select a Gig</option>
+                          {gigs.map((gig) => (
+                            <option key={gig._id} value={gig._id}>
+                              {gig.title || gig.name || `Gig ${gig._id}`}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    
                     <div className="space-y-3">
                       <h3 className="font-medium text-blue-700 border-b border-blue-200 pb-2 flex items-center gap-2">
                         <Building2 className="w-4 h-4" />
@@ -873,6 +932,13 @@ function LeadManagementPanel() {
               )}
               
               <div className="flex flex-wrap gap-2">
+                {selectedGig && (
+                  <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
+                    Gig: {selectedGig.title || selectedGig.name || `Gig ${selectedGig._id}`}
+                    <button onClick={() => setSelectedGig(null)} className="ml-1 hover:text-green-900">×</button>
+                  </div>
+                )}
+                
                 {selectedPipeline !== 'all' && (
                   <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
                     Pipeline: {selectedPipeline}
@@ -881,16 +947,16 @@ function LeadManagementPanel() {
                 )}
                 
                 {selectedStage !== 'all' && (
-                  <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
+                  <div className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
                     Stage: {getSelectedPipelineStages().find(s => s.display_value === selectedStage)?.display_value || selectedStage}
-                    <button onClick={() => setSelectedStage('all')} className="ml-1 hover:text-green-900">×</button>
+                    <button onClick={() => setSelectedStage('all')} className="ml-1 hover:text-purple-900">×</button>
                   </div>
                 )}
                 
                 {searchText && (
-                  <div className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
+                  <div className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
                     Search: {searchText}
-                    <button onClick={() => setSearchText('')} className="ml-1 hover:text-purple-900">×</button>
+                    <button onClick={() => setSearchText('')} className="ml-1 hover:text-orange-900">×</button>
                   </div>
                 )}
               </div>
@@ -936,12 +1002,12 @@ function LeadManagementPanel() {
                                 </div>
                                 <div className="text-sm text-gray-500 flex items-center gap-1">
                                   <Phone className="w-4 h-4" />
-                                  {lead.Telephony || lead.Phone || "N/A"}
+                                  {lead.Phone || lead.Telephony || "N/A"}
                                 </div>
-                                {/* <div className="text-sm text-gray-500 flex items-center gap-1">
+                                <div className="text-sm text-gray-500 flex items-center gap-1">
                                   <Mail className="w-4 h-4" />
                                   {lead.Email_1 || "N/A"}
-                                </div> */}
+                                </div>
                                 <div className="text-sm text-gray-500 flex items-center gap-1">
                                   <p>
                                     <b>Pipeline :</b> {typeof lead.Pipeline === 'object' ? lead.Pipeline.name : lead.Pipeline || "N/A"}
