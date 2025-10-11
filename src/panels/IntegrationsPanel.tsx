@@ -23,11 +23,10 @@ import {
   Network,
   Key
 } from 'lucide-react';
-import ZohoService, { 
+import { 
   checkZohoTokenValidity, 
   disconnectZoho,
-  configureZoho,
-  ZohoTokenService as ImportedZohoTokenService
+  configureZoho
 } from '../services/zohoService';
 import Cookies from 'js-cookie';
 import { useNavigate } from 'react-router-dom';
@@ -88,8 +87,27 @@ interface ZohoDBConfig extends ZohoConfig {
   updatedAt: Date;
 }
 
-// Utiliser le service Zoho importé qui vérifie dans la base de données
-const ZohoTokenService = ImportedZohoTokenService;
+// Créer un service global pour gérer le token Zoho
+const ZohoTokenService = {
+  getToken: (): string | null => {
+    return localStorage.getItem("zoho_access_token");
+  },
+  
+  setToken: (token: string): void => {
+    localStorage.setItem("zoho_access_token", token);
+  },
+  
+  removeToken: (): void => {
+    localStorage.removeItem("zoho_access_token");
+  },
+  
+  isTokenValid: async (): Promise<boolean> => {
+    const token = ZohoTokenService.getToken();
+    if (!token) return false;
+    
+    return await checkZohoTokenValidity();
+  }
+};
 
 // Add database integration functions
 const saveZohoConfigToDB = async (config: ZohoDBConfig): Promise<ZohoResponse> => {
@@ -846,22 +864,44 @@ export function IntegrationsPanel() {
       setError(null);
 
       if (integration.id === 'zoho-crm') {
-        // Au lieu de rediriger directement, on affiche d'abord le popup de configuration
-        setSelectedIntegration(integration);
-        setConfigValues({
-          client_id: '',
-          client_secret: '',
-          refresh_token: ''
-        });
-        
-        // Si on a déjà une configuration, on la charge
-        const existingConfig = await getZohoConfigFromDB();
-        if (existingConfig) {
-          setConfigValues({
-            client_id: existingConfig.clientId,
-            client_secret: existingConfig.clientSecret,
-            refresh_token: existingConfig.refreshToken
+        // Utiliser le même flux OAuth que dans UploadContacts
+        try {
+          const userId = Cookies.get('userId');
+
+          if (!userId) {
+            console.error('No userId found in cookies');
+            setError('User ID not found. Please log in again.');
+            return;
+          }
+
+          const redirectUri = `${import.meta.env.VITE_DASHBOARD_API}/zoho/auth/callback`;
+          const encodedRedirectUri = encodeURIComponent(redirectUri);
+          const encodedState = encodeURIComponent(userId);
+
+          const authUrl = `${import.meta.env.VITE_DASHBOARD_API}/zoho/auth?redirect_uri=${encodedRedirectUri}&state=${encodedState}`;
+
+          const response = await fetch(authUrl, {
+            method: 'GET',
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${userId}`,
+            },
           });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Error response:', errorData);
+            throw new Error(errorData.error || 'Failed to get Zoho auth URL');
+          }
+
+          const data = await response.json();
+
+          const redirectUrl = new URL(data.authUrl);
+          redirectUrl.searchParams.set('state', userId);
+          window.location.href = redirectUrl.toString();
+        } catch (error) {
+          console.error('Error in handleConnect for Zoho:', error);
+          setError((error as any)?.message || 'Failed to initiate Zoho authentication');
         }
         return;
       }

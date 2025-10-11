@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import ZohoService from '../services/zohoService';
 import {
   CreditCard,
   CircleDollarSign,
@@ -217,8 +216,7 @@ function LeadManagementSection() {
 
   const fetchDeals = async () => {
     setIsLoading(true);
-    const zohoService = ZohoService.getInstance();
-    const accessToken = await zohoService.getValidAccessToken();
+    let accessToken = localStorage.getItem("zoho_access_token");
     
     // Si nous n'avons pas de token mais que nous avons déjà tenté l'authentification,
     // nous affichons simplement l'erreur sans rediriger
@@ -242,8 +240,7 @@ function LeadManagementSection() {
       if (response.status === 401) {
         // Token expiré ou invalide
         setAuthError(true);
-        const zohoService = ZohoService.getInstance();
-        zohoService.resetConfiguration();
+        localStorage.removeItem("zoho_access_token");
         setIsLoading(false);
         return;
       }
@@ -306,10 +303,7 @@ function LeadManagementSection() {
       }
       
       const data = await response.json();
-      // Les tokens sont maintenant gérés dans la base de données
-      // Recharger la configuration depuis la DB
-      const zohoService = ZohoService.getInstance();
-      await zohoService.checkConfiguration();
+      localStorage.setItem("zoho_access_token", data.access_token);
       localStorage.removeItem("zoho_auth_attempted");
       
       // Maintenant que nous avons un token, récupérer les deals

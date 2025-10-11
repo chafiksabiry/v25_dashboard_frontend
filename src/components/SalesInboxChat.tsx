@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import ZohoService, { 
+import { 
+  isConnectedToZoho, 
   getSalesInboxMessages, 
   sendSalesInboxMessage,
   getSalesInboxContacts
@@ -27,9 +28,7 @@ export const SalesInboxChat: React.FC = () => {
       setError(null);
 
       // Vérifier si connecté à Zoho
-      const zohoService = ZohoService.getInstance();
-      const isConnected = await zohoService.checkConfiguration();
-      if (!isConnected) {
+      if (!isConnectedToZoho()) {
         setError('Not connected to Zoho. Please connect in the integrations panel.');
         setLoading(false);
         return;
@@ -92,18 +91,7 @@ export const SalesInboxChat: React.FC = () => {
   };
 
   // Si pas connecté à Zoho, afficher un message
-  const [isZohoConnected, setIsZohoConnected] = React.useState<boolean | null>(null);
-  
-  React.useEffect(() => {
-    const checkConnection = async () => {
-      const zohoService = ZohoService.getInstance();
-      const connected = await zohoService.checkConfiguration();
-      setIsZohoConnected(connected);
-    };
-    checkConnection();
-  }, []);
-
-  if (isZohoConnected === false) {
+  if (!isConnectedToZoho()) {
     return (
       <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-lg p-4">
         <p className="text-gray-600 mb-4">

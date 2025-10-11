@@ -22,7 +22,6 @@ import { LeadUploader } from "../components/LeadUploader";
 import { useNavigate } from 'react-router-dom';
 import { leadsApi } from '../services/api/leads';
 import Cookies from 'js-cookie';
-import ZohoService from '../services/zohoService';
 
 const zohoApiUrl = import.meta.env.VITE_ZOHO_API_URL;
 
@@ -226,8 +225,7 @@ function LeadManagementPanel() {
 
   const fetchPipelines = async () => {
     try {
-      const zohoService = ZohoService.getInstance();
-      const token = await zohoService.getValidAccessToken();
+      const token = localStorage.getItem('zoho_access_token');
       if (!token) {
         console.log('No Zoho token found, skipping pipelines fetch');
         return;
@@ -373,8 +371,7 @@ function LeadManagementPanel() {
     setSelectedStageInModal(stage);
     
     try {
-      const zohoService = ZohoService.getInstance();
-      const accessToken = await zohoService.getValidAccessToken();
+      const accessToken = localStorage.getItem('zoho_access_token');
       if (!accessToken) {
         throw new Error("Access token not found");
       }
@@ -454,8 +451,7 @@ function LeadManagementPanel() {
   const handleImportFromZoho = async () => {
     setIsImporting(true);
     try {
-      const zohoService = ZohoService.getInstance();
-      const accessToken = await zohoService.getValidAccessToken();
+      const accessToken = localStorage.getItem('zoho_access_token');
       if (!accessToken) {
         throw new Error("Access token not found");
       }
