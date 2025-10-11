@@ -17,11 +17,17 @@ import {
   AlertCircle,
   Phone,
   Mail,
+  Settings,
+  FileSpreadsheet,
+  Globe,
+  RefreshCw,
+  UserPlus,
 } from "lucide-react";
 import { LeadUploader } from "../components/LeadUploader";
 import { useNavigate } from 'react-router-dom';
 import { leadsApi } from '../services/api/leads';
 import Cookies from 'js-cookie';
+import toast from 'react-hot-toast';
 
 const zohoApiUrl = import.meta.env.VITE_ZOHO_API_URL;
 
@@ -153,6 +159,7 @@ function LeadManagementPanel() {
   // Modify these new states to handle advanced filters
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
   const debouncedSearchText = useDebounce(searchText, 300); // 300ms delay
 
   // Calculate the leads to display for the current page
@@ -499,100 +506,6 @@ function LeadManagementPanel() {
     }
   };
 
-  // Modifier le composant PaginationControls pour permettre la navigation pendant le chargement
-  const PaginationControls = () => {
-    const pageNumbers = [];
-    const maxVisiblePages = 7;
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pageNumbers.push(i);
-    }
-
-    return (
-      <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
-        <div className="flex justify-between flex-1 sm:hidden">
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Previous
-          </button>
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="relative inline-flex items-center px-4 py-2 ml-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Next
-          </button>
-        </div>
-        <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm text-gray-700">
-              {/* {isLoadingMore ? (
-                <span className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
-                  Loading more data...
-                </span>
-              ) : ( */}
-                <>
-                  Showing <span className="font-medium">{(currentPage - 1) * LEADS_PER_PAGE + 1}</span> to{" "}
-                  <span className="font-medium">
-                    {Math.min(currentPage * LEADS_PER_PAGE, totalLeads)}
-                  </span>{" "}
-                  of <span className="font-medium">{totalLeads}</span> results
-                </>
-              {/* )} */}
-            </p>
-          </div>
-          <div>
-            <nav className="inline-flex -space-x-px rounded-md shadow-sm isolate" aria-label="Pagination">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="relative inline-flex items-center px-2 py-2 text-gray-400 rounded-l-md border border-gray-300 bg-white text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <span className="sr-only">Previous</span>
-                <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
-                </svg>
-              </button>
-              {pageNumbers.map((number) => (
-                <button
-                  key={number}
-                  onClick={() => handlePageChange(number)}
-                  className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
-                    currentPage === number
-                      ? "z-10 bg-blue-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-                      : "text-gray-900 border border-gray-300 bg-white hover:bg-gray-50"
-                  }`}
-                >
-                  {number}
-                </button>
-              ))}
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="relative inline-flex items-center px-2 py-2 text-gray-400 rounded-r-md border border-gray-300 bg-white text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <span className="sr-only">Next</span>
-                <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </nav>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -602,421 +515,364 @@ function LeadManagementPanel() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Users className="w-6 h-6 text-blue-600" />
-            </div>
-            <h2 className="text-xl font-semibold">Lead Management</h2>
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Header Section */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+        <div className="flex items-center mb-2">
+          <div className="p-3 bg-blue-100 rounded-lg mr-3">
+            <UserPlus className="w-6 h-6 text-blue-600" />
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={handleImportFromZoho}
-              disabled={isImporting}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 disabled:opacity-50"
-            >
-              {isImporting ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-                  Importing...
-                </>
-              ) : (
-                <>
-                  <Upload className="w-5 h-5" />
-                  Import from Zoho
-                </>
-              )}
-            </button>
-            <button
-              onClick={() => setShowUploadModal(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-            >
-              <Upload className="w-5 h-5" />
-              Import Leads
-            </button>
-          </div>
+          <h2 className="text-2xl font-bold text-gray-900">Upload Contacts</h2>
         </div>
+        <p className="text-gray-600 ml-16">
+          Import, manage, and organize your leads efficiently. Choose between connecting with your CRM system or uploading contact files directly.
+        </p>
+      </div>
 
-        {/* Afficher directement le contenu des leads */}
-        {(
-          <>
-            <div className="grid grid-cols-4 gap-4 mb-6">
-              <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100" style={{ backgroundColor: '#f3f4f6' }}>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-2 bg-blue-50 rounded-lg">
-                    <Users className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div className="font-medium text-gray-700">Total Leads</div>
-                </div>
-                <div className="text-3xl font-bold text-gray-800 mb-2">{leads?.length ?? 0}</div>
-                <div className="text-sm text-gray-600 flex items-center gap-1">
-                  <ArrowUpRight className="w-4 h-4 text-green-500" />
-                  <span className="text-green-500">12% increase</span>
-                </div>
+      {/* Select a Gig Section */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+        <div className="flex items-center mb-4">
+          <Settings className="w-5 h-5 text-gray-700 mr-2" />
+          <h3 className="text-xl font-semibold text-gray-900">Select a Gig</h3>
+        </div>
+        <select
+          value={selectedGig?._id || ''}
+          onChange={(e) => {
+            const gig = gigs.find(g => g._id === e.target.value);
+            if (gig) handleGigChange(gig);
+          }}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 font-medium"
+          disabled={isLoadingGigs}
+        >
+          <option value="">Select a Gig</option>
+          {gigs.map((gig) => (
+            <option key={gig._id} value={gig._id}>
+              {gig.title || gig.name || `Gig ${gig._id}`}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Import Leads Section */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+        <div className="flex items-center mb-2">
+          <Upload className="w-5 h-5 text-blue-600 mr-2" />
+          <h3 className="text-xl font-semibold text-gray-900">Import Leads</h3>
+        </div>
+        <p className="text-gray-600 mb-6">
+          Choose your preferred method to import leads into your selected gig.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Zoho CRM Integration Card */}
+          <div className="bg-gradient-to-br from-green-50 to-teal-50 border-2 border-green-200 rounded-2xl p-6 hover:border-green-300 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] flex flex-col h-full">
+            {/* Header */}
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mr-4 border-2 border-green-200 shadow-sm">
+                <img 
+                  src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2334a853' d='M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z'/%3E%3C/svg%3E" 
+                  alt="Zoho" 
+                  className="h-6 w-6"
+                />
               </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100" style={{ backgroundColor: '#f3f4f6' }}>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-2 bg-purple-50 rounded-lg">
-                    <DollarSign className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <span className="font-medium text-gray-700">Pipeline Value</span>
-                </div>
-                <div className="text-3xl font-bold text-gray-800 mb-2">$1.2M</div>
-                <div className="text-sm text-gray-600 flex items-center gap-1">
-                  <ArrowUpRight className="w-4 h-4 text-green-500" />
-                  <span className="text-green-500">8% increase</span>
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100" style={{ backgroundColor: '#f3f4f6' }}>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-2 bg-amber-50 rounded-lg">
-                    <Brain className="w-5 h-5 text-amber-600" />
-                  </div>
-                  <span className="font-medium text-gray-700">AI Score</span>
-                </div>
-                <div className="text-3xl font-bold text-gray-800 mb-2">85%</div>
-                <div className="text-sm text-gray-600 flex items-center gap-1">
-                  <ArrowUpRight className="w-4 h-4 text-green-500" />
-                  <span className="text-green-500">5% increase</span>
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100" style={{ backgroundColor: '#f3f4f6' }}>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-2 bg-emerald-50 rounded-lg">
-                    <Clock className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <span className="font-medium text-gray-700">Avg Response</span>
-                </div>
-                <div className="text-3xl font-bold text-gray-800 mb-2">2.4h</div>
-                <div className="text-sm text-gray-600 flex items-center gap-1">
-                  <ArrowDownRight className="w-4 h-4 text-red-500" />
-                  <span className="text-red-500">3% increase</span>
-                </div>
+              <div className="flex-1">
+                <h4 className="text-xl font-bold text-green-900">Zoho CRM Integration</h4>
+                <p className="text-sm text-green-700">Connect and sync with your Zoho CRM</p>
               </div>
             </div>
-
-            <div className="space-y-4 mb-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="text"
-                      value={searchText}
-                      onChange={(e) => setSearchText(e.target.value)}
-                      placeholder="Search by name, company, email, phone, stage..."
-                      className="pl-10 pr-4 py-2 border rounded-lg w-96 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    {searchText && (
-                      <button
-                        onClick={() => setSearchText('')}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        ×
-                      </button>
-                    )}
-                  </div>
-                  <button 
-                    onClick={() => setShowFilterPanel(!showFilterPanel)}
-                    className="p-2 border rounded-lg hover:bg-gray-100 flex items-center gap-1"
+            
+            {/* Connection Status */}
+            <div className="mb-4">
+              {isZohoConnected ? (
+                <div className="flex items-center justify-between bg-green-100 border border-green-200 rounded-lg p-3">
+                  <span className="text-sm font-medium text-green-800 flex items-center">
+                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                    ✓ Connected to Zoho CRM
+                  </span>
+                  <button
+                    onClick={() => {/* Add disconnect handler */}}
+                    className="px-3 py-1 text-xs font-medium text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition-colors duration-200"
                   >
-                    <Filter className="w-5 h-5 text-gray-600" />
-                    <span className="text-gray-600">Advanced Filters</span>
+                    Disconnect
                   </button>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <span className="font-medium">{allLeads.length}</span>
-                  <span>leads found</span>
-                </div>
-              </div>
-
-              {showFilterPanel && (
-                <div className="bg-gradient-to-br from-white to-blue-50 p-5 rounded-lg border border-blue-100 shadow-lg">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-medium text-lg text-gray-800 flex items-center gap-2">
-                      <Filter className="w-5 h-5 text-blue-600" />
-                      <span>Advanced Filters</span>
-                    </h3>
-                    <button
-                      onClick={() => setShowFilterPanel(false)}
-                      className="text-gray-500 hover:text-gray-700 bg-white p-1.5 rounded-full hover:bg-gray-100"
-                    >
-                      ×
-                    </button>
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-6">
-                    <div className="space-y-3">
-                      <h3 className="font-medium text-green-700 border-b border-green-200 pb-2 flex items-center gap-2">
-                        <Building2 className="w-4 h-4" />
-                        Gig
-                      </h3>
-                      <div className="w-full relative">
-                        <select
-                          value={selectedGig?._id || ''}
-                          onChange={(e) => {
-                            const gig = gigs.find(g => g._id === e.target.value);
-                            if (gig) handleGigChange(gig);
-                          }}
-                          className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                          disabled={isLoadingGigs}
-                        >
-                          <option value="">Select a Gig</option>
-                          {gigs.map((gig) => (
-                            <option key={gig._id} value={gig._id}>
-                              {gig.title || gig.name || `Gig ${gig._id}`}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <h3 className="font-medium text-blue-700 border-b border-blue-200 pb-2 flex items-center gap-2">
-                        <Building2 className="w-4 h-4" />
-                        Pipeline
-                      </h3>
-                      <div className="w-full relative">
-                        <select
-                          value={selectedPipeline}
-                          onChange={(e) => handlePipelineChange(e.target.value)}
-                          className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                        >
-                          <option value="all">All Pipelines</option>
-                          {pipelines.map((pipeline) => (
-                            <option key={pipeline.id} value={pipeline.display_value}>
-                              {pipeline.display_value}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <h3 className="font-medium text-purple-700 border-b border-purple-200 pb-2 flex items-center gap-2">
-                        <Tags className="w-4 h-4" />
-                        Stage
-                      </h3>
-                      <div className="w-full relative">
-                        <select
-                          value={selectedStage}
-                          onChange={(e) => handleStageChange(e.target.value)}
-                          className="w-full p-2.5 text-gray-700 bg-white border border-purple-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none"
-                        >
-                          <option value="all">All Stages</option>
-                          {getSelectedPipelineStages().map((stage) => (
-                            <option key={stage.id} value={stage.display_value}>
-                              {stage.display_value}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-5 pt-3 border-t border-blue-100 flex justify-between items-center">
-                    <button
-                      onClick={() => {
-                        setSearchText('');
-                        setSelectedStage('all');
-                        handlePipelineChange('all');
-                      }}
-                      className="px-4 py-2 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-lg hover:from-gray-200 hover:to-gray-300 transition-colors flex items-center gap-2"
-                    >
-                      <Filter className="w-4 h-4" />
-                      Reset Filters
-                    </button>
-                    
-                    <button
-                      onClick={() => setShowFilterPanel(false)}
-                      className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-colors flex items-center gap-2"
-                    >
-                      Apply
-                    </button>
-                  </div>
+              ) : (
+                <div className="flex items-center justify-between bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <span className="text-sm font-medium text-yellow-800">⚠ Not connected</span>
+                  <button
+                    onClick={() => {/* Add connect handler */}}
+                    className="px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors duration-200"
+                  >
+                    Connect
+                  </button>
                 </div>
               )}
-              
-              <div className="flex flex-wrap gap-2">
-                {selectedGig && (
-                  <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
-                    Gig: {selectedGig.title || selectedGig.name || `Gig ${selectedGig._id}`}
-                    <button onClick={() => setSelectedGig(null)} className="ml-1 hover:text-green-900">×</button>
-                  </div>
-                )}
-                
-                {selectedPipeline !== 'all' && (
-                  <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
-                    Pipeline: {selectedPipeline}
-                    <button onClick={() => handlePipelineChange('all')} className="ml-1 hover:text-blue-900">×</button>
-                  </div>
-                )}
-                
-                {selectedStage !== 'all' && (
-                  <div className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
-                    Stage: {getSelectedPipelineStages().find(s => s.display_value === selectedStage)?.display_value || selectedStage}
-                    <button onClick={() => setSelectedStage('all')} className="ml-1 hover:text-purple-900">×</button>
-                  </div>
-                )}
-                
-                {searchText && (
-                  <div className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
-                    Search: {searchText}
-                    <button onClick={() => setSearchText('')} className="ml-1 hover:text-orange-900">×</button>
-                  </div>
-                )}
-              </div>
             </div>
+            
+            {/* Action Button - Pushed to bottom */}
+            <div className="mt-auto">
+              <button
+                onClick={async () => {
+                  if (!selectedGig) {
+                    toast.error('Please select a gig first');
+                    return;
+                  }
+                  await handleImportFromZoho();
+                }}
+                disabled={!isZohoConnected || isImporting}
+                className="w-full bg-gradient-to-r from-green-600 to-teal-600 text-white font-bold py-4 px-6 rounded-xl hover:from-green-700 hover:to-teal-700 disabled:opacity-50 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center"
+              >
+                {isImporting ? (
+                  <>
+                    <RefreshCw className="mr-3 h-5 w-5 animate-spin" />
+                    Importing from Zoho...
+                  </>
+                ) : !isZohoConnected ? (
+                  <>
+                    <Settings className="h-5 w-5 mr-3" />
+                    Connect to Zoho CRM First
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-5 w-5 mr-3" />
+                    Sync with Zoho CRM
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
 
-            <div className="overflow-x-auto">
-              <div className="relative">
-                <div className="max-h-[400px] overflow-y-auto">
-                  <table className="w-full border border-gray-200 table-fixed">
-                    <thead className="sticky top-0 bg-white z-10">
-                      <tr key="header" className="text-left border-b border-gray-200">
-                        <th className="w-[18%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Lead Details</th>
-                        <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Value</th>
-                        <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">AI Insights</th>
-                        <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Last Contact</th>
-                        <th className="w-[12%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Next Action</th>
-                        <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 text-left">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {isLoadingMore ? (
-                        <tr>
-                          <td colSpan={6} className="py-8 text-center">
-                            <div className="flex flex-col items-center justify-center space-y-3">
-                              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-                              <p className="text-gray-600 font-medium">Loading leads...</p>
-                            </div>
-                          </td>
-                        </tr>
-                      ) : displayedLeads.length > 0 ? (
-                        displayedLeads.map((lead, index) => (
-                          <tr 
-                            key={`${lead._id}-${lead.id}-${index}`}
-                            className="hover:bg-gray-50 cursor-pointer border-b border-gray-200"
-                            onClick={() => handleLeadClick(lead)}
-                          >
-                            <td className="w-[18%] px-4 py-4 border-r border-gray-200 text-left">
-                              <div>
-                                <div className="font-medium">{lead.Deal_Name}</div>
-                                <div className="text-sm text-gray-500 flex items-center gap-1">
-                                  <Building2 className="w-4 h-4" />
-                                  {lead.Contact_Name?.name || "N/A"}
-                                </div>
-                                <div className="text-sm text-gray-500 flex items-center gap-1">
-                                  <Phone className="w-4 h-4" />
-                                  {lead.Phone || lead.Telephony || "N/A"}
-                                </div>
-                                <div className="text-sm text-gray-500 flex items-center gap-1">
-                                  <Mail className="w-4 h-4" />
-                                  {lead.Email_1 || "N/A"}
-                                </div>
-                                <div className="text-sm text-gray-500 flex items-center gap-1">
-                                  <p>
-                                    <b>Pipeline :</b> {typeof lead.Pipeline === 'object' ? lead.Pipeline.name : lead.Pipeline || "N/A"}
-                                    <br />
-                                    <b>Stage :</b> {lead.Stage || "N/A"}
-                                  </p>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="w-[13%] px-4 py-4 border-r border-gray-200 text-left">
-                              <div>
-                                <div className="font-medium">
-                                  {lead.$currency_symbol || "$"}{lead.Amount ? lead.Amount.toLocaleString() : "0"}
-                                </div>
-                                <div className="text-sm text-gray-500">
-                                  {lead.Probability ? `${lead.Probability}%` : "0%"} probability
-                                </div>
-                              </div>
-                            </td>
-                            <td className="w-[13%] px-4 py-4 border-r border-gray-200 text-left">
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-1">
-                                  <Brain className="w-4 h-4 text-purple-600" />
-                                  <span>
-                                    Score: {lead.metadata?.ai_analysis?.score || "N/A"}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Sparkles className="w-4 h-4 text-yellow-600" />
-                                  <span>
-                                    {lead.Type || "N/A"}
-                                  </span>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="w-[13%] px-4 py-4 border-r border-gray-200 text-left">
-                              <div>
-                                <div className="text-sm">
-                                  {lead.Modified_Time ? new Date(lead.Modified_Time).toLocaleDateString() : "N/A"}
-                                </div>
-                                <div className="text-sm text-gray-500">{lead.Owner?.name || "N/A"}</div>
-                              </div>
-                            </td>
-                            <td className="w-[12%] px-4 py-4 border-r border-gray-200 text-left">
-                              <div className="text-sm">Follow-up</div>
-                              <div className="text-sm text-gray-500">Tomorrow</div>
-                            </td>
-                            <td className="w-[13%] px-4 py-4 text-left">
-                              <div className="flex items-center gap-2">
-                                <button
-                                  className="p-2 hover:bg-gray-100 rounded-lg text-purple-600"
-                                  title="AI Analysis"
-                                >
-                                  <Brain className="w-5 h-5" />
-                                </button>
-                                <button
-                                  className="p-2 hover:bg-gray-100 rounded-lg text-blue-600"
-                                  title="Generate Script"
-                                >
-                                  <Bot className="w-5 h-5" />
-                                </button>
-                                <button
-                                  className="p-2 hover:bg-gray-100 rounded-lg"
-                                  title="Edit Lead"
-                                  onClick={(e) => handleEditClick(e, lead)}
-                                >
-                                  <Edit className="w-5 h-5" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={6} className="py-4 text-center text-gray-500 border-b border-gray-200">
-                            No leads found
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+          {/* File Upload Card */}
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] flex flex-col h-full">
+            {/* Header */}
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mr-4 border-2 border-blue-200 shadow-sm">
+                <FileSpreadsheet className="h-6 w-6 text-blue-700" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-xl font-bold text-blue-900">File Upload</h4>
+                <p className="text-sm text-blue-700">Upload and process contact files</p>
               </div>
             </div>
-          </>
-        )}
+            
+            {/* File Info */}
+            <div className="mb-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <span className="text-sm font-medium text-blue-800">📁 Supported: CSV, Excel, JSON, TXT</span>
+              </div>
+            </div>
+            
+            {/* Upload Button - Pushed to bottom */}
+            <div className="mt-auto">
+              <button
+                onClick={() => setShowUploadModal(true)}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 px-6 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl cursor-pointer flex items-center justify-center"
+              >
+                <FileSpreadsheet className="h-5 w-5 mr-3 text-white" />
+                <span className="text-base font-semibold text-white">
+                  Click to upload or drag and drop
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-      
-      {hasMoreRecords && (
-        <div className="flex justify-center items-center mt-6">
+
+      {/* Channel Filter Section */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+        <div className="flex items-center mb-4">
+          <Globe className="w-5 h-5 text-blue-600 mr-2" />
+          <h3 className="text-xl font-semibold text-gray-900">Channel Filter</h3>
+        </div>
+        <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            className="px-6 py-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
+            className="flex items-center space-x-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 transform hover:scale-105 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg"
           >
-            <span className="text-gray-700">Afficher plus</span>
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-            </svg>
+            <Globe className="h-4 w-4" />
+            <span>All Channels</span>
+          </button>
+          <button
+            className="flex items-center space-x-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 transform hover:scale-105 bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-md"
+          >
+            <Phone className="h-4 w-4" />
+            <span>Voice Calls</span>
           </button>
         </div>
-      )}
+      </div>
+
+      {/* Leads List Section */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100">
+        <div className="border-b border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="flex items-center">
+                <Users className="w-5 h-5 text-blue-600 mr-2" />
+                <h3 className="text-xl font-semibold text-gray-900">Leads List</h3>
+              </div>
+              <div className="mt-2">
+                {selectedGig ? (
+                  <span className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-xs font-medium">
+                    Showing {displayedLeads.length} of {totalLeads} leads
+                  </span>
+                ) : (
+                  <p className="text-sm text-gray-500">Please select a gig to view leads</p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                  <Search className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  className="block w-64 rounded-lg border-gray-300 pl-10 focus:border-blue-600 focus:ring-blue-600 sm:text-sm shadow-sm"
+                  placeholder="Search leads..."
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                />
+              </div>
+              <select
+                className="rounded-lg border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-600 focus:outline-none focus:ring-blue-600 sm:text-sm shadow-sm"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+              <button
+                onClick={() => fetchLeads(currentPage)}
+                className="flex items-center rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-md hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 transform hover:scale-105"
+                disabled={isLoadingMore || !selectedGig}
+              >
+                {isLoadingMore ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Refresh
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Leads Table */}
+        <div className="overflow-x-auto">
+          <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 bg-gray-50">
+                    Lead
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 bg-gray-50">
+                    Lead Name
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 bg-gray-50">
+                    Pipeline
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 bg-white">
+                {isLoadingMore ? (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
+                        Loading leads...
+                      </div>
+                    </td>
+                  </tr>
+                ) : displayedLeads.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
+                      <div className="flex flex-col items-center justify-center py-8">
+                        <UserPlus className="h-12 w-12 text-gray-300 mb-2" />
+                        <p>No leads found</p>
+                        <p className="text-xs text-gray-400 mt-1">Try importing some leads or check your filters</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  displayedLeads.map((lead, index) => (
+                    <tr 
+                      key={`${lead._id}-${lead.id}-${index}`} 
+                      className={`hover:bg-gray-50 cursor-pointer transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
+                      onClick={() => handleLeadClick(lead)}
+                    >
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <div className="flex items-center">
+                          <div className="h-10 w-10 flex-shrink-0 rounded-full flex items-center justify-center bg-blue-100">
+                            <UserPlus className="h-6 w-6 text-blue-700" />
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900 flex items-center">
+                              {lead.Email_1 || 'No Email'}
+                            </div>
+                            <div className="text-sm text-gray-500">{lead.Phone || 'No Phone'}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
+                        {lead.Deal_Name || 'N/A'}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                        {typeof lead.Pipeline === 'object' ? lead.Pipeline.name : lead.Pipeline || 'Reps Pipeline'}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Pagination Controls */}
+        {displayedLeads.length > 0 && (
+          <div className="bg-white px-4 py-3 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center text-sm text-gray-700">
+                <span>
+                  Showing <span className="font-medium">{displayedLeads.length}</span> of{' '}
+                  <span className="font-medium">{totalLeads > 0 ? totalLeads : displayedLeads.length}</span> leads
+                </span>
+              </div>
+              
+              {totalPages > 1 && (
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
+                  >
+                    Previous
+                  </button>
+                  
+                  <div className="flex items-center space-x-1">
+                    <span className="px-3 py-2 text-sm text-gray-700">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                  </div>
+                  
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
       {showUploadModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -1144,41 +1000,6 @@ function LeadManagementPanel() {
         </div>
       )}
 
-      {showImportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <div className="text-center space-y-4">
-              <div className="flex items-center justify-center gap-2 text-amber-600">
-                <AlertCircle className="w-8 h-8" />
-              </div>
-              <h2 className="text-xl font-semibold text-gray-800">Connection Required</h2>
-              <p className="text-gray-600">
-                You need to connect to Zoho CRM to import leads. Please configure your Zoho CRM integration first.
-              </p>
-              <div className="flex justify-center gap-3 mt-6">
-                <button
-                  onClick={() => setShowImportModal(false)}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    setShowImportModal(false);
-                    navigate('/integrations');
-                  }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Configure Zoho Integration
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add pagination controls */}
-      <PaginationControls />
     </div>
   );
 }
