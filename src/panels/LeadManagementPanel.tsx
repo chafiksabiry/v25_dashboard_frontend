@@ -22,8 +22,14 @@ import {
   Globe,
   RefreshCw,
   UserPlus,
+  FileText,
+  X,
+  ChevronUp,
+  ChevronDown,
+  Trash2,
+  CheckCircle,
+  Info,
 } from "lucide-react";
-import { LeadUploader } from "../components/LeadUploader";
 import { useNavigate } from 'react-router-dom';
 import { leadsApi } from '../services/api/leads';
 import Cookies from 'js-cookie';
@@ -104,7 +110,6 @@ interface Lead {
 
 function LeadManagementPanel() {
   const navigate = useNavigate();
-  const [showUploadModal, setShowUploadModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -167,6 +172,23 @@ function LeadManagementPanel() {
   const [searchText, setSearchText] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const debouncedSearchText = useDebounce(searchText, 300); // 300ms delay
+
+  // File upload states
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [parsedLeads, setParsedLeads] = useState<any[]>([]);
+  const [validationResults, setValidationResults] = useState<any>(null);
+  const [showSaveButton, setShowSaveButton] = useState(true);
+  const [showFileName, setShowFileName] = useState(true);
+  const [isSavingLeads, setIsSavingLeads] = useState(false);
+  const [savedLeadsCount, setSavedLeadsCount] = useState(0);
+  const [editingLeadIndex, setEditingLeadIndex] = useState<number | null>(null);
+  const [showLeadsPreview, setShowLeadsPreview] = useState(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const processingRef = useRef(false);
 
   // Calculate the leads to display for the current page
   const getCurrentPageLeads = () => {
@@ -554,7 +576,6 @@ function LeadManagementPanel() {
   };
 
   const [isImporting, setIsImporting] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
 
   // Fonction pour refresh automatique du token Zoho
   const fetchZohoWithAutoRefresh = async (url: string, options: RequestInit = {}) => {
@@ -840,6 +861,287 @@ function LeadManagementPanel() {
     }
   };
 
+  // File upload functions
+  const updateRealProgress = (progress: number, status: string) => {
+    if (!processingRef.current) {
+      return;
+    }
+    setUploadProgress(progress);
+  };
+
+  const processFileWithBackend = async (file: File): Promise<{leads: any[], validation: any}> => {
+    try {
+      if (!processingRef.current) {
+        throw new Error('Processing cancelled by user');
+      }
+      
+      abortControllerRef.current = new AbortController();
+
+      const userId = Cookies.get('userId');
+      const gigId = selectedGig?._id;
+      const companyId = Cookies.get('companyId');
+
+      if (!gigId) {
+        throw new Error('Please select a gig first');
+      }
+
+      if (!userId || !companyId) {
+        throw new Error('Missing user or company information');
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      updateRealProgress(20, 'Sending file to server...');
+
+      const response = await fetch(`${import.meta.env.VITE_DASHBOARD_API}/file-processing/process`, {
+        method: 'POST',
+        body: formData,
+        signal: abortControllerRef.current?.signal,
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        let errorMessage = `Backend error: ${response.status} ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          // Use status text if we can't parse error
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Backend processing failed');
+      }
+
+      const result = data.data;
+      
+      if (!result || !result.leads || !Array.isArray(result.leads)) {
+        throw new Error('Invalid response format from backend');
+      }
+
+      const leadsWithIds = result.leads.map((lead: any) => ({
+        ...lead,
+        userId: { $oid: userId },
+        companyId: { $oid: companyId },
+        gigId: { $oid: gigId }
+      }));
+
+      updateRealProgress(100, 'Processing completed!');
+
+      return {
+        ...result,
+        leads: leadsWithIds
+      };
+
+    } catch (error) {
+      console.error('❌ Error in processFileWithBackend:', error);
+      throw error;
+    }
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!selectedGig) {
+        toast.error('Please select a gig first before uploading a file');
+        return;
+      }
+      
+      setSelectedFile(null);
+      setUploadError(null);
+      setUploadSuccess(false);
+      setIsProcessing(false);
+      setUploadProgress(0);
+      setParsedLeads([]);
+      setValidationResults(null);
+      setShowSaveButton(true);
+      setShowFileName(true);
+      
+      const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
+      
+      setSelectedFile(file);
+      setUploadError(null);
+      setUploadSuccess(false);
+      setIsProcessing(true);
+      setUploadProgress(10);
+      setParsedLeads([]);
+      
+      processingRef.current = true;
+      
+      try {
+        if (!processingRef.current) {
+          return;
+        }
+        
+        const result = await processFileWithBackend(file);
+
+        if (result.leads.length === 0) {
+          toast.error('No valid leads found in the file. Please check the file format and content.');
+          setUploadError('No valid leads found');
+          setIsProcessing(false);
+          setUploadProgress(0);
+          return;
+        }
+
+        if (result.validation) {
+          setValidationResults(result.validation);
+        }
+        
+        setParsedLeads(result.leads);
+        setIsProcessing(false);
+        setUploadProgress(100);
+        processingRef.current = false;
+      } catch (error: any) {
+        console.error('Error uploading file:', error);
+        const errorMessage = error.message || 'Error uploading file';
+        setUploadError(errorMessage);
+        toast.error(errorMessage);
+        setUploadProgress(0);
+        setIsProcessing(false);
+      }
+    }
+  };
+
+  const handleSaveLeads = async () => {
+    if (!parsedLeads || parsedLeads.length === 0) return;
+    
+    setIsSavingLeads(true);
+    setSavedLeadsCount(0);
+    setShowSaveButton(false);
+    processingRef.current = true;
+
+    try {
+      const currentUserId = Cookies.get('userId');
+      const currentGigId = selectedGig?._id;
+      const currentCompanyId = Cookies.get('companyId');
+      
+      const leadsForAPI = parsedLeads.map((lead: any) => ({
+        userId: lead.userId?.$oid || currentUserId,
+        companyId: lead.companyId?.$oid || currentCompanyId,
+        gigId: lead.gigId?.$oid || currentGigId,
+        Last_Activity_Time: lead.Last_Activity_Time || null,
+        Deal_Name: lead.Deal_Name || "Unnamed Lead",
+        Email_1: lead.Email_1 || "no-email@placeholder.com",
+        Phone: lead.Phone || "no-phone@placeholder.com",
+        Stage: lead.Stage || "New",
+        Pipeline: lead.Pipeline || "Sales Pipeline",
+        Activity_Tag: lead.Activity_Tag || '',
+        Telephony: lead.Telephony || '',
+        Project_Tags: lead.Project_Tags || []
+      }));
+
+      const savedLeads: any[] = [];
+      const failedLeads: { index: number; error: string }[] = [];
+      
+      for (let i = 0; i < leadsForAPI.length; i++) {
+        if (!processingRef.current) {
+          throw new Error('Processing cancelled by user');
+        }
+        
+        const lead = leadsForAPI[i];
+        
+        try {
+          const response = await axios.post(
+            `${import.meta.env.VITE_DASHBOARD_API}/leads`, 
+            lead,
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${currentGigId}:${currentUserId}`
+              },
+              timeout: 10000
+            }
+          );
+          
+          if (response.status === 200 || response.status === 201) {
+            savedLeads.push(response.data);
+            const progress = Math.round(((i + 1) / leadsForAPI.length) * 100);
+            setUploadProgress(progress);
+            setSavedLeadsCount(savedLeads.length);
+          } else {
+            failedLeads.push({ index: i, error: response.statusText });
+          }
+        } catch (error: any) {
+          failedLeads.push({ 
+            index: i, 
+            error: error.message || 'Network error'
+          });
+        }
+        
+        if (i < leadsForAPI.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+      }
+      
+      const savedCount = savedLeads.length;
+      const totalCount = leadsForAPI.length;
+      
+      if (savedCount === totalCount) {
+        setUploadSuccess(true);
+        setUploadProgress(100);
+        toast.success(`Successfully saved ${savedCount} contacts!`);
+        setParsedLeads([]);
+        await fetchLeads(1);
+      } else if (savedCount > 0) {
+        setUploadError(`${savedCount} leads saved, ${failedLeads.length} failed`);
+        console.warn('Failed leads:', failedLeads);
+        const failedParsedLeads = parsedLeads.filter((_, index) => 
+          failedLeads.some(failed => failed.index === index)
+        );
+        setParsedLeads(failedParsedLeads);
+      } else {
+        setUploadError('Failed to save any leads');
+        toast.error('Failed to save any leads. Check console for details.');
+        console.error('All leads failed to save:', failedLeads);
+      }
+      
+    } catch (error: any) {
+      console.error('Error in handleSaveLeads:', error);
+      const errorMessage = error.message || 'Error saving leads';
+      setUploadError(errorMessage);
+      toast.error(errorMessage);
+      
+    } finally {
+      setIsSavingLeads(false);
+      processingRef.current = false;
+      setShowSaveButton(true);
+      setShowFileName(true);
+      
+      setTimeout(() => {
+        setSelectedFile(null);
+        setUploadProgress(0);
+        setUploadSuccess(false);
+        setParsedLeads([]);
+        setUploadError(null);
+        setValidationResults(null);
+        processingRef.current = false;
+        
+        const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+        if (fileInput) {
+          fileInput.value = '';
+        }
+      }, 2000);
+    }
+  };
+
+  const handleEditLead = (index: number, field: string, value: string) => {
+    const newLeads = [...parsedLeads];
+    newLeads[index] = { ...newLeads[index], [field]: value };
+    setParsedLeads(newLeads);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -987,31 +1289,272 @@ function LeadManagementPanel() {
               <div className="flex-1">
                 <h4 className="text-xl font-bold text-blue-900">File Upload</h4>
                 <p className="text-sm text-blue-700">Upload and process contact files</p>
-                      </div>
-                    </div>
-                    
+              </div>
+            </div>
+            
             {/* File Info */}
             <div className="mb-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <span className="text-sm font-medium text-blue-800">📁 Supported: CSV, Excel, JSON, TXT</span>
-                      </div>
-                    </div>
-                    
+              </div>
+            </div>
+            
             {/* Upload Button - Pushed to bottom */}
             <div className="mt-auto">
-              <button
-                onClick={() => setShowUploadModal(true)}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 px-6 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl cursor-pointer flex items-center justify-center"
-              >
-                <FileSpreadsheet className="h-5 w-5 mr-3 text-white" />
-                <span className="text-base font-semibold text-white">
-                  Click to upload or drag and drop
-                </span>
+              <div className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 px-6 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl cursor-pointer flex items-center justify-center">
+                <label htmlFor="file-upload" className="cursor-pointer flex items-center justify-center w-full">
+                  <FileSpreadsheet className="h-5 w-5 mr-3 text-white" />
+                  <span className="text-base font-semibold text-white">
+                    {isProcessing ? (
+                      <div className="flex items-center">
+                        <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
+                        Processing...
+                      </div>
+                    ) : (
+                      'Click to upload or drag and drop'
+                    )}
+                  </span>
+                  <input
+                    id="file-upload"
+                    type="file"
+                    className="hidden"
+                    accept="*"
+                    onChange={handleFileSelect}
+                    disabled={isProcessing}
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* File Processing Results */}
+        {selectedFile && showFileName && (
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center">
+                <FileText className="mr-2 h-4 w-4 text-blue-600" />
+                <span className="font-medium text-gray-900">{selectedFile.name}</span>
+              </div>
+              <button onClick={() => {
+                setSelectedFile(null);
+                setUploadProgress(0);
+                setUploadError(null);
+                setUploadSuccess(false);
+                setParsedLeads([]);
+                setValidationResults(null);
+              }}>
+                <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
               </button>
             </div>
+            <div className="mt-3">
+              <div className="relative">
+                <div className="h-3 rounded-full bg-gray-200 overflow-hidden">
+                  <div
+                    className={`h-3 rounded-full transition-all duration-300 ${
+                      uploadError ? 'bg-red-500' : uploadSuccess ? 'bg-green-500' : 'bg-gradient-to-r from-blue-500 to-indigo-500'
+                    }`}
+                    style={{ 
+                      width: `${uploadProgress}%`,
+                      background: isProcessing && !uploadError && !uploadSuccess ? 'linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%)' : undefined
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+                <span>
+                  {isProcessing && !uploadError && !uploadSuccess 
+                    ? `Analysing... ${uploadProgress}%` 
+                    : uploadProgress > 0 ? `${uploadProgress}% completed` : 'Ready'
+                  }
+                </span>
+                <span>{Math.round(selectedFile.size / 1024)} KB</span>
+              </div>
+            </div>
+            
+            {uploadError && (
+              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+                {uploadError}
+              </div>
+            )}
+            {uploadSuccess && (
+              <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-600">
+                File uploaded successfully!
+              </div>
+            )}
+            {parsedLeads.length > 0 && !uploadSuccess && !uploadError && showSaveButton && (
+              <div className="mt-4 space-y-4">
+                {validationResults && (
+                  <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3">
+                    <h4 className="text-sm font-semibold text-blue-800 mb-2 flex items-center">
+                      <Info className="mr-2 h-4 w-4" />
+                      AI Processing Results
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-blue-600 font-medium">Total Rows:</span> {validationResults.totalRows}
                       </div>
+                      <div>
+                        <span className="text-green-600 font-medium">Valid Rows:</span> {validationResults.validRows > 0 ? validationResults.validRows : parsedLeads.length}
+                      </div>
+                      {validationResults.invalidRows > 0 && (
+                        <div className="col-span-2">
+                          <span className="text-red-600 font-medium">Invalid Rows:</span> {validationResults.invalidRows}
+                        </div>
+                      )}
                     </div>
                   </div>
+                )}
+                
+                {/* Preview Section */}
+                <div className="bg-white border border-gray-200 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center">
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      <h4 className="text-sm font-semibold text-gray-800">
+                        Confirm & Edit Leads ({parsedLeads.length})
+                      </h4>
+                    </div>
+                    <button
+                      onClick={() => setShowLeadsPreview(!showLeadsPreview)}
+                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                      title={showLeadsPreview ? "Hide leads preview" : "Show leads preview"}
+                    >
+                      {showLeadsPreview ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                  {showLeadsPreview && (
+                    <>
+                      <p className="text-xs text-gray-600 mb-3">Review and edit your leads before saving. Click the edit icon to modify any field.</p>
+                      <div className="max-h-60 overflow-y-auto">
+                        <div className="space-y-2">
+                          {parsedLeads.map((lead: any, index: number) => (
+                            <div key={index} className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg p-3 border border-gray-200 hover:border-slate-300 transition-all duration-200">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
+                                    <span className="text-xs font-bold text-slate-600">{index + 1}</span>
+                                  </div>
+                                  <span className="text-sm font-semibold text-gray-900">
+                                    {lead.Deal_Name || 'Unnamed Lead'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <button
+                                    onClick={() => setEditingLeadIndex(editingLeadIndex === index ? null : index)}
+                                    className="text-slate-600 hover:text-slate-800 p-2 rounded-md hover:bg-slate-50 transition-colors duration-200"
+                                    title="Edit lead"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      const newLeads = [...parsedLeads];
+                                      newLeads.splice(index, 1);
+                                      setParsedLeads(newLeads);
+                                    }}
+                                    className="text-red-500 hover:text-red-700 p-2 rounded-md hover:bg-red-50 transition-colors duration-200"
+                                    title="Delete lead"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </div>
+                              
+                              {editingLeadIndex === index ? (
+                                <div className="space-y-3 bg-white rounded-lg p-3 border border-slate-200 shadow-sm">
+                                  <div className="grid grid-cols-1 gap-3">
+                                    <div>
+                                      <label className="block text-sm font-semibold text-gray-700 mb-2">Name</label>
+                                      <input
+                                        type="text"
+                                        value={lead.Deal_Name || ''}
+                                        onChange={(e) => handleEditLead(index, 'Deal_Name', e.target.value)}
+                                        placeholder="Enter lead name"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-700 focus:border-slate-700 transition-all duration-200 bg-white shadow-sm"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                                      <input
+                                        type="email"
+                                        value={lead.Email_1 || ''}
+                                        onChange={(e) => handleEditLead(index, 'Email_1', e.target.value)}
+                                        placeholder="Enter email address"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-700 focus:border-slate-700 transition-all duration-200 bg-white shadow-sm"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-semibold text-gray-700 mb-2">Phone</label>
+                                      <input
+                                        type="tel"
+                                        value={lead.Phone || ''}
+                                        onChange={(e) => handleEditLead(index, 'Phone', e.target.value)}
+                                        placeholder="Enter phone number"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-700 focus:border-slate-700 transition-all duration-200 bg-white shadow-sm"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="flex justify-end space-x-2 pt-2 border-t border-gray-100">
+                                    <button
+                                      onClick={() => setEditingLeadIndex(null)}
+                                      className="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all duration-200 border border-gray-300"
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setEditingLeadIndex(null);
+                                      }}
+                                      className="px-3 py-1 text-sm font-medium text-white bg-gradient-to-r from-slate-700 to-slate-900 rounded-lg hover:from-slate-800 hover:to-slate-950 transition-all duration-200 shadow-sm"
+                                    >
+                                      Save Changes
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="grid grid-cols-1 gap-2 text-sm">
+                                  <div className="flex items-center space-x-2">
+                                    <Mail className="h-4 w-4 text-gray-400" />
+                                    <span className="text-gray-600">
+                                      <span className="font-medium">Email:</span> {lead.Email_1 || 'No email'}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <Phone className="h-4 w-4 text-gray-400" />
+                                    <span className="text-gray-600">
+                                      <span className="font-medium">Phone:</span> {lead.Phone || 'No phone'}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+                
+                <button
+                  className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-white font-bold hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                  onClick={handleSaveLeads}
+                  disabled={isSavingLeads}
+                >
+                  <div className="flex items-center justify-center">
+                    <UserPlus className="mr-2 h-5 w-5" />
+                    Save {parsedLeads.length} Contacts
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
                   
       {/* Channel Filter Section */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
@@ -1208,19 +1751,6 @@ function LeadManagementPanel() {
           </div>
         )}
       </div>
-
-      {showUploadModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full">
-            <LeadUploader
-              onComplete={() => {
-                setShowUploadModal(false);
-              }}
-              onClose={() => setShowUploadModal(false)}
-            />
-          </div>
-        </div>
-      )}
 
       {showLeadDetails && selectedLead && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
