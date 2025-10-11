@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Upload, X, FileText, AlertCircle, Database } from "lucide-react";
 import Swal from "sweetalert2";
 import axios from "axios";
+import ZohoService from "../services/zohoService";
 
 interface LeadUploaderProps {
   onComplete: () => void;
@@ -78,47 +79,21 @@ export function LeadUploader({ onComplete, onClose }: LeadUploaderProps) {
   };
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
-    if (token) {
-      localStorage.setItem("zoho_access_token", token);
-      window.history.replaceState({}, document.title, "/leads");
-    }
-    // Vérifie la connexion Zoho
-    const zohoToken = localStorage.getItem("zoho_access_token");
-    setZohoConnected(!!zohoToken);
+    // Vérifie la connexion Zoho depuis la base de données
+    const checkZohoConfig = async () => {
+      const zohoService = ZohoService.getInstance();
+      const isConfigured = await zohoService.checkConfiguration();
+      setZohoConnected(isConfigured);
+    };
+    checkZohoConfig();
   }, []);
-
-  const refreshAccessToken = async () => {
-    try {
-      const refreshToken = localStorage.getItem("zoho_refresh_token");
-      if (!refreshToken) {
-        throw new Error("Aucun refresh token disponible.");
-      }
-
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/zoho/refresh-token`,
-        {
-          refresh_token: refreshToken,
-        }
-      );
-
-      if (response.data.access_token) {
-        localStorage.setItem("zoho_access_token", response.data.access_token);
-        return response.data.access_token;
-      } else {
-        throw new Error("Impossible de rafraîchir le token.");
-      }
-    } catch (error) {
-      console.error("Erreur lors du rafraîchissement du token:", error);
-      return null;
-    }
-  };
 
   const fetchLeads = async () => {
     setError("");
 
-    let accessToken = localStorage.getItem("zoho_access_token");
+    const zohoService = ZohoService.getInstance();
+    const accessToken = await zohoService.getValidAccessToken();
+    
     if (!accessToken) {
       window.location.href = `${import.meta.env.VITE_API_URL}/zoho/auth`;
       return;
@@ -142,13 +117,17 @@ export function LeadUploader({ onComplete, onClose }: LeadUploaderProps) {
         icon: "success",
         confirmButtonText: "OK",
       });
+      
+      // Rafraîchir l'état de connexion
+      const isConfigured = await zohoService.checkConfiguration();
+      setZohoConnected(isConfigured);
     } catch (error) {
       console.error("Erreur lors de la récupération des leads:", error);
 
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         // Token expiré, essayons de le rafraîchir
-        const newAccessToken = await refreshAccessToken();
-        if (newAccessToken) {
+        const refreshed = await zohoService.refreshToken();
+        if (refreshed) {
           fetchLeads(); // Réessayer avec le nouveau token
         } else {
           window.location.href = `${import.meta.env.VITE_API_URL}/zoho/auth`;
@@ -162,9 +141,10 @@ export function LeadUploader({ onComplete, onClose }: LeadUploaderProps) {
   };
 
   const checkZohoConnection = async () => {
-    const accessToken = localStorage.getItem("zoho_access_token");
+    const zohoService = ZohoService.getInstance();
+    const isConfigured = await zohoService.checkConfiguration();
 
-    if (!accessToken) {
+    if (!isConfigured) {
       // Utilisateur non connecté
       Swal.fire({
         title: "Connecter à Zoho",

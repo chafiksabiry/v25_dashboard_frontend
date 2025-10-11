@@ -11,7 +11,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import axios from 'axios';
-import { ZohoTokenService } from '../services/zohoService';
+import ZohoService from '../services/zohoService';
 import { useNavigate } from 'react-router-dom';
 
 interface Email {
@@ -47,7 +47,8 @@ function EmailsPanel() {
   const [isEmailDetailOpen, setIsEmailDetailOpen] = useState(false);
 
   const fetchEmails = async () => {
-    let accessToken = localStorage.getItem("zoho_access_token");
+    const zohoService = ZohoService.getInstance();
+    const accessToken = await zohoService.getValidAccessToken();
     if (!accessToken) {
         window.location.href = `${import.meta.env.VITE_API_URL}/zoho/auth`;
         return;
@@ -145,7 +146,8 @@ function EmailsPanel() {
   };
 
   const handleArchive = async (email: Email) => {
-    const accessToken = localStorage.getItem("zoho_access_token");
+    const zohoService = ZohoService.getInstance();
+    const accessToken = await zohoService.getValidAccessToken();
     if (!accessToken) return;
 
     try {
@@ -236,7 +238,10 @@ Date: ${formatDate(email.receivedTime)}
         
         if (tokenResult.access_token) {
           console.log("Nouveau token récupéré:", tokenResult.access_token);
-          localStorage.setItem('zoho_access_token', tokenResult.access_token);
+          // Les tokens sont maintenant gérés dans la base de données
+          // Recharger la configuration depuis la DB
+          const zohoService = ZohoService.getInstance();
+          await zohoService.checkConfiguration();
           setIsZohoConnected(true);
           // Vous pouvez ajouter ici d'autres actions après la connexion réussie
         } else {
@@ -253,13 +258,14 @@ Date: ${formatDate(email.receivedTime)}
     }
   };
 
-  const checkZohoConnection = () => {
-    const token = localStorage.getItem('zoho_access_token');
-    return !!token;
+  const checkZohoConnection = async () => {
+    const zohoService = ZohoService.getInstance();
+    return await zohoService.checkConfiguration();
   };
 
   const fetchAllCounts = async () => {
-    let accessToken = localStorage.getItem("zoho_access_token");
+    const zohoService = ZohoService.getInstance();
+    const accessToken = await zohoService.getValidAccessToken();
     if (!accessToken) return;
     
     try {
@@ -296,9 +302,10 @@ Date: ${formatDate(email.receivedTime)}
     }
   };
 
-  const handleDisconnect = () => {
-    // Supprimer le token
-    localStorage.removeItem('zoho_access_token');
+  const handleDisconnect = async () => {
+    // Supprimer la configuration Zoho
+    const zohoService = ZohoService.getInstance();
+    zohoService.resetConfiguration();
     
     // Réinitialiser les états
     setIsZohoConnected(false);
@@ -319,19 +326,25 @@ Date: ${formatDate(email.receivedTime)}
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('zoho_access_token');
-    console.log("=== Initialisation ===");
-    console.log("Token au démarrage:", token ? "Présent" : "Absent");
+    const checkZohoStatus = async () => {
+      const zohoService = ZohoService.getInstance();
+      const isConfigured = await zohoService.checkConfiguration();
+      console.log("=== Initialisation ===");
+      console.log("Zoho configuré:", isConfigured ? "Oui" : "Non");
+      
+      if (isConfigured) {
+        const token = zohoService.getAccessToken();
+        console.log("Token value:", token);
+        setIsZohoConnected(true);
+        fetchAllCounts();
+      } else {
+        console.log("Aucune configuration Zoho trouvée");
+        setIsZohoConnected(false);
+        setIsLoading(false);
+      }
+    };
     
-    if (token) {
-      console.log("Token value:", token);
-      setIsZohoConnected(true);
-      fetchAllCounts();
-    } else {
-      console.log("Aucun token trouvé - Configuration de Zoho");
-      setIsZohoConnected(false);
-      setIsLoading(false);
-    }
+    checkZohoStatus();
   }, []);
 
   useEffect(() => {

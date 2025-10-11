@@ -1,4 +1,5 @@
 import React, { ReactNode, useEffect, useState } from "react";
+import ZohoService from '../services/zohoService';
 import {
   Users,
   Search,
@@ -39,7 +40,8 @@ function ContactManagementPanel() {
   const [contacts, setContacts] = useState<Contact[]>([]);
 
   const fetchContacts = async () => {
-    let accessToken = localStorage.getItem("zoho_access_token");
+    const zohoService = ZohoService.getInstance();
+    const accessToken = await zohoService.getValidAccessToken();
     if (!accessToken) {
         window.location.href = `${import.meta.env.VITE_API_URL}/zoho/auth`;
         return;

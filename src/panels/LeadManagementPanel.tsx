@@ -22,6 +22,7 @@ import { LeadUploader } from "../components/LeadUploader";
 import { useNavigate } from 'react-router-dom';
 import { leadsApi } from '../services/api/leads';
 import Cookies from 'js-cookie';
+import ZohoService from '../services/zohoService';
 
 const zohoApiUrl = import.meta.env.VITE_ZOHO_API_URL;
 
@@ -225,7 +226,8 @@ function LeadManagementPanel() {
 
   const fetchPipelines = async () => {
     try {
-      const token = localStorage.getItem('zoho_access_token');
+      const zohoService = ZohoService.getInstance();
+      const token = await zohoService.getValidAccessToken();
       if (!token) {
         console.log('No Zoho token found, skipping pipelines fetch');
         return;
@@ -371,7 +373,8 @@ function LeadManagementPanel() {
     setSelectedStageInModal(stage);
     
     try {
-      const accessToken = localStorage.getItem('zoho_access_token');
+      const zohoService = ZohoService.getInstance();
+      const accessToken = await zohoService.getValidAccessToken();
       if (!accessToken) {
         throw new Error("Access token not found");
       }
@@ -451,7 +454,8 @@ function LeadManagementPanel() {
   const handleImportFromZoho = async () => {
     setIsImporting(true);
     try {
-      const accessToken = localStorage.getItem('zoho_access_token');
+      const zohoService = ZohoService.getInstance();
+      const accessToken = await zohoService.getValidAccessToken();
       if (!accessToken) {
         throw new Error("Access token not found");
       }
@@ -602,203 +606,46 @@ function LeadManagementPanel() {
   }
 
   return (
-    <div className="space-y-4 bg-gradient-to-br from-blue-50 to-white min-h-screen p-4">
-      {/* Page Header */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-        <div className="flex items-start justify-between mb-6">
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-900 mb-3 flex items-center">
-              <Users className="mr-3 h-8 w-8 text-blue-600" />
-              Upload Contacts
-            </h1>
-            <p className="text-lg text-gray-600">
-              Import, manage, and organize your leads efficiently. Choose between connecting with your CRM system or uploading contact files directly.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Gigs Selection Dropdown */}
-      <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-6 transition-all duration-300 ease-in-out">
-        <h4 className="text-xl font-bold text-slate-900 mb-6 flex items-center">
-          <Building2 className="mr-3 h-6 w-6 text-slate-600" />
-          Select a Gig
-        </h4>
-        {isLoadingGigs ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600"></div>
-            <span className="ml-4 text-base text-slate-600 font-medium">Loading gigs...</span>
-          </div>
-        ) : gigs.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="mx-auto h-16 w-16 text-slate-300 mb-4">
-              <Building2 className="h-16 w-16" />
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-blue-100 rounded-lg">
+              <Users className="w-6 h-6 text-blue-600" />
             </div>
-            <p className="text-base text-slate-500 font-medium">No gigs available.</p>
+            <h2 className="text-xl font-semibold">Lead Management</h2>
           </div>
-        ) : (
-          <div className="max-w-lg">
-            <select
-              value={selectedGig?._id || ''}
-              onChange={(e) => {
-                const gig = gigs.find(g => g._id === e.target.value);
-                if (gig) handleGigChange(gig);
-              }}
-              className="w-full rounded-xl border-2 border-slate-300 py-4 px-5 text-base font-medium focus:border-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-200 focus:ring-offset-2 bg-white shadow-sm hover:border-slate-400 transition-all duration-200"
+          <div className="flex gap-2">
+            <button
+              onClick={handleImportFromZoho}
+              disabled={isImporting}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 disabled:opacity-50"
             >
-              <option value="" className="text-slate-500">Select a gig...</option>
-              {gigs.map((gig) => (
-                <option key={gig._id} value={gig._id} className="text-slate-900">
-                  {gig.title || gig.name || `Gig ${gig._id}`}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-      </div>
-
-      {/* Import Methods Section */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold text-gray-900 flex items-center">
-            <Upload className="mr-2 h-5 w-5 text-blue-600" />
-            Import Leads
-          </h3>
-          <p className="mt-1 text-sm text-gray-600">Choose your preferred method to import leads into your selected gig.</p>
-        </div>
-
-        {/* Import Methods Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-4">
-          {/* Zoho Import Card */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] flex flex-col h-full">
-            {/* Header */}
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mr-4 border-2 border-blue-200 shadow-sm">
-                <Upload className="h-6 w-6 text-blue-700" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-xl font-bold text-blue-900">Zoho CRM Integration</h4>
-                <p className="text-sm text-blue-700">Connect and sync with your Zoho CRM</p>
-              </div>
-            </div>
-            
-            {/* Connection Status */}
-            <div className="mb-4">
-              {localStorage.getItem('zoho_access_token') ? (
-                <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3">
-                  <span className="text-sm font-medium text-green-800">✓ Connected to Zoho CRM</span>
-                  <button
-                    className="px-3 py-1 text-xs font-medium text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition-colors duration-200"
-                  >
-                    Disconnect
-                  </button>
-                </div>
+              {isImporting ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                  Importing...
+                </>
               ) : (
-                <div className="flex items-center justify-between bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                  <span className="text-sm font-medium text-yellow-800">⚠ Not connected</span>
-                  <button
-                    onClick={() => navigate('/integrations')}
-                    className="px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors duration-200"
-                  >
-                    Connect
-                  </button>
-                </div>
+                <>
+                  <Upload className="w-5 h-5" />
+                  Import from Zoho
+                </>
               )}
-            </div>
-            
-            {/* Action Button - Pushed to bottom */}
-            <div className="mt-auto">
-              <button
-                onClick={async () => {
-                  if (!selectedGig) {
-                    alert('Please select a gig first');
-                    return;
-                  }
-                  if (!localStorage.getItem('zoho_access_token')) {
-                    navigate('/integrations');
-                    return;
-                  }
-                  await handleImportFromZoho();
-                }}
-                disabled={isImporting}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 px-6 rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center"
-              >
-                {isImporting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-3"></div>
-                    Importing from Zoho...
-                  </>
-                ) : !localStorage.getItem('zoho_access_token') ? (
-                  <>
-                    <Upload className="h-5 w-5 mr-3" />
-                    Connect to Zoho CRM First
-                  </>
-                ) : (
-                  <>
-                    <Upload className="h-5 w-5 mr-3" />
-                    Sync with Zoho CRM
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* File Upload Card */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] flex flex-col h-full">
-            {/* Header */}
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mr-4 border-2 border-blue-200 shadow-sm">
-                <Upload className="h-6 w-6 text-blue-700" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-xl font-bold text-blue-900">File Upload</h4>
-                <p className="text-sm text-blue-700">Upload and process contact files</p>
-              </div>
-            </div>
-            
-            {/* File Info */}
-            <div className="mb-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <span className="text-sm font-medium text-blue-800">📁 Supported: CSV, Excel, JSON, TXT</span>
-              </div>
-            </div>
-            
-            {/* Upload Button - Pushed to bottom */}
-            <div className="mt-auto">
-              <button
-                onClick={() => {
-                  if (!selectedGig) {
-                    alert('Please select a gig first');
-                    return;
-                  }
-                  setShowUploadModal(true);
-                }}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 px-6 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center"
-              >
-                <Upload className="h-5 w-5 mr-3" />
-                Click to upload or drag and drop
-              </button>
-            </div>
+            </button>
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+            >
+              <Upload className="w-5 h-5" />
+              Import Leads
+            </button>
           </div>
         </div>
-      </div>
 
-      {/* Message when no gig is selected */}
-      {!selectedGig && (
-        <div className="bg-white rounded-xl shadow-lg border border-blue-200 p-12 text-center">
-          <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-            <Building2 className="w-8 h-8 text-blue-600" />
-          </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Gig Selected</h3>
-          <p className="text-gray-600">Please select a gig from the dropdown above to view and manage leads.</p>
-        </div>
-      )}
-
-      {/* Leads List Section - Only show if a gig is selected */}
-      {selectedGig && (
-        <>
-          {/* Statistics Cards */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+        {/* Afficher directement le contenu des leads */}
+        {(
+          <>
             <div className="grid grid-cols-4 gap-4 mb-6">
               <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100" style={{ backgroundColor: '#f3f4f6' }}>
                 <div className="flex items-center gap-2 mb-3">
@@ -1157,11 +1004,22 @@ function LeadManagementPanel() {
                 </div>
               </div>
             </div>
-
-            {/* Add pagination controls */}
-            <PaginationControls />
-          </div>
-        </>
+          </>
+        )}
+      </div>
+      
+      {hasMoreRecords && (
+        <div className="flex justify-center items-center mt-6">
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            className="px-6 py-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
+          >
+            <span className="text-gray-700">Afficher plus</span>
+            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
       )}
 
       {showUploadModal && (
@@ -1322,6 +1180,9 @@ function LeadManagementPanel() {
           </div>
         </div>
       )}
+
+      {/* Add pagination controls */}
+      <PaginationControls />
     </div>
   );
 }

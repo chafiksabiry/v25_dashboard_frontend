@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Video, Share2, Users, Clock, CheckCircle2, BarChart2, PlusCircle, Send } from "lucide-react";
 import { channelConfig } from "./channelConfig";
-import { ZohoTokenService } from '../../services/zohoService';
+import ZohoService, { ZohoTokenService } from '../../services/zohoService';
 
 interface Chat {
   id: string;
@@ -94,7 +94,8 @@ const SalesInboxChat: React.FC = () => {
 
   const fetchChats = async () => {
     setLoading(true);
-    const token = ZohoTokenService.getToken();
+    const zohoService = ZohoService.getInstance();
+    const token = await zohoService.getValidAccessToken();
     
     if (!token) {
       setIsZohoConnected(false);
@@ -146,7 +147,8 @@ const SalesInboxChat: React.FC = () => {
 
   const loadMessages = async (chatId: string) => {
     setLoadingMessages(true);
-    const token = ZohoTokenService.getToken();
+    const zohoService = ZohoService.getInstance();
+    const token = await zohoService.getValidAccessToken();
     
     if (!token) {
       setIsZohoConnected(false);
@@ -196,7 +198,8 @@ const SalesInboxChat: React.FC = () => {
   const sendMessage = async () => {
     if (!activeChat || !message.trim()) return;
 
-    const token = ZohoTokenService.getToken();
+    const zohoService = ZohoService.getInstance();
+    const token = await zohoService.getValidAccessToken();
     if (!token) {
       setIsZohoConnected(false);
       handleZohoConnect();
@@ -333,14 +336,18 @@ const SalesInboxChat: React.FC = () => {
   }
 
   useEffect(() => {
-    const token = ZohoTokenService.getToken();
-    if (!token) {
-      setIsZohoConnected(false);
-      handleZohoConnect();
-    } else {
-      setIsZohoConnected(true);
-      fetchChats();
-    }
+    const checkZohoConnection = async () => {
+      const zohoService = ZohoService.getInstance();
+      const isConfigured = await zohoService.checkConfiguration();
+      if (!isConfigured) {
+        setIsZohoConnected(false);
+        handleZohoConnect();
+      } else {
+        setIsZohoConnected(true);
+        fetchChats();
+      }
+    };
+    checkZohoConnection();
   }, []);
 
   if (!isZohoConnected) {

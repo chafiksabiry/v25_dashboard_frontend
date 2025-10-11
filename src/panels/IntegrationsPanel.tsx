@@ -23,10 +23,11 @@ import {
   Network,
   Key
 } from 'lucide-react';
-import { 
+import ZohoService, { 
   checkZohoTokenValidity, 
   disconnectZoho,
-  configureZoho
+  configureZoho,
+  ZohoTokenService as ImportedZohoTokenService
 } from '../services/zohoService';
 import Cookies from 'js-cookie';
 import { useNavigate } from 'react-router-dom';
@@ -87,27 +88,8 @@ interface ZohoDBConfig extends ZohoConfig {
   updatedAt: Date;
 }
 
-// Créer un service global pour gérer le token Zoho
-const ZohoTokenService = {
-  getToken: (): string | null => {
-    return localStorage.getItem("zoho_access_token");
-  },
-  
-  setToken: (token: string): void => {
-    localStorage.setItem("zoho_access_token", token);
-  },
-  
-  removeToken: (): void => {
-    localStorage.removeItem("zoho_access_token");
-  },
-  
-  isTokenValid: async (): Promise<boolean> => {
-    const token = ZohoTokenService.getToken();
-    if (!token) return false;
-    
-    return await checkZohoTokenValidity();
-  }
-};
+// Utiliser le service Zoho importé qui vérifie dans la base de données
+const ZohoTokenService = ImportedZohoTokenService;
 
 // Add database integration functions
 const saveZohoConfigToDB = async (config: ZohoDBConfig): Promise<ZohoResponse> => {

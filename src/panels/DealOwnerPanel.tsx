@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ZohoTokenService } from '../services/zohoService';
+import ZohoService from '../services/zohoService';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, User, Filter, Calendar, Phone, Mail, Building } from 'lucide-react';
 
@@ -62,7 +62,8 @@ const DealOwnerPanel = () => {
   const fetchPipelines = async () => {
     try {
       setLoading(true);
-      const token = ZohoTokenService.getToken();
+      const zohoService = ZohoService.getInstance();
+      const token = await zohoService.getValidAccessToken();
       if (!token) throw new Error('No Zoho token found');
 
       const response = await fetch('https://api-dashboard.harx.ai/api/zoho/pipelines', {
@@ -93,7 +94,8 @@ const DealOwnerPanel = () => {
   const fetchLeadsByPipeline = async (pipelineId?: string) => {
     try {
       setLoading(true);
-      const token = ZohoTokenService.getToken();
+      const zohoService = ZohoService.getInstance();
+      const token = await zohoService.getValidAccessToken();
       if (!token) throw new Error('No Zoho token found');
 
       const url = new URL('https://api-dashboard.harx.ai/api/zoho/leads-by-pipeline');
@@ -166,7 +168,18 @@ const DealOwnerPanel = () => {
 
   const ownerStats = getOwnerStats();
 
-  if (!ZohoTokenService.getToken()) {
+  const [isZohoConnected, setIsZohoConnected] = React.useState<boolean | null>(null);
+
+  React.useEffect(() => {
+    const checkConnection = async () => {
+      const zohoService = ZohoService.getInstance();
+      const connected = await zohoService.checkConfiguration();
+      setIsZohoConnected(connected);
+    };
+    checkConnection();
+  }, []);
+
+  if (isZohoConnected === false) {
     return (
       <div className="space-y-6">
         <div className="bg-white rounded-xl shadow-sm p-6">
