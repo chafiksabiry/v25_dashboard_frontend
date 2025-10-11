@@ -829,7 +829,7 @@ function LeadManagementPanel() {
           console.error('Error updating onboarding progress after Zoho import:', error);
         }
       } else {
-        toast.info('No new leads to import from Zoho CRM');
+        toast.success('No new leads to import from Zoho CRM');
         await fetchLeads(1);
       }
     } catch (error: any) {
