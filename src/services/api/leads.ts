@@ -1,15 +1,26 @@
 import api from './index';
 
 export interface Lead {
-  id: string;
-  name: string;
-  company: string;
-  email: string;
-  phone: string;
-  status: string;
-  value: number;
-  probability: number;
-  source: string;
+  _id: string;
+  userId: string;
+  gigId: string;
+  refreshToken: string;
+  id: string; // Zoho CRM ID
+  Last_Activity_Time: string | null;
+  Deal_Name: string;
+  Stage: string;
+  Email_1: string;
+  Phone?: string;
+  updatedAt: string;
+  // Champs optionnels pour compatibilité
+  name?: string;
+  company?: string;
+  email?: string;
+  phone?: string;
+  status?: string;
+  value?: number;
+  probability?: number;
+  source?: string;
   assignedTo?: string;
   lastContact?: string;
   nextAction?: string;
@@ -20,13 +31,29 @@ export interface Lead {
       sentiment?: string;
     };
   };
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Interface pour la réponse paginée des leads
+export interface LeadsResponse {
+  success: boolean;
+  count: number;
+  total: number;
+  totalPages: number;
+  currentPage: number;
+  data: Lead[];
 }
 
 export const leadsApi = {
   getAll: async () => {
     const response = await api.get<Lead[]>('/leads');
+    return response.data;
+  },
+
+  // Nouvelle méthode pour récupérer les leads par gig avec pagination
+  getByGig: async (gigId: string, page: number = 1, limit: number = 10) => {
+    const response = await api.get<LeadsResponse>(`/leads/gig/${gigId}?page=${page}&limit=${limit}`);
     return response.data;
   },
 

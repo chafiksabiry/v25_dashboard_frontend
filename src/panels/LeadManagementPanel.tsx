@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Users,
   Search,
@@ -6,7 +6,6 @@ import {
   Clock,
   DollarSign,
   Building2,
-  MapPin,
   Tags,
   ArrowUpRight,
   ArrowDownRight,
@@ -18,14 +17,26 @@ import {
   AlertCircle,
   Phone,
   Mail,
+  Settings,
+  FileSpreadsheet,
+  Globe,
+  RefreshCw,
+  UserPlus,
+  FileText,
+  X,
+  ChevronUp,
+  ChevronDown,
+  Trash2,
+  CheckCircle,
+  Info,
 } from "lucide-react";
-import { LeadUploader } from "../components/LeadUploader";
-import { ZohoTokenService } from '../services/zohoService';
 import { useNavigate } from 'react-router-dom';
+import { leadsApi } from '../services/api/leads';
 import Cookies from 'js-cookie';
+import toast from 'react-hot-toast';
+import axios from 'axios';
 
 const zohoApiUrl = import.meta.env.VITE_ZOHO_API_URL;
-const apiUrl = import.meta.env.VITE_API_URL;
 
 // Add this custom hook at the top of the file, after imports
 function useDebounce<T>(value: T, delay: number): T {
@@ -47,41 +58,45 @@ function useDebounce<T>(value: T, delay: number): T {
 // Update the Lead interface at the top of the file, after imports
 interface Lead {
   _id: string;
-  id: string;
   userId: string;
-  Owner: {
-    name: string;
-    id: string;
-    email: string;
-  };
-  Created_By: {
-    name: string;
-    id: string;
-    email: string;
-  };
-  Modified_By: {
-    name: string;
-    id: string;
-    email: string;
-  };
-  Contact_Name: {
-    name: string;
-    id: string;
-  };
+  gigId: string;
+  refreshToken: string;
+  id: string; // Zoho CRM ID
+  Last_Activity_Time: string | null;
   Deal_Name: string;
+  Stage: string;
   Email_1: string;
-  Phone: string | null;
-  Telephony: string | null;
-  Pipeline: {
+  Phone?: string;
+  updatedAt: string;
+  // Champs optionnels pour compatibilité
+  Owner?: {
+    name: string;
+    id: string;
+    email: string;
+  };
+  Created_By?: {
+    name: string;
+    id: string;
+    email: string;
+  };
+  Modified_By?: {
+    name: string;
+    id: string;
+    email: string;
+  };
+  Contact_Name?: {
+    name: string;
+    id: string;
+  };
+  Telephony?: string | null;
+  Pipeline?: {
     name: string;
     id: string;
   } | string;
-  Stage: string;
-  Created_Time: string;
-  Modified_Time: string;
-  Last_Activity_Time: string;
-  Description: string | null;
-  Tag: string[];
+  Created_Time?: string;
+  Modified_Time?: string;
+  Description?: string | null;
+  Tag?: string[];
   Amount?: number;
   Probability?: number;
   Type?: string;
@@ -95,14 +110,14 @@ interface Lead {
 
 function LeadManagementPanel() {
   const navigate = useNavigate();
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [isZohoConnected, setIsZohoConnected] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [zohoError, setZohoError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const maxRetries = 3;
-  const retryDelay = 5000; // 5 seconds
+  
+  // Zoho CRM states
+  const [hasZohoConfig, setHasZohoConfig] = useState(false);
+  const [hasZohoAccessToken, setHasZohoAccessToken] = useState(false);
+  const [isDisconnectingZoho, setIsDisconnectingZoho] = useState(false);
+  const urlParamsProcessedRef = useRef(false);
 
   interface Stage {
     display_value: string;
@@ -135,53 +150,108 @@ function LeadManagementPanel() {
   }
 
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [selectedPipeline, setSelectedPipeline] = useState<string>('all');
   const [selectedStage, setSelectedStage] = useState<string>('all');
-  const [hasMoreRecords, setHasMoreRecords] = useState(false);
+  const [hasMoreRecords] = useState(false);
   const LEADS_PER_PAGE = 20; // Réduire à 20 leads par page pour une meilleure performance
   const [totalLeads, setTotalLeads] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [currentViewIndex, setCurrentViewIndex] = useState(0);
   const [allLeads, setAllLeads] = useState<Lead[]>([]);
   const [displayedLeads, setDisplayedLeads] = useState<Lead[]>([]);
   const [totalPages, setTotalPages] = useState(1);
+  
+  // États pour la gestion des gigs
+  const [gigs, setGigs] = useState<any[]>([]);
+  const [selectedGig, setSelectedGig] = useState<any>(null);
+  const [isLoadingGigs, setIsLoadingGigs] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Modify these new states to handle advanced filters
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
   const debouncedSearchText = useDebounce(searchText, 300); // 300ms delay
-  // Reset the view index when changing page
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // File upload states
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [parsedLeads, setParsedLeads] = useState<any[]>([]);
+  const [validationResults, setValidationResults] = useState<any>(null);
+  const [showSaveButton, setShowSaveButton] = useState(true);
+  const [showFileName, setShowFileName] = useState(true);
+  const [isSavingLeads, setIsSavingLeads] = useState(false);
+  const [savedLeadsCount, setSavedLeadsCount] = useState(0);
+  const [editingLeadIndex, setEditingLeadIndex] = useState<number | null>(null);
+  const [showLeadsPreview, setShowLeadsPreview] = useState(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const processingRef = useRef(false);
+
+  // Update displayed leads when allLeads changes
   useEffect(() => {
-    setCurrentViewIndex(0);
-  }, [currentPage]);
+    setDisplayedLeads(allLeads);
+  }, [allLeads]);
 
-  // Calculate the leads to display for the current page
-  const getCurrentPageLeads = () => {
-    const startIndex = (currentPage - 1) * LEADS_PER_PAGE;
-    const endIndex = startIndex + LEADS_PER_PAGE;
-    return allLeads.slice(startIndex, endIndex);
-  };
+  const fetchGigs = async () => {
+    try {
+      setIsLoadingGigs(true);
+      
+      const userId: string = Cookies.get('userId') || '680a27ffefa3d29d628d0016';
+      console.log('Stored userId:', userId);
+      
+      if (!userId) {
+        console.error("No user ID found");
+        setGigs([]);
+        setIsLoadingGigs(false);
+        return;
+      }
 
-  // Update displayed leads when page changes
-  useEffect(() => {
-    const currentPageLeads = getCurrentPageLeads();
-    setDisplayedLeads(currentPageLeads);
-    setTotalPages(Math.ceil(allLeads.length / LEADS_PER_PAGE));
-  }, [currentPage, allLeads]);
+      console.log("Fetching gigs for user:", userId);
+      const response = await fetch(`${import.meta.env.VITE_API_URL_GIGS}/gigs/user/${userId}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        console.error("Server response:", {
+          status: response.status,
+          statusText: response.statusText,
+          data: errorData
+        });
+        throw new Error(`Server error: ${response.status} ${response.statusText}`);
+      }
 
-  const handlePageChange = (newPage: number) => {
-    if (newPage < 1 || newPage > totalPages) return;
-    setCurrentPage(newPage);
+      const data = await response.json();
+      console.log("Received data:", data);
+      
+      if (!data.data || !Array.isArray(data.data)) {
+        throw new Error("Invalid data format");
+      }
+
+      const validGigs = data.data;
+      setGigs(validGigs);
+      
+      // Sélectionner le premier gig par défaut
+      if (validGigs.length > 0) {
+        setSelectedGig(validGigs[0]);
+      }
+    } catch (error) {
+      console.error("Detailed error:", error);
+      setGigs([]);
+    } finally {
+      setIsLoadingGigs(false);
+    }
   };
 
   const fetchPipelines = async () => {
     try {
-      setIsLoading(true);
-      const token = ZohoTokenService.getToken();
-      if (!token) throw new Error('No Zoho token found');
+      const token = localStorage.getItem('zoho_access_token');
+      if (!token) {
+        console.log('No Zoho token found, skipping pipelines fetch');
+        return;
+      }
 
       const response = await fetch(`${zohoApiUrl}/pipelines`, {
         headers: {
@@ -201,88 +271,203 @@ function LeadManagementPanel() {
     } catch (error) {
       console.error('Error fetching pipelines:', error);
       setError(error instanceof Error ? error.message : 'Failed to fetch pipelines');
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const fetchLeads = async (page: number = 1) => {
+  const fetchLeads = async (page: number = 1, searchQuery: string = '') => {
     try {
       setIsLoadingMore(true);
-      const userId = Cookies.get("userId") || "6807abfc2c1ca099fe2b13c5";
       
-      const queryParams = new URLSearchParams({
-        page: "1", // Always fetch first page
-        limit: "1000" // Fetch a larger number of leads
-      });
-
-      if (selectedPipeline !== 'all') {
-        const selectedPipelineData = pipelines.find(p => p.display_value === selectedPipeline);
-        if (selectedPipelineData) {
-          queryParams.append('pipeline', selectedPipelineData.actual_value);
-        }
-      }
-      if (selectedStage !== 'all') {
-        queryParams.append('stage', selectedStage);
-      }
-      if (debouncedSearchText) {
-        queryParams.append('search', debouncedSearchText);
-      }
-
-      const response = await fetch(`${apiUrl}/leads/user/${userId}?${queryParams.toString()}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json"
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error("Error retrieving leads");
-      }
-
-      const result = await response.json();
-      
-      if (result.success && result.data) {
-        let filteredData = result.data;
-        if (selectedPipeline !== 'all') {
-          const selectedPipelineData = pipelines.find(p => p.display_value === selectedPipeline);
-          if (selectedPipelineData) {
-            filteredData = result.data.filter((lead: Lead) => {
-              const leadPipeline = typeof lead.Pipeline === 'object' ? lead.Pipeline.name : lead.Pipeline;
-              return leadPipeline === selectedPipelineData.display_value;
-            });
-          }
-        }
-        
-        setAllLeads(filteredData);
-        setTotalLeads(filteredData.length);
-        setCurrentPage(1); // Reset to first page when new data is loaded
-      } else {
+      // Vérifier qu'un gig est sélectionné
+      if (!selectedGig) {
+        console.log("No gig selected, skipping leads fetch");
         setAllLeads([]);
         setTotalLeads(0);
+        return;
+      }
+
+      let apiUrl: string;
+      
+      if (searchQuery.trim()) {
+        // Utiliser l'endpoint de recherche dédié
+        apiUrl = `${import.meta.env.VITE_DASHBOARD_API}/leads/gig/${selectedGig._id}/search?search=${encodeURIComponent(searchQuery.trim())}`;
+        console.log('🔍 Recherche leads avec URL:', apiUrl);
+      } else {
+        // Utiliser l'endpoint normal avec pagination
+        apiUrl = `${import.meta.env.VITE_DASHBOARD_API}/leads/gig/${selectedGig._id}?page=${page}&limit=${LEADS_PER_PAGE}`;
+        console.log('📄 Récupération leads avec URL:', apiUrl);
+      }
+      
+      const userId = Cookies.get('userId');
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Authorization': `Bearer ${selectedGig._id}:${userId}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch leads: ${response.statusText}`);
+      }
+
+      const responseData = await response.json();
+      console.log('📊 Réponse API leads:', responseData);
+      
+      if (!responseData.success) {
+        throw new Error('Failed to fetch leads: API returned unsuccessful response');
+      }
+
+      if (!Array.isArray(responseData.data)) {
+        throw new Error('Invalid response format: expected data to be an array');
+      }
+
+      let filteredData = responseData.data;
+      
+      // Appliquer les filtres côté client si nécessaire
+      if (selectedStage !== 'all') {
+        filteredData = filteredData.filter((lead: Lead) => lead.Stage === selectedStage);
+      }
+      
+      setAllLeads(filteredData);
+      
+      if (searchQuery.trim()) {
+        // Pour la recherche, afficher tous les résultats sur une seule page
+        setTotalPages(1);
+        setCurrentPage(1);
+        setTotalLeads(filteredData.length);
+      } else {
+        // Pour la pagination normale
+        setTotalPages(responseData.totalPages);
+        setCurrentPage(responseData.currentPage);
+        setTotalLeads(responseData.total);
       }
     } catch (error) {
       console.error("Error retrieving leads:", error);
       setAllLeads([]);
       setTotalLeads(0);
+      setTotalPages(1);
     } finally {
       setIsLoadingMore(false);
     }
   };
 
-  // Modify the initial useEffect to not check configuration
+  // Charger les gigs et pipelines directement au démarrage
   useEffect(() => {
-    const token = localStorage.getItem('zoho_access_token');
-    
-    if (token) {
-      setIsZohoConnected(true);
-      fetchLeads(1);
-      fetchPipelines();
-    } else {
-      setIsZohoConnected(false);
-      setIsLoading(false);
+    fetchGigs();
+    fetchPipelines();
+    setIsLoading(false);
+  }, []);
+
+  // Détecter le callback OAuth de Zoho
+  useEffect(() => {
+    const runOnce = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      const state = urlParams.get('state');
+      const location = urlParams.get('location');
+      const accountsServer = urlParams.get('accounts-server');
+      
+      if (code && state) {
+        handleOAuthCallback(code, state, location || undefined, accountsServer || undefined);
+        
+        // Nettoyer l'URL après traitement
+        const params = new URLSearchParams(window.location.search);
+        params.delete('code');
+        params.delete('state');
+        params.delete('location');
+        params.delete('accounts-server');
+        const newSearch = params.toString();
+        window.history.replaceState({}, '', `${window.location.pathname}${newSearch ? '?' + newSearch : ''}`);
+      }
+    };
+
+    // Utiliser une ref pour s'assurer que ça ne s'exécute qu'une fois
+    if (!urlParamsProcessedRef.current) {
+      urlParamsProcessedRef.current = true;
+      runOnce();
     }
   }, []);
+
+  // Vérifier la configuration Zoho au montage
+  useEffect(() => {
+    const checkZohoConfig = async () => {
+      try {
+        const userId = Cookies.get('userId');
+        if (!userId) {
+          console.log('No userId found, cannot check Zoho config');
+          return;
+        }
+
+        const apiUrl = `${import.meta.env.VITE_DASHBOARD_API}/zoho/config/user/${userId}`;
+        console.log('Checking Zoho config for user:', userId);
+        console.log('API URL:', apiUrl);
+
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${selectedGig?._id || Cookies.get('gigId')}:${userId}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        });
+
+        console.log('Zoho config check response status:', response.status);
+        console.log('Zoho config check response content-type:', response.headers.get('content-type'));
+
+        if (response.ok) {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const data = await response.json();
+            console.log('Zoho config data:', data);
+            
+            // L'API retourne directement l'objet config OU { success: true, data: {...} }
+            // Vérifier si on a un access_token (config directe) ou si data.success est true
+            const hasConfig = (data.access_token && data.userId) || (data.success && data.data);
+            
+            if (hasConfig) {
+              console.log('✅ Zoho config found for user');
+              setHasZohoConfig(true);
+              setHasZohoAccessToken(true);
+            } else {
+              console.log('❌ No Zoho config found for user');
+              setHasZohoConfig(false);
+              setHasZohoAccessToken(false);
+            }
+          } else {
+            console.error('Expected JSON response but got:', contentType);
+            setHasZohoConfig(false);
+            setHasZohoAccessToken(false);
+          }
+        } else {
+          console.log(`Zoho config check failed with status ${response.status}`);
+          setHasZohoConfig(false);
+          setHasZohoAccessToken(false);
+        }
+      } catch (error) {
+        console.error('Error checking Zoho config:', error);
+        setHasZohoConfig(false);
+        setHasZohoAccessToken(false);
+      }
+    };
+
+    checkZohoConfig();
+  }, [selectedGig]);
+
+  // Effet pour récupérer les leads quand un gig est sélectionné
+  useEffect(() => {
+    if (selectedGig) {
+      fetchLeads(1);
+    }
+  }, [selectedGig]);
+
+  // Gestionnaire pour le changement de gig
+  const handleGigChange = async (gig: any) => {
+    console.log('Gig sélectionné:', gig);
+    setSelectedGig(gig);
+    setSelectedPipeline('all');
+    setSelectedStage('all');
+    setCurrentPage(1);
+  };
 
   // Optimize pipeline change handler
   const handlePipelineChange = async (pipelineName: string) => {
@@ -297,10 +482,7 @@ function LeadManagementPanel() {
 
   console.log("Leads:", leads);
 
-  const handleZohoConnect = async () => {
-    // Cette fonction ne sera appelée que manuellement depuis la page des intégrations
-    return;
-  };
+  // Fonction de connexion Zoho supprimée - non nécessaire
 
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showLeadDetails, setShowLeadDetails] = useState(false);
@@ -374,47 +556,20 @@ function LeadManagementPanel() {
       
     } catch (error: unknown) {
       console.error("Error updating lead:", error);
-      if (error instanceof Error && error.message === "Access token not found") {
-        setIsZohoConnected(false);
-      }
+      // Gérer l'erreur si nécessaire
     } finally {
       setIsUpdating(false);
     }
   };
 
-  const [showEditForm, setShowEditForm] = useState(false);
-  const [editableLead, setEditableLead] = useState<Lead | null>(null);
-
-  const handleEditClick = (e: React.MouseEvent, lead: Lead) => {
+  const handleEditClick = (e: React.MouseEvent, _lead: Lead) => {
     e.stopPropagation();  // Prevent click triggering on the line
-    setEditableLead(lead);
-    setShowEditForm(true);
+    // TODO: Implement lead editing functionality
   };
 
-  // Add a logout function
-  const handleZohoDisconnect = () => {
-    localStorage.removeItem('zoho_access_token');
-    setIsZohoConnected(false);
-    setLeads([]);
-    setPipelines([]);
-  };
+  // Fonction de déconnexion Zoho supprimée - non nécessaire
 
-  // Check if Zoho is connected
-  const checkZohoConnection = () => {
-    const token = ZohoTokenService.getToken();
-    if (!token) {
-      return false;
-    }
-    return true;
-  };
-
-  useEffect(() => {
-    if (!checkZohoConnection()) {
-      setError('Connection to Zoho CRM required');
-    } else {
-      fetchLeads();
-    }
-  }, []);
+  // Pas besoin de vérifier la connexion Zoho
 
 
   // Get stages of the selected pipeline
@@ -435,158 +590,690 @@ function LeadManagementPanel() {
   };
 
   const [isImporting, setIsImporting] = useState(false);
-  const [importedCount, setImportedCount] = useState(0);
-  const [showImportModal, setShowImportModal] = useState(false);
 
-  const handleImportFromZoho = async () => {
-    if (!isZohoConnected) {
-      setShowImportModal(true);
-      return;
-    }
-
-    setIsImporting(true);
-    try {
-      const accessToken = localStorage.getItem('zoho_access_token');
-      if (!accessToken) {
-        throw new Error("Access token not found");
-      }
-
-      // Récupérer les leads depuis Zoho
-      const response = await fetch(`${zohoApiUrl}/leads?page=${currentPage}`, {
-        method: "GET",
-        headers: {
-          "Authorization": `Zoho-oauthtoken ${accessToken}`,
-          "Content-Type": "application/json"
+  // Fonction pour refresh automatique du token Zoho
+  const fetchZohoWithAutoRefresh = async (url: string, options: RequestInit = {}) => {
+    const userId = Cookies.get('userId');
+    const gigId = selectedGig?._id || Cookies.get('gigId');
+    
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${gigId}:${userId}`,
+      ...options.headers,
+    };
+    
+    let response = await fetch(url, { ...options, headers });
+    
+    // Si le token est expiré (401)
+    if (response.status === 401) {
+      // Refresh automatique du token
+      const refreshRes = await fetch(
+        `${import.meta.env.VITE_DASHBOARD_API}/zoho/config/user/${userId}/refresh-token`,
+        {
+          method: 'POST',
+          headers,
         }
+      );
+      
+      if (refreshRes.ok) {
+        // Réessayer la requête initiale
+        response = await fetch(url, { ...options, headers });
+      } else {
+        toast.error('Session Zoho expirée. Veuillez vous reconnecter.');
+        throw new Error('Zoho token expired');
+      }
+    }
+    
+    return response;
+  };
+
+  // Connexion à Zoho CRM
+  const handleZohoConnect = async () => {
+    try {
+      const userId = Cookies.get('userId');
+  
+      if (!userId) {
+        console.error('No userId found in cookies');
+        toast.error('User ID not found. Please log in again.');
+        return;
+      }
+  
+      // Construire l'URL complète actuelle pour y revenir après l'authentification
+      const currentUrl = window.location.href;
+      console.log('💾 Current URL for return after auth:', currentUrl);
+  
+      // Construire le callback URI avec l'URL de redirection
+      const redirectUri = `${import.meta.env.VITE_DASHBOARD_API}/zoho/auth/callback`;
+      const encodedRedirectUri = encodeURIComponent(redirectUri);
+      const encodedState = encodeURIComponent(userId);
+      const encodedReturnUrl = encodeURIComponent(currentUrl);
+  
+      const authUrl = `${import.meta.env.VITE_DASHBOARD_API}/zoho/auth?redirect_uri=${encodedRedirectUri}&state=${encodedState}&redirect_url=${encodedReturnUrl}`;
+  
+      console.log('Calling Zoho auth URL:', authUrl);
+  
+      const response = await fetch(authUrl, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${userId}`,
+        },
       });
+  
+      console.log('Response status:', response.status);
+      console.log('Response content-type:', response.headers.get('content-type'));
 
       if (!response.ok) {
-        throw new Error("Failed to fetch leads from Zoho");
+        // Vérifier si c'est du JSON avant de parser
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          console.error('Error response:', errorData);
+          throw new Error(errorData.error || `HTTP ${response.status}: Failed to get Zoho auth URL`);
+        } else {
+          // Si ce n'est pas du JSON, c'est probablement une erreur HTML
+          const errorText = await response.text();
+          console.error('Non-JSON error response:', errorText.substring(0, 200));
+          throw new Error(`Server error (${response.status}): The endpoint may not exist or returned HTML instead of JSON`);
+        }
+      }
+  
+      // Vérifier le content-type avant de parser
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const responseText = await response.text();
+        console.error('Expected JSON but got:', responseText.substring(0, 200));
+        throw new Error('Server returned HTML instead of JSON. The API endpoint may not be correctly configured.');
+      }
+  
+      const data = await response.json();
+  
+      if (!data.authUrl) {
+        throw new Error('No auth URL received from server');
+      }
+  
+      const redirectUrl = new URL(data.authUrl);
+      redirectUrl.searchParams.set('state', userId);
+      
+      console.log('Redirecting to Zoho:', redirectUrl.toString());
+      window.location.href = redirectUrl.toString();
+    } catch (error) {
+      console.error('Error in handleZohoConnect:', error);
+      toast.error((error as any)?.message || 'Failed to initiate Zoho authentication');
+    }
+  };
+
+  // Déconnexion de Zoho CRM
+  const handleZohoDisconnect = async () => {
+    setIsDisconnectingZoho(true);
+    try {
+      const userId = Cookies.get('userId');
+      const gigId = selectedGig?._id || Cookies.get('gigId');
+      
+      if (!userId) {
+        console.error('No userId found in cookies');
+        toast.error('User ID not found. Please log in again.');
+        return;
       }
 
-      const result = await response.json();
-      const zohoLeads = result.data?.data?.data || [];
+      console.log('Disconnecting from Zoho for user:', userId);
 
-      // Sauvegarder les leads dans la base de données
-      const saveResponse = await fetch('/api/leads/save', {
+      const response = await fetch(`${import.meta.env.VITE_DASHBOARD_API}/zoho/disconnect`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${gigId}:${userId}`,
         },
-        body: JSON.stringify({ leads: zohoLeads }),
       });
 
-      if (!saveResponse.ok) {
-        throw new Error("Failed to save leads");
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error response:', errorData);
+        throw new Error(errorData.message || 'Failed to disconnect from Zoho');
       }
 
-      const saveResult = await saveResponse.json();
-      setImportedCount(saveResult.data.length);
-      
-      // Rafraîchir la liste des leads
-      await fetchLeads(currentPage);
-      
-      // Afficher une notification de succès
-      console.log(`Successfully imported ${saveResult.data.length} leads`);
+      const data = await response.json();
+
+      if (data.success) {
+        console.log('✅ Successfully disconnected from Zoho, updating status');
+        setHasZohoConfig(false);
+        setHasZohoAccessToken(false);
+        toast.success('Disconnected from Zoho CRM successfully');
+      } else {
+        throw new Error(data.message || 'Failed to disconnect from Zoho');
+      }
     } catch (error) {
-      console.error("Error importing leads:", error);
+      console.error('Error in handleZohoDisconnect:', error);
+      toast.error((error as any)?.message || 'Failed to disconnect from Zoho');
+    } finally {
+      setIsDisconnectingZoho(false);
+    }
+  };
+
+  // Traitement du callback OAuth
+  const handleOAuthCallback = async (code: string, state: string, location?: string, accountsServer?: string) => {
+    try {
+      const userId = state || Cookies.get('userId');
+      
+      if (!userId) {
+        throw new Error('User ID not found in state parameter or cookies');
+      }
+
+      const queryParams = new URLSearchParams({
+        code,
+        state: userId,
+        ...(location && { location }),
+        ...(accountsServer && { accountsServer })
+      }).toString();
+  
+      console.log('Processing OAuth callback with params:', queryParams);
+  
+      const response = await fetch(
+        `${import.meta.env.VITE_DASHBOARD_API}/zoho/auth/callback?${queryParams}`,
+        {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${selectedGig?._id || Cookies.get('gigId')}:${userId}`
+          }
+        }
+      );
+  
+      const data = await response.json();
+  
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to exchange code for tokens');
+      }
+  
+      console.log('✅ OAuth callback successful, updating Zoho config status');
+      setHasZohoConfig(true);
+      setHasZohoAccessToken(true);
+      toast.success('Connected to Zoho CRM successfully!');
+  
+    } catch (error: any) {
+      console.error('Error handling OAuth callback:', error);
+      toast.error(error.message || 'Failed to complete Zoho authentication');
+    }
+  };
+
+  // Import des leads depuis Zoho
+  const handleImportFromZoho = async () => {
+    if (!selectedGig) {
+      toast.error('Please select a gig first');
+      return;
+    }
+    
+    setIsImporting(true);
+    try {
+      const userId = Cookies.get('userId');
+      const companyId = Cookies.get('companyId');
+      
+      if (!companyId) {
+        toast.error('Configuration de l\'entreprise non trouvée. Veuillez vous reconnecter.');
+        return;
+      }
+      
+      if (!hasZohoAccessToken) {
+        toast.error('Configuration Zoho non trouvée. Veuillez configurer Zoho CRM d\'abord.');
+        return;
+      }
+      
+      const apiUrl = `${import.meta.env.VITE_DASHBOARD_API}/zoho/leads/sync-all`;
+      
+      const checkResponse = await fetchZohoWithAutoRefresh(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          userId: userId,
+          companyId: companyId,
+          gigId: selectedGig._id
+        })
+      });
+      
+      if (!checkResponse.ok) {
+        const errorData = await checkResponse.json().catch(() => null);
+        throw new Error(errorData?.message || `Erreur lors de la synchronisation avec Zoho`);
+      }
+      
+      const data = await checkResponse.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || `Erreur lors de la synchronisation`);
+      }
+      
+      if (data.data && Array.isArray(data.data.leads) && data.data.leads.length > 0) {
+        toast.success(`Successfully imported ${data.data.leads.length} leads from Zoho CRM`);
+        // Rafraîchir la liste des leads
+        await fetchLeads(1);
+        
+        // Mettre à jour l'onboarding si des leads ont été importés
+        try {
+          const companyId = Cookies.get('companyId');
+          if (companyId) {
+            await axios.put(
+              `${import.meta.env.VITE_COMPANY_API_URL}/onboarding/companies/${companyId}/onboarding/phases/2/steps/6`,
+              { status: 'completed' }
+            );
+          }
+        } catch (error) {
+          console.error('Error updating onboarding progress after Zoho import:', error);
+        }
+      } else {
+        toast.success('No new leads to import from Zoho CRM');
+        await fetchLeads(1);
+      }
+    } catch (error: any) {
+      console.error('Error in handleImportFromZoho:', error);
+      toast.error(error.message || 'Une erreur est survenue lors de l\'importation');
     } finally {
       setIsImporting(false);
     }
   };
 
-  // Modifier le composant PaginationControls pour permettre la navigation pendant le chargement
-  const PaginationControls = () => {
-    const pageNumbers = [];
-    const maxVisiblePages = 7;
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+  // File upload functions
+  const updateRealProgress = (progress: number, status: string) => {
+    if (!processingRef.current) {
+      return;
+    }
+    setUploadProgress(progress);
+  };
 
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+  const processFileWithBackend = async (file: File): Promise<{leads: any[], validation: any}> => {
+    try {
+      if (!processingRef.current) {
+        throw new Error('Processing cancelled by user');
+      }
+      
+      abortControllerRef.current = new AbortController();
+
+      const userId = Cookies.get('userId');
+      const gigId = selectedGig?._id;
+      const companyId = Cookies.get('companyId');
+
+      if (!gigId) {
+        throw new Error('Please select a gig first');
+      }
+
+      if (!userId || !companyId) {
+        throw new Error('Missing user or company information');
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      updateRealProgress(20, 'Sending file to server...');
+
+      const response = await fetch(`${import.meta.env.VITE_DASHBOARD_API}/file-processing/process`, {
+        method: 'POST',
+        body: formData,
+        signal: abortControllerRef.current?.signal,
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        let errorMessage = `Backend error: ${response.status} ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          // Use status text if we can't parse error
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Backend processing failed');
+      }
+
+      const result = data.data;
+      
+      if (!result || !result.leads || !Array.isArray(result.leads)) {
+        throw new Error('Invalid response format from backend');
+      }
+
+      const leadsWithIds = result.leads.map((lead: any) => ({
+        ...lead,
+        userId: { $oid: userId },
+        companyId: { $oid: companyId },
+        gigId: { $oid: gigId }
+      }));
+
+      updateRealProgress(100, 'Processing completed!');
+
+      return {
+        ...result,
+        leads: leadsWithIds
+      };
+
+    } catch (error) {
+      console.error('❌ Error in processFileWithBackend:', error);
+      throw error;
+    }
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!selectedGig) {
+        toast.error('Please select a gig first before uploading a file');
+        return;
+      }
+      
+      setSelectedFile(null);
+      setUploadError(null);
+      setUploadSuccess(false);
+      setIsProcessing(false);
+      setUploadProgress(0);
+      setParsedLeads([]);
+      setValidationResults(null);
+      setShowSaveButton(true);
+      setShowFileName(true);
+      
+      const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
+      
+      setSelectedFile(file);
+      setUploadError(null);
+      setUploadSuccess(false);
+      setIsProcessing(true);
+      setUploadProgress(10);
+      setParsedLeads([]);
+      
+      processingRef.current = true;
+      
+      try {
+        if (!processingRef.current) {
+          return;
+        }
+        
+        const result = await processFileWithBackend(file);
+
+        if (result.leads.length === 0) {
+          toast.error('No valid leads found in the file. Please check the file format and content.');
+          setUploadError('No valid leads found');
+          setIsProcessing(false);
+          setUploadProgress(0);
+          return;
+        }
+
+        if (result.validation) {
+          setValidationResults(result.validation);
+        }
+        
+        setParsedLeads(result.leads);
+        setIsProcessing(false);
+        setUploadProgress(100);
+        processingRef.current = false;
+      } catch (error: any) {
+        console.error('Error uploading file:', error);
+        const errorMessage = error.message || 'Error uploading file';
+        setUploadError(errorMessage);
+        toast.error(errorMessage);
+        setUploadProgress(0);
+        setIsProcessing(false);
+      }
+    }
+  };
+
+  const handleSaveLeads = async () => {
+    if (!parsedLeads || parsedLeads.length === 0) return;
+    
+    setIsSavingLeads(true);
+    setSavedLeadsCount(0);
+    setShowSaveButton(false);
+    processingRef.current = true;
+
+    try {
+      const currentUserId = Cookies.get('userId');
+      const currentGigId = selectedGig?._id;
+      const currentCompanyId = Cookies.get('companyId');
+      
+      const leadsForAPI = parsedLeads.map((lead: any) => ({
+        userId: lead.userId?.$oid || currentUserId,
+        companyId: lead.companyId?.$oid || currentCompanyId,
+        gigId: lead.gigId?.$oid || currentGigId,
+        Last_Activity_Time: lead.Last_Activity_Time || null,
+        Deal_Name: lead.Deal_Name || "Unnamed Lead",
+        Email_1: lead.Email_1 || "no-email@placeholder.com",
+        Phone: lead.Phone || "no-phone@placeholder.com",
+        Stage: lead.Stage || "New",
+        Pipeline: lead.Pipeline || "Sales Pipeline",
+        Activity_Tag: lead.Activity_Tag || '',
+        Telephony: lead.Telephony || '',
+        Project_Tags: lead.Project_Tags || []
+      }));
+
+      const savedLeads: any[] = [];
+      const failedLeads: { index: number; error: string }[] = [];
+      
+      for (let i = 0; i < leadsForAPI.length; i++) {
+        if (!processingRef.current) {
+          throw new Error('Processing cancelled by user');
+        }
+        
+        const lead = leadsForAPI[i];
+        
+        try {
+          const response = await axios.post(
+            `${import.meta.env.VITE_DASHBOARD_API}/leads`, 
+            lead,
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${currentGigId}:${currentUserId}`
+              },
+              timeout: 10000
+            }
+          );
+          
+          if (response.status === 200 || response.status === 201) {
+            savedLeads.push(response.data);
+            const progress = Math.round(((i + 1) / leadsForAPI.length) * 100);
+            setUploadProgress(progress);
+            setSavedLeadsCount(savedLeads.length);
+          } else {
+            failedLeads.push({ index: i, error: response.statusText });
+          }
+        } catch (error: any) {
+          failedLeads.push({ 
+            index: i, 
+            error: error.message || 'Network error'
+          });
+        }
+        
+        if (i < leadsForAPI.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+      }
+      
+      const savedCount = savedLeads.length;
+      const totalCount = leadsForAPI.length;
+      
+      if (savedCount === totalCount) {
+        setUploadSuccess(true);
+        setUploadProgress(100);
+        toast.success(`Successfully saved ${savedCount} contacts!`);
+        setParsedLeads([]);
+        await fetchLeads(1);
+      } else if (savedCount > 0) {
+        setUploadError(`${savedCount} leads saved, ${failedLeads.length} failed`);
+        console.warn('Failed leads:', failedLeads);
+        const failedParsedLeads = parsedLeads.filter((_, index) => 
+          failedLeads.some(failed => failed.index === index)
+        );
+        setParsedLeads(failedParsedLeads);
+      } else {
+        setUploadError('Failed to save any leads');
+        toast.error('Failed to save any leads. Check console for details.');
+        console.error('All leads failed to save:', failedLeads);
+      }
+      
+    } catch (error: any) {
+      console.error('Error in handleSaveLeads:', error);
+      const errorMessage = error.message || 'Error saving leads';
+      setUploadError(errorMessage);
+      toast.error(errorMessage);
+      
+    } finally {
+      setIsSavingLeads(false);
+      processingRef.current = false;
+      setShowSaveButton(true);
+      setShowFileName(true);
+      
+      setTimeout(() => {
+        setSelectedFile(null);
+        setUploadProgress(0);
+        setUploadSuccess(false);
+        setParsedLeads([]);
+        setUploadError(null);
+        setValidationResults(null);
+        processingRef.current = false;
+        
+        const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+        if (fileInput) {
+          fileInput.value = '';
+        }
+      }, 2000);
+    }
+  };
+
+  const handleEditLead = (index: number, field: string, value: string) => {
+    const newLeads = [...parsedLeads];
+    newLeads[index] = { ...newLeads[index], [field]: value };
+    setParsedLeads(newLeads);
+  };
+
+  // Fonction de recherche avec délai
+  const handleSearch = async (query: string) => {
+    setSearchText(query);
+    
+    // Annuler le timeout précédent s'il existe
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // Délai pour éviter trop d'appels API pendant la frappe
+    searchTimeoutRef.current = setTimeout(async () => {
+      // Si on a une requête de recherche, récupérer tous les résultats
+      if (query.trim()) {
+        await fetchLeads(1, query);
+      } else {
+        // Si pas de recherche, recharger les leads normaux avec pagination
+        await fetchLeads(1);
+      }
+    }, 500); // 500ms de délai
+  };
+
+  // Render pagination buttons
+  const renderPaginationButtons = () => {
+    const buttons = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        buttons.push(
+          <button
+            key={i}
+            onClick={() => fetchLeads(i, searchText)}
+            className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+              i === currentPage
+                ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
+                : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+            }`}
+          >
+            {i}
+          </button>
+        );
+      }
+      return buttons;
+    }
+
+    // Always show first page
+    buttons.push(
+      <button
+        key={1}
+        onClick={() => fetchLeads(1, searchText)}
+        className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+          1 === currentPage
+            ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
+            : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+        }`}
+      >
+        1
+      </button>
+    );
+
+    let startPage = Math.max(2, currentPage - 1);
+    let endPage = Math.min(totalPages - 1, currentPage + 1);
+
+    if (currentPage <= 3) {
+      endPage = Math.min(4, totalPages - 1);
+    } else if (currentPage >= totalPages - 2) {
+      startPage = Math.max(2, totalPages - 3);
+    }
+
+    if (startPage > 2) {
+      buttons.push(
+        <span key="start-ellipsis" className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300">
+          ...
+        </span>
+      );
     }
 
     for (let i = startPage; i <= endPage; i++) {
-      pageNumbers.push(i);
+      buttons.push(
+        <button
+          key={i}
+          onClick={() => fetchLeads(i, searchText)}
+          className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+            i === currentPage
+              ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
+              : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+          }`}
+        >
+          {i}
+        </button>
+      );
     }
 
-    return (
-      <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
-        <div className="flex justify-between flex-1 sm:hidden">
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Previous
-          </button>
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="relative inline-flex items-center px-4 py-2 ml-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Next
-          </button>
-        </div>
-        <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm text-gray-700">
-              {/* {isLoadingMore ? (
-                <span className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
-                  Loading more data...
-                </span>
-              ) : ( */}
-                <>
-                  Showing <span className="font-medium">{(currentPage - 1) * LEADS_PER_PAGE + 1}</span> to{" "}
-                  <span className="font-medium">
-                    {Math.min(currentPage * LEADS_PER_PAGE, totalLeads)}
-                  </span>{" "}
-                  of <span className="font-medium">{totalLeads}</span> results
-                </>
-              {/* )} */}
-            </p>
-          </div>
-          <div>
-            <nav className="inline-flex -space-x-px rounded-md shadow-sm isolate" aria-label="Pagination">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="relative inline-flex items-center px-2 py-2 text-gray-400 rounded-l-md border border-gray-300 bg-white text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <span className="sr-only">Previous</span>
-                <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
-                </svg>
-              </button>
-              {pageNumbers.map((number) => (
-                <button
-                  key={number}
-                  onClick={() => handlePageChange(number)}
-                  className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
-                    currentPage === number
-                      ? "z-10 bg-blue-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-                      : "text-gray-900 border border-gray-300 bg-white hover:bg-gray-50"
-                  }`}
-                >
-                  {number}
-                </button>
-              ))}
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="relative inline-flex items-center px-2 py-2 text-gray-400 rounded-r-md border border-gray-300 bg-white text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <span className="sr-only">Next</span>
-                <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </nav>
-          </div>
-        </div>
-      </div>
-    );
+    if (endPage < totalPages - 1) {
+      buttons.push(
+        <span key="end-ellipsis" className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300">
+          ...
+        </span>
+      );
+    }
+
+    if (totalPages > 1) {
+      buttons.push(
+        <button
+          key={totalPages}
+          onClick={() => fetchLeads(totalPages, searchText)}
+          className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+            totalPages === currentPage
+              ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
+              : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+          }`}
+        >
+          {totalPages}
+        </button>
+      );
+    }
+
+    return buttons;
   };
 
   if (isLoading) {
@@ -597,465 +1284,608 @@ function LeadManagementPanel() {
     );
   }
 
-  if (!checkZohoConnection()) {
-    return (
-      <div className="space-y-6">
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center gap-2 text-amber-600">
-              <AlertCircle className="w-6 h-6" />
-              <h2 className="text-xl font-semibold">Connection Required</h2>
-            </div>
-            <p className="text-gray-600">
-              You need to connect to Zoho CRM to access leads. Please configure your Zoho CRM integration first.
-            </p>
-            {zohoError && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
-                {zohoError}
-              </div>
-            )}
-            <button
-              onClick={() => navigate('/integrations')}
-              className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700"
-            >
-              Configure Zoho CRM Integration
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Users className="w-6 h-6 text-blue-600" />
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Header Section */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+        <div className="flex items-center mb-2">
+          <div className="p-3 bg-blue-100 rounded-lg mr-3">
+            <UserPlus className="w-6 h-6 text-blue-600" />
             </div>
-            <h2 className="text-xl font-semibold">Lead Management</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Upload Contacts</h2>
           </div>
-          <div className="flex gap-2">
-            {isZohoConnected && (
-              <>
-                <button
-                  onClick={handleImportFromZoho}
-                  disabled={isImporting}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 disabled:opacity-50"
-                >
-                  {isImporting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-                      Importing...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-5 h-5" />
-                      Import from Zoho
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={handleZohoDisconnect}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                >
-                  Disconnect Zoho
-                </button>
-              </>
-            )}
-            <button
-              onClick={() => setShowUploadModal(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-            >
-              <Upload className="w-5 h-5" />
-              Import Leads
-            </button>
-          </div>
+        <p className="text-gray-600 ml-16">
+          Import, manage, and organize your leads efficiently. Choose between connecting with your CRM system or uploading contact files directly.
+        </p>
         </div>
 
-        {!isZohoConnected ? (
-          <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-            <div className="text-center mb-6">
-              <div className="p-4 bg-blue-100 rounded-full inline-block mb-4">
-                <Building2 className="w-10 h-10 text-blue-600" />
-              </div>
-              <h2 className="text-xl font-semibold mb-2">Connect to Zoho CRM</h2>
-              <p className="text-gray-600 max-w-md mb-6">
-                To access your leads and manage your leads, you must first connect to your Zoho CRM account.
-              </p>
-              <button
-                onClick={handleZohoConnect}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium flex items-center gap-2 mx-auto"
-              >
-                <Users className="w-5 h-5" />
-                Connect to Zoho CRM
-              </button>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-4 gap-4 mb-6">
-              <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100" style={{ backgroundColor: '#f3f4f6' }}>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-2 bg-blue-50 rounded-lg">
-                    <Users className="w-5 h-5 text-blue-600" />
+      {/* Select a Gig Section */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+        <div className="flex items-center mb-4">
+          <Settings className="w-5 h-5 text-gray-700 mr-2" />
+          <h3 className="text-xl font-semibold text-gray-900">Select a Gig</h3>
                   </div>
-                  <div className="font-medium text-gray-700">Total Leads</div>
+        <select
+          value={selectedGig?._id || ''}
+          onChange={(e) => {
+            const gig = gigs.find(g => g._id === e.target.value);
+            if (gig) handleGigChange(gig);
+          }}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 font-medium"
+          disabled={isLoadingGigs}
+        >
+          <option value="">Select a Gig</option>
+          {gigs.map((gig) => (
+            <option key={gig._id} value={gig._id}>
+              {gig.title || gig.name || `Gig ${gig._id}`}
+            </option>
+          ))}
+        </select>
                 </div>
-                <div className="text-3xl font-bold text-gray-800 mb-2">{leads?.length ?? 0}</div>
-                <div className="text-sm text-gray-600 flex items-center gap-1">
-                  <ArrowUpRight className="w-4 h-4 text-green-500" />
-                  <span className="text-green-500">12% increase</span>
+
+      {/* Import Leads Section */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+        <div className="flex items-center mb-2">
+          <Upload className="w-5 h-5 text-blue-600 mr-2" />
+          <h3 className="text-xl font-semibold text-gray-900">Import Leads</h3>
                 </div>
+        <p className="text-gray-600 mb-6">
+          Choose your preferred method to import leads into your selected gig.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Zoho CRM Integration Card */}
+          <div className="bg-gradient-to-br from-green-50 to-teal-50 border-2 border-green-200 rounded-2xl p-6 hover:border-green-300 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] flex flex-col h-full">
+            {/* Header */}
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mr-4 border-2 border-green-200 shadow-sm">
+                <img 
+                  src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2334a853' d='M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z'/%3E%3C/svg%3E" 
+                  alt="Zoho" 
+                  className="h-6 w-6"
+                />
               </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100" style={{ backgroundColor: '#f3f4f6' }}>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-2 bg-purple-50 rounded-lg">
-                    <DollarSign className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <span className="font-medium text-gray-700">Pipeline Value</span>
-                </div>
-                <div className="text-3xl font-bold text-gray-800 mb-2">$1.2M</div>
-                <div className="text-sm text-gray-600 flex items-center gap-1">
-                  <ArrowUpRight className="w-4 h-4 text-green-500" />
-                  <span className="text-green-500">8% increase</span>
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100" style={{ backgroundColor: '#f3f4f6' }}>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-2 bg-amber-50 rounded-lg">
-                    <Brain className="w-5 h-5 text-amber-600" />
-                  </div>
-                  <span className="font-medium text-gray-700">AI Score</span>
-                </div>
-                <div className="text-3xl font-bold text-gray-800 mb-2">85%</div>
-                <div className="text-sm text-gray-600 flex items-center gap-1">
-                  <ArrowUpRight className="w-4 h-4 text-green-500" />
-                  <span className="text-green-500">5% increase</span>
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100" style={{ backgroundColor: '#f3f4f6' }}>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-2 bg-emerald-50 rounded-lg">
-                    <Clock className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <span className="font-medium text-gray-700">Avg Response</span>
-                </div>
-                <div className="text-3xl font-bold text-gray-800 mb-2">2.4h</div>
-                <div className="text-sm text-gray-600 flex items-center gap-1">
-                  <ArrowDownRight className="w-4 h-4 text-red-500" />
-                  <span className="text-red-500">3% increase</span>
-                </div>
+              <div className="flex-1">
+                <h4 className="text-xl font-bold text-green-900">Zoho CRM Integration</h4>
+                <p className="text-sm text-green-700">Connect and sync with your Zoho CRM</p>
               </div>
             </div>
 
-            <div className="space-y-4 mb-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="text"
-                      value={searchText}
-                      onChange={(e) => setSearchText(e.target.value)}
-                      placeholder="Search by name, company, email, phone, stage..."
-                      className="pl-10 pr-4 py-2 border rounded-lg w-96 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    {searchText && (
+            {/* Connection Status */}
+            <div className="mb-4">
+              {hasZohoAccessToken ? (
+                <div className="flex items-center justify-between bg-green-100 border border-green-200 rounded-lg p-3">
+                  <span className="text-sm font-medium text-green-800 flex items-center">
+                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                    ✓ Connected to Zoho CRM
+                  </span>
                       <button
-                        onClick={() => setSearchText('')}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    onClick={handleZohoDisconnect}
+                    disabled={isDisconnectingZoho}
+                    className="px-3 py-1 text-xs font-medium text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition-colors duration-200 disabled:opacity-50"
                       >
-                        ×
+                    {isDisconnectingZoho ? 'Disconnecting...' : 'Disconnect'}
                       </button>
-                    )}
                   </div>
+              ) : (
+                <div className="flex items-center justify-between bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <span className="text-sm font-medium text-yellow-800">⚠ Not connected</span>
                   <button 
-                    onClick={() => setShowFilterPanel(!showFilterPanel)}
-                    className="p-2 border rounded-lg hover:bg-gray-100 flex items-center gap-1"
+                    onClick={handleZohoConnect}
+                    className="px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors duration-200"
                   >
-                    <Filter className="w-5 h-5 text-gray-600" />
-                    <span className="text-gray-600">Advanced Filters</span>
+                    Connect
                   </button>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <span className="font-medium">{filteredLeads.length}</span>
-                  <span>leads found</span>
-                  {filteredLeads.length !== allLeads.length && (
-                    <span className="text-gray-400">
-                      (filtered from {allLeads.length} total leads)
-                    </span>
-                  )}
-                </div>
+              )}
               </div>
 
-              {showFilterPanel && (
-                <div className="bg-gradient-to-br from-white to-blue-50 p-5 rounded-lg border border-blue-100 shadow-lg">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-medium text-lg text-gray-800 flex items-center gap-2">
-                      <Filter className="w-5 h-5 text-blue-600" />
-                      <span>Advanced Filters</span>
-                    </h3>
+            {/* Action Button - Pushed to bottom */}
+            <div className="mt-auto">
                     <button
-                      onClick={() => setShowFilterPanel(false)}
-                      className="text-gray-500 hover:text-gray-700 bg-white p-1.5 rounded-full hover:bg-gray-100"
-                    >
-                      ×
+                onClick={async () => {
+                  if (!selectedGig) {
+                    toast.error('Please select a gig first');
+                    return;
+                  }
+                  await handleImportFromZoho();
+                }}
+                disabled={!hasZohoAccessToken || isImporting}
+                className="w-full bg-gradient-to-r from-green-600 to-teal-600 text-white font-bold py-4 px-6 rounded-xl hover:from-green-700 hover:to-teal-700 disabled:opacity-50 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center"
+              >
+                {isImporting ? (
+                  <>
+                    <RefreshCw className="mr-3 h-5 w-5 animate-spin" />
+                    Importing from Zoho...
+                  </>
+                ) : !hasZohoAccessToken ? (
+                  <>
+                    <Settings className="h-5 w-5 mr-3" />
+                    Connect to Zoho CRM First
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-5 w-5 mr-3" />
+                    Sync with Zoho CRM
+                  </>
+                )}
                     </button>
+            </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                      <h3 className="font-medium text-blue-700 border-b border-blue-200 pb-2 flex items-center gap-2">
-                        <Building2 className="w-4 h-4" />
-                        Pipeline
-                      </h3>
-                      <div className="w-full relative">
-                        <select
-                          value={selectedPipeline}
-                          onChange={(e) => handlePipelineChange(e.target.value)}
-                          className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                        >
-                          <option value="all">All Pipelines</option>
-                          {pipelines.map((pipeline) => (
-                            <option key={pipeline.id} value={pipeline.display_value}>
-                              {pipeline.display_value}
-                            </option>
-                          ))}
-                        </select>
+          {/* File Upload Card */}
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] flex flex-col h-full">
+            {/* Header */}
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mr-4 border-2 border-blue-200 shadow-sm">
+                <FileSpreadsheet className="h-6 w-6 text-blue-700" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-xl font-bold text-blue-900">File Upload</h4>
+                <p className="text-sm text-blue-700">Upload and process contact files</p>
+              </div>
+            </div>
+            
+            {/* File Info */}
+            <div className="mb-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <span className="text-sm font-medium text-blue-800">📁 Supported: CSV, Excel, JSON, TXT</span>
+              </div>
+            </div>
+            
+            {/* Upload Button - Pushed to bottom */}
+            <div className="mt-auto">
+              <div className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 px-6 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl cursor-pointer flex items-center justify-center">
+                <label htmlFor="file-upload" className="cursor-pointer flex items-center justify-center w-full">
+                  <FileSpreadsheet className="h-5 w-5 mr-3 text-white" />
+                  <span className="text-base font-semibold text-white">
+                    {isProcessing ? (
+                      <div className="flex items-center">
+                        <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
+                        Processing...
                       </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <h3 className="font-medium text-purple-700 border-b border-purple-200 pb-2 flex items-center gap-2">
-                        <Tags className="w-4 h-4" />
-                        Stage
-                      </h3>
-                      <div className="w-full relative">
-                        <select
-                          value={selectedStage}
-                          onChange={(e) => handleStageChange(e.target.value)}
-                          className="w-full p-2.5 text-gray-700 bg-white border border-purple-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none"
-                        >
-                          <option value="all">All Stages</option>
-                          {getSelectedPipelineStages().map((stage) => (
-                            <option key={stage.id} value={stage.display_value}>
-                              {stage.display_value}
-                            </option>
-                          ))}
-                        </select>
+                    ) : (
+                      'Click to upload or drag and drop'
+                    )}
+                  </span>
+                  <input
+                    id="file-upload"
+                    type="file"
+                    className="hidden"
+                    accept="*"
+                    onChange={handleFileSelect}
+                    disabled={isProcessing}
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* File Processing Results */}
+        {selectedFile && showFileName && (
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center">
+                <FileText className="mr-2 h-4 w-4 text-blue-600" />
+                <span className="font-medium text-gray-900">{selectedFile.name}</span>
+              </div>
+              <button onClick={() => {
+                setSelectedFile(null);
+                setUploadProgress(0);
+                setUploadError(null);
+                setUploadSuccess(false);
+                setParsedLeads([]);
+                setValidationResults(null);
+              }}>
+                <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+              </button>
+            </div>
+            <div className="mt-3">
+              <div className="relative">
+                <div className="h-3 rounded-full bg-gray-200 overflow-hidden">
+                  <div
+                    className={`h-3 rounded-full transition-all duration-300 ${
+                      uploadError ? 'bg-red-500' : uploadSuccess ? 'bg-green-500' : 'bg-gradient-to-r from-blue-500 to-indigo-500'
+                    }`}
+                    style={{ 
+                      width: `${uploadProgress}%`,
+                      background: isProcessing && !uploadError && !uploadSuccess ? 'linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%)' : undefined
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+                <span>
+                  {isProcessing && !uploadError && !uploadSuccess 
+                    ? `Analysing... ${uploadProgress}%` 
+                    : uploadProgress > 0 ? `${uploadProgress}% completed` : 'Ready'
+                  }
+                </span>
+                <span>{Math.round(selectedFile.size / 1024)} KB</span>
+              </div>
+            </div>
+            
+            {uploadError && (
+              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+                {uploadError}
+              </div>
+            )}
+            {uploadSuccess && (
+              <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-600">
+                File uploaded successfully!
+              </div>
+            )}
+            {parsedLeads.length > 0 && !uploadSuccess && !uploadError && showSaveButton && (
+              <div className="mt-4 space-y-4">
+                {validationResults && (
+                  <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3">
+                    <h4 className="text-sm font-semibold text-blue-800 mb-2 flex items-center">
+                      <Info className="mr-2 h-4 w-4" />
+                      AI Processing Results
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-blue-600 font-medium">Total Rows:</span> {validationResults.totalRows}
                       </div>
+                      <div>
+                        <span className="text-green-600 font-medium">Valid Rows:</span> {validationResults.validRows > 0 ? validationResults.validRows : parsedLeads.length}
+                      </div>
+                      {validationResults.invalidRows > 0 && (
+                        <div className="col-span-2">
+                          <span className="text-red-600 font-medium">Invalid Rows:</span> {validationResults.invalidRows}
+                        </div>
+                      )}
                     </div>
                   </div>
-                  
-                  <div className="mt-5 pt-3 border-t border-blue-100 flex justify-between items-center">
+                )}
+                
+                {/* Preview Section */}
+                <div className="bg-white border border-gray-200 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center">
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      <h4 className="text-sm font-semibold text-gray-800">
+                        Confirm & Edit Leads ({parsedLeads.length})
+                      </h4>
+                    </div>
                     <button
-                      onClick={() => {
-                        setSearchText('');
-                        setSelectedStage('all');
-                        handlePipelineChange('all');
-                      }}
-                      className="px-4 py-2 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-lg hover:from-gray-200 hover:to-gray-300 transition-colors flex items-center gap-2"
+                      onClick={() => setShowLeadsPreview(!showLeadsPreview)}
+                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                      title={showLeadsPreview ? "Hide leads preview" : "Show leads preview"}
                     >
-                      <Filter className="w-4 h-4" />
-                      Reset Filters
+                      {showLeadsPreview ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
                     </button>
-                    
+                  </div>
+                  {showLeadsPreview && (
+                    <>
+                      <p className="text-xs text-gray-600 mb-3">Review and edit your leads before saving. Click the edit icon to modify any field.</p>
+                      <div className="max-h-60 overflow-y-auto">
+                        <div className="space-y-2">
+                          {parsedLeads.map((lead: any, index: number) => (
+                            <div key={index} className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg p-3 border border-gray-200 hover:border-slate-300 transition-all duration-200">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
+                                    <span className="text-xs font-bold text-slate-600">{index + 1}</span>
+                                  </div>
+                                  <span className="text-sm font-semibold text-gray-900">
+                                    {lead.Deal_Name || 'Unnamed Lead'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <button
+                                    onClick={() => setEditingLeadIndex(editingLeadIndex === index ? null : index)}
+                                    className="text-slate-600 hover:text-slate-800 p-2 rounded-md hover:bg-slate-50 transition-colors duration-200"
+                                    title="Edit lead"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      const newLeads = [...parsedLeads];
+                                      newLeads.splice(index, 1);
+                                      setParsedLeads(newLeads);
+                                    }}
+                                    className="text-red-500 hover:text-red-700 p-2 rounded-md hover:bg-red-50 transition-colors duration-200"
+                                    title="Delete lead"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </div>
+                              
+                              {editingLeadIndex === index ? (
+                                <div className="space-y-3 bg-white rounded-lg p-3 border border-slate-200 shadow-sm">
+                                  <div className="grid grid-cols-1 gap-3">
+                                    <div>
+                                      <label className="block text-sm font-semibold text-gray-700 mb-2">Name</label>
+                                      <input
+                                        type="text"
+                                        value={lead.Deal_Name || ''}
+                                        onChange={(e) => handleEditLead(index, 'Deal_Name', e.target.value)}
+                                        placeholder="Enter lead name"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-700 focus:border-slate-700 transition-all duration-200 bg-white shadow-sm"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                                      <input
+                                        type="email"
+                                        value={lead.Email_1 || ''}
+                                        onChange={(e) => handleEditLead(index, 'Email_1', e.target.value)}
+                                        placeholder="Enter email address"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-700 focus:border-slate-700 transition-all duration-200 bg-white shadow-sm"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-semibold text-gray-700 mb-2">Phone</label>
+                                      <input
+                                        type="tel"
+                                        value={lead.Phone || ''}
+                                        onChange={(e) => handleEditLead(index, 'Phone', e.target.value)}
+                                        placeholder="Enter phone number"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-700 focus:border-slate-700 transition-all duration-200 bg-white shadow-sm"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="flex justify-end space-x-2 pt-2 border-t border-gray-100">
+                                    <button
+                                      onClick={() => setEditingLeadIndex(null)}
+                                      className="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all duration-200 border border-gray-300"
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setEditingLeadIndex(null);
+                                      }}
+                                      className="px-3 py-1 text-sm font-medium text-white bg-gradient-to-r from-slate-700 to-slate-900 rounded-lg hover:from-slate-800 hover:to-slate-950 transition-all duration-200 shadow-sm"
+                                    >
+                                      Save Changes
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="grid grid-cols-1 gap-2 text-sm">
+                                  <div className="flex items-center space-x-2">
+                                    <Mail className="h-4 w-4 text-gray-400" />
+                                    <span className="text-gray-600">
+                                      <span className="font-medium">Email:</span> {lead.Email_1 || 'No email'}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <Phone className="h-4 w-4 text-gray-400" />
+                                    <span className="text-gray-600">
+                                      <span className="font-medium">Phone:</span> {lead.Phone || 'No phone'}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+                
+                <button
+                  className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-white font-bold hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                  onClick={handleSaveLeads}
+                  disabled={isSavingLeads}
+                >
+                  <div className="flex items-center justify-center">
+                    <UserPlus className="mr-2 h-5 w-5" />
+                    Save {parsedLeads.length} Contacts
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+                  
+      {/* Channel Filter Section */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+        <div className="flex items-center mb-4">
+          <Globe className="w-5 h-5 text-blue-600 mr-2" />
+          <h3 className="text-xl font-semibold text-gray-900">Channel Filter</h3>
+        </div>
+        <div className="flex flex-wrap gap-2">
                     <button
-                      onClick={() => setShowFilterPanel(false)}
-                      className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-colors flex items-center gap-2"
+            className="flex items-center space-x-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 transform hover:scale-105 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg"
+          >
+            <Globe className="h-4 w-4" />
+            <span>All Channels</span>
+                    </button>
+                    <button
+            className="flex items-center space-x-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 transform hover:scale-105 bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-md"
                     >
-                      Apply
+            <Phone className="h-4 w-4" />
+            <span>Voice Calls</span>
                     </button>
                   </div>
                 </div>
-              )}
-              
-              <div className="flex flex-wrap gap-2">
-                {selectedPipeline !== 'all' && (
-                  <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
-                    Pipeline: {selectedPipeline}
-                    <button onClick={() => handlePipelineChange('all')} className="ml-1 hover:text-blue-900">×</button>
+
+      {/* Leads List Section */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100">
+        <div className="border-b border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="flex items-center">
+                <Users className="w-5 h-5 text-blue-600 mr-2" />
+                <h3 className="text-xl font-semibold text-gray-900">Leads List</h3>
                   </div>
+              <div className="mt-2">
+                {selectedGig ? (
+                  <span className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-xs font-medium">
+                    Showing {displayedLeads.length} of {totalLeads} leads
+                  </span>
+                ) : (
+                  <p className="text-sm text-gray-500">Please select a gig to view leads</p>
                 )}
-                
-                {selectedStage !== 'all' && (
-                  <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
-                    Stage: {getSelectedPipelineStages().find(s => s.display_value === selectedStage)?.display_value || selectedStage}
-                    <button onClick={() => setSelectedStage('all')} className="ml-1 hover:text-green-900">×</button>
                   </div>
-                )}
-                
-                {searchText && (
-                  <div className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
-                    Search: {searchText}
-                    <button onClick={() => setSearchText('')} className="ml-1 hover:text-purple-900">×</button>
                   </div>
+            <div className="flex items-center space-x-2">
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                  <Search className="h-5 w-5 text-gray-400" />
+                  </div>
+                <input
+                  type="text"
+                  className="block w-64 rounded-lg border-gray-300 pl-10 focus:border-blue-600 focus:ring-blue-600 sm:text-sm shadow-sm"
+                  placeholder="Search leads..."
+                  value={searchText}
+                  onChange={(e) => handleSearch(e.target.value)}
+                />
+              </div>
+              <select
+                className="rounded-lg border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-600 focus:outline-none focus:ring-blue-600 sm:text-sm shadow-sm"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+              <button
+                onClick={() => {
+                  setSearchText('');
+                  fetchLeads(1);
+                }}
+                className="flex items-center rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-md hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 transform hover:scale-105"
+                disabled={isLoadingMore || !selectedGig}
+              >
+                {isLoadingMore ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Refresh
+                  </>
                 )}
+              </button>
+            </div>
               </div>
             </div>
 
+        {/* Leads Table */}
             <div className="overflow-x-auto">
-              <div className="relative">
-                <div className="max-h-[400px] overflow-y-auto">
-                  <table className="w-full border border-gray-200 table-fixed">
-                    <thead className="sticky top-0 bg-white z-10">
-                      <tr key="header" className="text-left border-b border-gray-200">
-                        <th className="w-[18%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Lead Details</th>
-                        <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Value</th>
-                        <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">AI Insights</th>
-                        <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Last Contact</th>
-                        <th className="w-[12%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 text-left">Next Action</th>
-                        <th className="w-[13%] px-4 py-4 text-sm font-semibold text-gray-700 bg-gray-100 text-left">Actions</th>
+          <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 bg-gray-50">
+                    Lead
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 bg-gray-50">
+                    Lead Name
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 bg-gray-50">
+                    Pipeline
+                  </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 bg-white">
                       {isLoadingMore ? (
                         <tr>
-                          <td colSpan={6} className="py-8 text-center">
-                            <div className="flex flex-col items-center justify-center space-y-3">
-                              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-                              <p className="text-gray-600 font-medium">Loading leads...</p>
+                    <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
+                        Loading leads...
                             </div>
                           </td>
                         </tr>
-                      ) : displayedLeads.length > 0 ? (
+                ) : displayedLeads.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
+                      <div className="flex flex-col items-center justify-center py-8">
+                        <UserPlus className="h-12 w-12 text-gray-300 mb-2" />
+                        <p>No leads found</p>
+                        <p className="text-xs text-gray-400 mt-1">Try importing some leads or check your filters</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
                         displayedLeads.map((lead, index) => (
                           <tr 
                             key={`${lead._id}-${lead.id}-${index}`}
-                            className="hover:bg-gray-50 cursor-pointer border-b border-gray-200"
+                      className={`hover:bg-gray-50 cursor-pointer transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
                             onClick={() => handleLeadClick(lead)}
                           >
-                            <td className="w-[18%] px-4 py-4 border-r border-gray-200 text-left">
-                              <div>
-                                <div className="font-medium">{lead.Deal_Name}</div>
-                                <div className="text-sm text-gray-500 flex items-center gap-1">
-                                  <Building2 className="w-4 h-4" />
-                                  {lead.Contact_Name?.name || "N/A"}
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <div className="flex items-center">
+                          <div className="h-10 w-10 flex-shrink-0 rounded-full flex items-center justify-center bg-blue-100">
+                            <UserPlus className="h-6 w-6 text-blue-700" />
                                 </div>
-                                <div className="text-sm text-gray-500 flex items-center gap-1">
-                                  <Phone className="w-4 h-4" />
-                                  {lead.Telephony || lead.Phone || "N/A"}
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900 flex items-center">
+                              {lead.Email_1 || 'No Email'}
                                 </div>
-                                {/* <div className="text-sm text-gray-500 flex items-center gap-1">
-                                  <Mail className="w-4 h-4" />
-                                  {lead.Email_1 || "N/A"}
-                                </div> */}
-                                <div className="text-sm text-gray-500 flex items-center gap-1">
-                                  <p>
-                                    <b>Pipeline :</b> {typeof lead.Pipeline === 'object' ? lead.Pipeline.name : lead.Pipeline || "N/A"}
-                                    <br />
-                                    <b>Stage :</b> {lead.Stage || "N/A"}
-                                  </p>
+                            <div className="text-sm text-gray-500">{lead.Phone || 'No Phone'}</div>
                                 </div>
                               </div>
                             </td>
-                            <td className="w-[13%] px-4 py-4 border-r border-gray-200 text-left">
-                              <div>
-                                <div className="font-medium">
-                                  {lead.$currency_symbol || "$"}{lead.Amount ? lead.Amount.toLocaleString() : "0"}
-                                </div>
-                                <div className="text-sm text-gray-500">
-                                  {lead.Probability ? `${lead.Probability}%` : "0%"} probability
-                                </div>
-                              </div>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
+                        {lead.Deal_Name || 'N/A'}
                             </td>
-                            <td className="w-[13%] px-4 py-4 border-r border-gray-200 text-left">
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-1">
-                                  <Brain className="w-4 h-4 text-purple-600" />
-                                  <span>
-                                    Score: {lead.metadata?.ai_analysis?.score || "N/A"}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Sparkles className="w-4 h-4 text-yellow-600" />
-                                  <span>
-                                    {lead.Type || "N/A"}
-                                  </span>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="w-[13%] px-4 py-4 border-r border-gray-200 text-left">
-                              <div>
-                                <div className="text-sm">
-                                  {lead.Modified_Time ? new Date(lead.Modified_Time).toLocaleDateString() : "N/A"}
-                                </div>
-                                <div className="text-sm text-gray-500">{lead.Owner?.name || "N/A"}</div>
-                              </div>
-                            </td>
-                            <td className="w-[12%] px-4 py-4 border-r border-gray-200 text-left">
-                              <div className="text-sm">Follow-up</div>
-                              <div className="text-sm text-gray-500">Tomorrow</div>
-                            </td>
-                            <td className="w-[13%] px-4 py-4 text-left">
-                              <div className="flex items-center gap-2">
-                                <button
-                                  className="p-2 hover:bg-gray-100 rounded-lg text-purple-600"
-                                  title="AI Analysis"
-                                >
-                                  <Brain className="w-5 h-5" />
-                                </button>
-                                <button
-                                  className="p-2 hover:bg-gray-100 rounded-lg text-blue-600"
-                                  title="Generate Script"
-                                >
-                                  <Bot className="w-5 h-5" />
-                                </button>
-                                <button
-                                  className="p-2 hover:bg-gray-100 rounded-lg"
-                                  title="Edit Lead"
-                                  onClick={(e) => handleEditClick(e, lead)}
-                                >
-                                  <Edit className="w-5 h-5" />
-                                </button>
-                              </div>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                        {typeof lead.Pipeline === 'object' ? lead.Pipeline.name : lead.Pipeline || 'Reps Pipeline'}
                             </td>
                           </tr>
                         ))
-                      ) : (
-                        <tr>
-                          <td colSpan={6} className="py-4 text-center text-gray-500 border-b border-gray-200">
-                            No leads found
-                          </td>
-                        </tr>
                       )}
                     </tbody>
                   </table>
                 </div>
               </div>
+
+        {/* Pagination Controls */}
+        {displayedLeads.length > 0 && (
+          <div className="bg-white px-4 py-3 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center text-sm text-gray-700">
+                <span>
+                  Showing <span className="font-medium">{displayedLeads.length}</span> of{' '}
+                  <span className="font-medium">{totalLeads > 0 ? totalLeads : displayedLeads.length}</span> leads
+                </span>
             </div>
-          </>
+              
+              {totalPages > 1 && (
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => fetchLeads(currentPage - 1, searchText)}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  
+                  <div className="flex items-center space-x-1">
+                    {renderPaginationButtons()}
+                  </div>
+                  
+                  <button
+                    onClick={() => fetchLeads(currentPage + 1, searchText)}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         )}
       </div>
-      
-      {isZohoConnected && hasMoreRecords && (
-        <div className="flex justify-center items-center mt-6">
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            className="px-6 py-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
-          >
-            <span className="text-gray-700">Afficher plus</span>
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-        </div>
-      )}
-
-      {showUploadModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full">
-            <LeadUploader
-              onComplete={() => {
-                setShowUploadModal(false);
-              }}
-              onClose={() => setShowUploadModal(false)}
-            />
-          </div>
-        </div>
-      )}
 
       {showLeadDetails && selectedLead && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -1170,41 +2000,6 @@ function LeadManagementPanel() {
         </div>
       )}
 
-      {showImportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <div className="text-center space-y-4">
-              <div className="flex items-center justify-center gap-2 text-amber-600">
-                <AlertCircle className="w-8 h-8" />
-              </div>
-              <h2 className="text-xl font-semibold text-gray-800">Connection Required</h2>
-              <p className="text-gray-600">
-                You need to connect to Zoho CRM to import leads. Please configure your Zoho CRM integration first.
-              </p>
-              <div className="flex justify-center gap-3 mt-6">
-                <button
-                  onClick={() => setShowImportModal(false)}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    setShowImportModal(false);
-                    navigate('/integrations');
-                  }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Configure Zoho Integration
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add pagination controls */}
-      <PaginationControls />
     </div>
   );
 }

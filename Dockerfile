@@ -36,6 +36,8 @@ ENV VITE_MATCHING_API_URL=https://preprod-api-matching.harx.ai/api
 ENV VITE_API_URL_GIGS=https://preprod-api-gigsmanual.harx.ai/api
 ENV VITE_ZOHO_API_URL=https://preprod-api-dashboard.harx.ai/api/zoho
 ENV VITE_BACKEND_URL_GIGS=https://preprod-api-gigsmanual.harx.ai/api/gigs
+ENV VITE_DASHBOARD_API=https://preprod-api-dashboard.harx.ai/api
+
 
 # WebSocket URL for Speech-to-Text
 #ENV VITE_WS_URL=ws://38.242.208.242:5006
