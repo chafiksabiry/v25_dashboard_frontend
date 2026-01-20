@@ -14,10 +14,10 @@ function ChatPanel() {
   const [chats, setChats] = useState<any[]>([]);
   const [activeChat, setActiveChat] = useState<any | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
-  
+
   // Charger les discussions
   useEffect(() => {
-    axios.get("https://api-dashboard.harx.ai/api/zoho/chats")
+    axios.get("https://harxv25dashboardfrontend.netlify.app/api/zoho/chats")
       .then((res) => {
         setChats(res.data.chats || []);
       })
@@ -29,7 +29,7 @@ function ChatPanel() {
   // Charger les messages de la discussion sélectionnée
   const loadMessages = async (chatId: string) => {
     try {
-      const res = await axios.get(`https://api-dashboard.harx.ai/api/zoho/chats/${chatId}/transcript`);
+      const res = await axios.get(`https://harxv25dashboardfrontend.netlify.app/api/zoho/chats/${chatId}/transcript`);
       setMessages(res.data.transcript || []);
       setActiveChat(chatId);
     } catch (err) {

@@ -27,7 +27,7 @@ export function Leads() {
       }
 
       // Use the token to fetch leads
-      const response = await fetch('https://api-dashboard.harx.ai/api/leads', {
+      const response = await fetch('https://harxv25dashboardfrontend.netlify.app/api/leads', {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',

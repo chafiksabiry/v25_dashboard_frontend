@@ -49,8 +49,8 @@ function EmailsPanel() {
   const fetchEmails = async () => {
     let accessToken = localStorage.getItem("zoho_access_token");
     if (!accessToken) {
-        window.location.href = `${import.meta.env.VITE_API_URL}/zoho/auth`;
-        return;
+      window.location.href = `${import.meta.env.VITE_API_URL}/zoho/auth`;
+      return;
     }
     try {
       setLoading(true);
@@ -59,7 +59,7 @@ function EmailsPanel() {
         sent: '/zoho/emails/sent',
         archived: '/zoho/emails/archived'
       };
-      
+
       const endpoint = endpoints[activeFilter as keyof typeof endpoints] || '/zoho/emails/inbox';
       const response = await axios.get(`${import.meta.env.VITE_API_URL}${endpoint}`, {
         headers: {
@@ -116,7 +116,7 @@ function EmailsPanel() {
       // Retourne le nom s'il existe, sinon la partie locale de l'email
       return matches[1].trim() || matches[2].split('@')[0];
     }
-    
+
     // Si pas de format spécial, retourner la partie avant @ ou l'email complet
     return cleaned.split('@')[0];
   };
@@ -158,11 +158,11 @@ function EmailsPanel() {
           },
         }
       );
-      
+
       // Rafraîchir les données après l'archivage
       await fetchEmails();
       await fetchAllCounts(); // Mettre à jour tous les compteurs
-      
+
       // Optionnel : Afficher un message de succès
       alert("Email archivé avec succès");
     } catch (err) {
@@ -179,7 +179,7 @@ Sujet: ${email.subject}
 De: ${email.sender}
 Date: ${formatDate(email.receivedTime)}
     `;
-    
+
     try {
       await navigator.clipboard.writeText(shareText);
       alert("Détails de l'email copiés dans le presse-papier !");
@@ -192,17 +192,17 @@ Date: ${formatDate(email.receivedTime)}
   const handleZohoConnect = async () => {
     try {
       setIsLoading(true);
-      
+
       const configData = {
         clientId: "1000.xxxx", // Remplacer par votre vrai Client ID
         clientSecret: "xxxx", // Remplacer par votre vrai Client Secret
         refreshToken: "xxxx" // Remplacer par votre vrai Refresh Token
       };
-      
+
       console.log("Tentative de configuration avec:", configData);
-      
+
       // Première étape : Configuration
-      const configResponse = await fetch('https://api-dashboard.harx.ai/api/zoho/configure', {
+      const configResponse = await fetch('https://harxv25dashboardfrontend.netlify.app/api/zoho/configure', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -220,7 +220,7 @@ Date: ${formatDate(email.receivedTime)}
       if (configResult.success) {
         console.log("Configuration réussie, récupération du token...");
         // Deuxième étape : Récupération du token
-        const tokenResponse = await fetch('https://api-dashboard.harx.ai/api/zoho/token', {
+        const tokenResponse = await fetch('https://harxv25dashboardfrontend.netlify.app/api/zoho/token', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
@@ -233,7 +233,7 @@ Date: ${formatDate(email.receivedTime)}
 
         const tokenResult = await tokenResponse.json();
         console.log("Token response:", tokenResult);
-        
+
         if (tokenResult.access_token) {
           console.log("Nouveau token récupéré:", tokenResult.access_token);
           localStorage.setItem('zoho_access_token', tokenResult.access_token);
@@ -243,7 +243,7 @@ Date: ${formatDate(email.receivedTime)}
           throw new Error('Token non reçu');
         }
       }
-      
+
     } catch (error) {
       console.error('Erreur lors de la configuration:', error);
       setIsZohoConnected(false);
@@ -261,7 +261,7 @@ Date: ${formatDate(email.receivedTime)}
   const fetchAllCounts = async () => {
     let accessToken = localStorage.getItem("zoho_access_token");
     if (!accessToken) return;
-    
+
     try {
       const [sentResponse, archivedResponse, inboxResponse] = await Promise.all([
         axios.get(`${import.meta.env.VITE_API_URL}/zoho/emails/sent`, {
@@ -299,7 +299,7 @@ Date: ${formatDate(email.receivedTime)}
   const handleDisconnect = () => {
     // Supprimer le token
     localStorage.removeItem('zoho_access_token');
-    
+
     // Réinitialiser les états
     setIsZohoConnected(false);
     setEmails([]);
@@ -308,7 +308,7 @@ Date: ${formatDate(email.receivedTime)}
     setArchivedCount(0);
     setUnreadCount(0);
     setError(null);
-    
+
     // Rediriger vers la page d'intégrations
     navigate('/integrations');
   };
@@ -322,7 +322,7 @@ Date: ${formatDate(email.receivedTime)}
     const token = localStorage.getItem('zoho_access_token');
     console.log("=== Initialisation ===");
     console.log("Token au démarrage:", token ? "Présent" : "Absent");
-    
+
     if (token) {
       console.log("Token value:", token);
       setIsZohoConnected(true);
@@ -358,7 +358,7 @@ Date: ${formatDate(email.receivedTime)}
             </div>
             <div className="ml-3">
               <p className="text-sm text-amber-700">
-                Vous devez vous connecter à Zoho CRM pour accéder aux emails. 
+                Vous devez vous connecter à Zoho CRM pour accéder aux emails.
                 <button
                   onClick={() => navigate('/integrations')}
                   className="ml-2 text-amber-700 underline hover:text-amber-800"
@@ -422,30 +422,27 @@ Date: ${formatDate(email.receivedTime)}
 
         <div className="flex items-center gap-4 mb-8">
           <button
-            className={`px-4 py-2 rounded-lg ${
-              activeFilter === 'inbox'
+            className={`px-4 py-2 rounded-lg ${activeFilter === 'inbox'
                 ? 'bg-purple-600 text-white shadow-md transform scale-105'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:shadow'
-            }`}
+              }`}
           >
             <Inbox className="w-4 h-4" />
             Inbox
           </button>
           <button
-            className={`px-4 py-2 rounded-lg ${
-              activeFilter === 'sent'
+            className={`px-4 py-2 rounded-lg ${activeFilter === 'sent'
                 ? 'bg-purple-600 text-white shadow-md transform scale-105'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:shadow'
-            }`}
+              }`}
           >
             Sent
           </button>
           <button
-            className={`px-4 py-2 rounded-lg ${
-              activeFilter === 'archived'
+            className={`px-4 py-2 rounded-lg ${activeFilter === 'archived'
                 ? 'bg-purple-600 text-white shadow-md transform scale-105'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:shadow'
-            }`}
+              }`}
           >
             Archived
           </button>

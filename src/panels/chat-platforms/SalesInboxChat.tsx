@@ -95,7 +95,7 @@ const SalesInboxChat: React.FC = () => {
   const fetchChats = async () => {
     setLoading(true);
     const token = ZohoTokenService.getToken();
-    
+
     if (!token) {
       setIsZohoConnected(false);
       handleZohoConnect();
@@ -109,7 +109,7 @@ const SalesInboxChat: React.FC = () => {
           "Content-Type": "application/json"
         }
       });
-      
+
       if (res.data?.success && res.data?.data?.success && Array.isArray(res.data?.data?.data?.data)) {
         const chatData = res.data.data.data.data.map((chat: any) => ({
           id: chat.id,
@@ -124,7 +124,7 @@ const SalesInboxChat: React.FC = () => {
           owner: chat.owner,
           department: chat.department
         }));
-        
+
         setChats(chatData);
         setIsZohoConnected(true);
       } else {
@@ -132,7 +132,7 @@ const SalesInboxChat: React.FC = () => {
       }
     } catch (err: any) {
       console.error(`Erreur de récupération des discussions pour salesinbox:`, err);
-      
+
       if (err.response?.status === 401) {
         setIsZohoConnected(false);
         handleZohoConnect();
@@ -147,24 +147,24 @@ const SalesInboxChat: React.FC = () => {
   const loadMessages = async (chatId: string) => {
     setLoadingMessages(true);
     const token = ZohoTokenService.getToken();
-    
+
     if (!token) {
       setIsZohoConnected(false);
       handleZohoConnect();
       return;
     }
-    
+
     try {
       const res = await axios.get(
         `${import.meta.env.VITE_API_URL}/zoho/chats/${chatId}/messages`,
-        { 
-          headers: { 
+        {
+          headers: {
             "Authorization": `Zoho-oauthtoken ${token}`,
             "Content-Type": "application/json"
-          } 
+          }
         }
       );
-      
+
       if (res.data?.success && res.data?.data?.data) {
         const messagesData = res.data.data.data.data.map((msg: any) => ({
           id: msg.id,
@@ -181,7 +181,7 @@ const SalesInboxChat: React.FC = () => {
       setActiveChat(chatId);
     } catch (err: any) {
       console.error(`Erreur de récupération des messages pour salesinbox:`, err);
-      
+
       if (err.response?.status === 401) {
         setIsZohoConnected(false);
         handleZohoConnect();
@@ -207,24 +207,24 @@ const SalesInboxChat: React.FC = () => {
       const res = await axios.post(
         `${import.meta.env.VITE_API_URL}/zoho/chats/${activeChat}`,
         { text: message },
-        { 
-          headers: { 
+        {
+          headers: {
             "Authorization": `Zoho-oauthtoken ${token}`,
             "Content-Type": "application/json"
-          } 
+          }
         }
       );
 
       const newMessageObj: Message = {
         id: Date.now().toString(),
         time: Date.now().toString(),
-        sender: { 
-          type: "operator", 
+        sender: {
+          type: "operator",
           name: "Vous",
           id: "operator-1"
         },
         type: "text",
-        message: { 
+        message: {
           text: message
         }
       };
@@ -233,21 +233,21 @@ const SalesInboxChat: React.FC = () => {
       setMessage("");
     } catch (err) {
       console.error(`Erreur d'envoi du message pour salesinbox:`, err);
-      
+
       const newMessageObj: Message = {
         id: Date.now().toString(),
         time: Date.now().toString(),
-        sender: { 
-          type: "operator", 
+        sender: {
+          type: "operator",
           name: "Vous",
           id: "operator-1"
         },
         type: "text",
-        message: { 
+        message: {
           text: message
         }
       };
-      
+
       setMessages((prevMessages) => [...prevMessages, newMessageObj]);
       setMessage("");
     }
@@ -261,8 +261,8 @@ const SalesInboxChat: React.FC = () => {
         clientSecret: "xxxx",
         refreshToken: "xxxx"
       };
-      
-      const configResponse = await fetch('https://api-dashboard.harx.ai/api/zoho/configure', {
+
+      const configResponse = await fetch('https://harxv25dashboardfrontend.netlify.app/api/zoho/configure', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -277,7 +277,7 @@ const SalesInboxChat: React.FC = () => {
       }
 
       if (configResult.success) {
-        const tokenResponse = await fetch('https://api-dashboard.harx.ai/api/zoho/token', {
+        const tokenResponse = await fetch('https://harxv25dashboardfrontend.netlify.app/api/zoho/token', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
@@ -289,7 +289,7 @@ const SalesInboxChat: React.FC = () => {
         }
 
         const tokenResult = await tokenResponse.json();
-        
+
         if (tokenResult.access_token) {
           ZohoTokenService.setToken(tokenResult.access_token);
           setIsZohoConnected(true);
@@ -298,7 +298,7 @@ const SalesInboxChat: React.FC = () => {
           throw new Error('Token non reçu');
         }
       }
-      
+
     } catch (error) {
       console.error('Erreur lors de la configuration:', error);
       setIsZohoConnected(false);
@@ -349,8 +349,8 @@ const SalesInboxChat: React.FC = () => {
         <p className="text-gray-600 mb-4">
           You need to connect to Zoho CRM to use the SalesInbox.
         </p>
-        <a 
-          href="/integrations" 
+        <a
+          href="/integrations"
           className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700"
         >
           Go to Integrations
@@ -423,9 +423,8 @@ const SalesInboxChat: React.FC = () => {
               chats.map((chat) => (
                 <button
                   key={chat.id}
-                  className={`w-full p-4 text-left hover:bg-gray-100 flex items-center gap-4 transition-all ${
-                    activeChat === chat.id ? styles.activeChatBg : ""
-                  }`}
+                  className={`w-full p-4 text-left hover:bg-gray-100 flex items-center gap-4 transition-all ${activeChat === chat.id ? styles.activeChatBg : ""
+                    }`}
                   onClick={() => loadMessages(chat.id)}
                 >
                   <img
@@ -456,7 +455,7 @@ const SalesInboxChat: React.FC = () => {
             <div className="flex items-center gap-3">
               <img
                 src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                  activeChat 
+                  activeChat
                     ? chats.find((chat) => chat.id === activeChat)?.visitor_name || "User"
                     : "User"
                 )}&background=random`}
@@ -465,7 +464,7 @@ const SalesInboxChat: React.FC = () => {
               />
               <div>
                 <div className={`font-medium ${styles.headerText} flex items-center`}>
-                  {styles.icon} 
+                  {styles.icon}
                   {activeChat
                     ? chats.find((chat) => chat.id === activeChat)?.visitor_name || "Sélectionnez une conversation"
                     : "Sélectionnez une conversation"}
@@ -538,11 +537,10 @@ const SalesInboxChat: React.FC = () => {
                         className={`mb-3 flex w-full ${isOperator ? 'justify-end' : 'justify-start'}`}
                       >
                         <div
-                          className={`p-4 rounded-2xl shadow max-w-[70%] break-words ${
-                            isOperator
+                          className={`p-4 rounded-2xl shadow max-w-[70%] break-words ${isOperator
                               ? "bg-blue-600 text-white"
                               : "bg-gray-100 text-gray-800"
-                          }`}
+                            }`}
                         >
                           <div className="text-md">
                             {decodeHtmlEntities(msg.message.text)}

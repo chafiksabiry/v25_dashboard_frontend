@@ -41,22 +41,22 @@ function ContactManagementPanel() {
   const fetchContacts = async () => {
     let accessToken = localStorage.getItem("zoho_access_token");
     if (!accessToken) {
-        window.location.href = `${import.meta.env.VITE_API_URL}/zoho/auth`;
-        return;
+      window.location.href = `${import.meta.env.VITE_API_URL}/zoho/auth`;
+      return;
     }
-  
+
     try {
-      const response = await fetch("https://api-dashboard.harx.ai/api/zoho/contacts", {
+      const response = await fetch("https://harxv25dashboardfrontend.netlify.app/api/zoho/contacts", {
         method: "GET",
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       });
-  
+
       if (!response.ok) {
         throw new Error("Erreur lors de la récupération des contacts");
       }
-  
+
       const result = await response.json();
       setContacts(result.data.data);
       console.log("Contacts récupérés :", result.data.data);
@@ -64,7 +64,7 @@ function ContactManagementPanel() {
       console.error("Erreur :", error);
     }
   };
-  
+
 
   useEffect(() => {
     fetchContacts();

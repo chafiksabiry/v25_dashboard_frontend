@@ -9,7 +9,7 @@ const actions = initGlobalState(initialState);
 
 // Listen for changes (for debugging)
 actions.onGlobalStateChange((state, /*prev*/) => {
-    console.log('[Main App] Global state changed:', state);
+  console.log('[Main App] Global state changed:', state);
 });
 
 console.log("qiankun is here");
@@ -18,7 +18,7 @@ console.log("qiankun is here");
 registerMicroApps([
   {
     name: 'app1',
-    entry: 'https://registration.harx.ai/',
+    entry: 'https://harx25register.netlify.app/',
     container: '#container-app1',
     activeRule: '/app1',
     props: {
@@ -43,7 +43,7 @@ registerMicroApps([
   },
   {
     name: 'repdashboard',
-    entry: 'https://rep-dashboard.harx.ai/',
+    entry: 'https://harxv25dashboardrepfront.netlify.app/',
     container: '#container-app8',
     activeRule: '/repdashboard/*',
     props: {

@@ -28,7 +28,7 @@ export function Deals() {
       }
 
       // Use the token to fetch deals
-      const response = await fetch('https://api-dashboard.harx.ai/api/deals', {
+      const response = await fetch('https://harxv25dashboardfrontend.netlify.app/api/deals', {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
