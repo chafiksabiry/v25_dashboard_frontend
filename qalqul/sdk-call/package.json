@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@qalqul/sdk-call": "file:",
-    "@qalqul/sipml": "https://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@github.com/qalqul/qalqul-sipml.git",
+    "@qalqul/sipml": "file:../sipml",
     "@types/socket.io-client": "^3.0.0",
     "patch-package": "^8.0.0",
     "rxjs": "^6.3.3",

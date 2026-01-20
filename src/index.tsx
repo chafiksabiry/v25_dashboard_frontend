@@ -31,7 +31,7 @@ registerMicroApps([
   // ... autres apps ...
   {
     name: 'app6',
-    entry: 'https://gigsai.harx.ai/',
+    entry: 'https://harxv25gigcreationfrontend.netlify.app/',
     container: '#container-app6',
     activeRule: '/app6',
     props: {
