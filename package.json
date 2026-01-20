@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "cross-env VITE_QIANKUN=false vite",
     "dev:standalone": "cross-env VITE_QIANKUN=false vite",
-    "build": "vite build",
-    "build:qiankun": "vite build --mode qiankun",
+    "build": "npm run build:sdk-call && vite build",
+    "build:qiankun": "npm run build:sdk-call && vite build --mode qiankun",
+    "build:sdk-call": "cd qalqul/sdk-call && npm install && npm run build",
     "lint": "eslint .",
     "preview": "vite preview",
     "server": "node server/index.js"
