@@ -649,13 +649,10 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
   };
 
   const handleMuteToggle = () => {
-    if (provider === 'qalqul' ? qalqulSDK : connection) {
-      if (provider === 'qalqul') {
-        manageMuteCall(calls[calls.length - 1]);
-      } else {
-        connection?.mute(!isMuted);
-      }
-      setIsMuted(!isMuted);
+    if (connection) {
+      const newMutedStatus = !isMuted;
+      connection.mute(newMutedStatus);
+      setIsMuted(newMutedStatus);
     }
   };
 
@@ -683,13 +680,8 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
       // Update call status
       setCallStatus('ended');
 
-      // Handle provider-specific disconnection
-      if (provider === 'qalqul') {
-        if (calls.length > 0) {
-          await manageHangupCall(calls[calls.length - 1]);
-        }
-      } else if (connection) {
-        // The disconnect handler will handle cleanup and saving
+      // The disconnect handler will handle cleanup and saving
+      if (connection) {
         connection.disconnect();
       }
 
