@@ -18,7 +18,7 @@ var removeReactRefreshScript = () => {
 var vite_config_default = defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   return {
-    base: "https://dashboard.harx.ai/",
+    base: "https://harxv25dashboardfrontend.netlify.app/",
     plugins: [
       react({
         jsxRuntime: "classic"
