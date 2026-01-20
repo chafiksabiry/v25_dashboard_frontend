@@ -6,9 +6,8 @@
   "scripts": {
     "dev": "cross-env VITE_QIANKUN=false vite",
     "dev:standalone": "cross-env VITE_QIANKUN=false vite",
-    "build": "npm run build:sdk-call && vite build",
-    "build:qiankun": "npm run build:sdk-call && vite build --mode qiankun",
-    "build:sdk-call": "cd qalqul/sdk-call && npm install && npm run build",
+    "build": "vite build",
+    "build:qiankun": "vite build --mode qiankun",
     "lint": "eslint .",
     "preview": "vite preview",
     "server": "node server/index.js"
@@ -18,7 +17,6 @@
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.1.0",
     "@mui/material": "^7.1.0",
-    "@qalqul/sdk-call": "file:./qalqul/sdk-call",
     "@reduxjs/toolkit": "^2.2.1",
     "@supabase/supabase-js": "^2.39.7",
     "@telnyx/webrtc": "^2.22.10",
