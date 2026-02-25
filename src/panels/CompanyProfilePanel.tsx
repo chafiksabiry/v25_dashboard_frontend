@@ -180,10 +180,8 @@ function CompanyProfile() {
                   [field]: e.target.value,
                 }))
               }
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none ${isHeroField
-                  ? 'border-white/30 bg-white/20 backdrop-blur-sm text-white placeholder-white/70'
-                  : 'border-indigo-300 bg-white text-gray-900'
-                }`}
+              className="w-full px-3 py-2 border border-indigo-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 outline-none"
+
               placeholder={isHeroField ? value || "Enter text..." : ""}
             />
             <div className="absolute right-0 top-full mt-2 flex gap-2">
@@ -208,8 +206,8 @@ function CompanyProfile() {
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
                 <button
                   className={`p-1 rounded-full shadow-sm ${isHeroField
-                      ? 'bg-white/20 backdrop-blur-sm text-white hover:text-yellow-300'
-                      : 'bg-white text-gray-600 hover:text-indigo-600 border border-gray-100'
+                    ? 'bg-white/20 backdrop-blur-sm text-white hover:text-yellow-300'
+                    : 'bg-white text-gray-600 hover:text-indigo-600 border border-gray-100'
                     }`}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -965,8 +963,8 @@ return (
       <button
         onClick={() => setEditMode(!editMode)}
         className={`p-2 rounded-full transition-all duration-300 ${editMode
-            ? "bg-green-500 text-white hover:bg-green-600"
-            : "bg-white text-gray-600 hover:bg-gray-100"
+          ? "bg-green-500 text-white hover:bg-green-600"
+          : "bg-white text-gray-600 hover:bg-gray-100"
           }`}
       >
         <Edit2 size={20} />
