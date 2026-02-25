@@ -95,7 +95,7 @@ export const integrationHandlers = {
     const expiresAt = config.expires_at;
 
     // If token is expired or will expire in the next 5 minutes, refresh it
-    if (!expiresAt || Date.now() >= expiresAt - 300000) {
+    if (!expiresAt || Date.now() >= expiresAt - 30000) {
       return await integrationHandlers.refreshZooToken(integrationId);
     }
 

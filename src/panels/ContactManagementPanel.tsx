@@ -18,22 +18,23 @@ import {
 
 function ContactManagementPanel() {
   interface Contact {
-    Contact_Name: ReactNode;
     id: string;
-    Full_Name: string;
-    Company_name: string;
-    status: string;
-    value: number;
-    Email: string;
-    Telephony: string;
-    Location: string;
-    $approval_state: string;
+    First_Name: string;
+    Last_Name: string;
+    Email_1: string;
+    Phone: string;
+    Address: string;
+    Postal_Code: string;
+    City: string;
+    Date_of_Birth: string;
+    Stage: string;
+    Pipeline: string;
+    updatedAt: string;
     metadata?: {
       ai_analysis?: {
         score?: string;
       };
     };
-    updated_at?: string;
   }
 
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -58,8 +59,8 @@ function ContactManagementPanel() {
       }
 
       const result = await response.json();
-      setContacts(result.data.data);
-      console.log("Contacts récupérés :", result.data.data);
+      setContacts(result.data); // Backend returns the array in .data
+      console.log("Contacts récupérés :", result.data);
     } catch (error) {
       console.error("Erreur :", error);
     }
@@ -128,65 +129,31 @@ function ContactManagementPanel() {
         <div className="overflow-x-auto max-h-screen border border-gray-200 rounded-lg shadow-lg">
           <table className="w-full text-sm text-gray-700">
             <thead className="sticky top-0 bg-gray-100">
-              <tr className="text-left border-b">
-                <th className="py-3 px-4 font-medium text-gray-600">
-                  Contact Details
-                </th>
-                <th className="py-3 px-4 font-medium text-gray-600 text-center">
-                  Approval state
-                </th>
-                <th className="py-3 px-4 font-medium text-gray-600 text-center">
-                  Value
-                </th>
-                <th className="py-3 px-4 font-medium text-gray-600 text-center">
-                  AI Insights
-                </th>
-                <th className="py-3 px-4 font-medium text-gray-600 text-center">
-                  Last Contact
-                </th>
+              <tr className="text-left border-b bg-gray-50 text-center">
+                <th className="py-3 px-3 font-semibold text-gray-600 uppercase text-xs">Last Name</th>
+                <th className="py-3 px-3 font-semibold text-gray-600 uppercase text-xs">First Name</th>
+                <th className="py-3 px-3 font-semibold text-gray-600 uppercase text-xs">Email</th>
+                <th className="py-3 px-3 font-semibold text-gray-600 uppercase text-xs">Address</th>
+                <th className="py-3 px-3 font-semibold text-gray-600 uppercase text-xs">Postal Code</th>
+                <th className="py-3 px-3 font-semibold text-gray-600 uppercase text-xs">City</th>
+                <th className="py-3 px-3 font-semibold text-gray-600 uppercase text-xs">Date of Birth</th>
+                <th className="py-3 px-3 font-semibold text-gray-600 uppercase text-xs">Mobile</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {contacts.map((contact) => (
                 <tr
                   key={contact.id}
-                  className="hover:bg-gray-50 transition duration-300"
+                  className="hover:bg-gray-50 transition duration-300 text-center divide-x border-b"
                 >
-                  <td className="py-4 px-4">
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        {contact.Full_Name || "N/A"}
-                      </div>
-                      <div className="text-sm text-gray-500 flex items-center gap-1">
-                        <Building2 className="w-4 h-4 text-gray-500" />
-                        {contact.Company_name || "N/A"}
-                      </div>
-                      <div className="text-sm text-gray-500 flex items-center gap-1">
-                        <Phone className="w-4 h-4 text-gray-500" />
-                        {contact.Telephony || "123-456-7890"}
-                      </div>
-                      <div className="text-sm text-gray-500 flex items-center gap-1">
-                        <Mail className="w-4 h-4 text-gray-500" />
-                        {contact.Email || "abc@gmail.com"}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-center text-gray-600">
-                    {/* <span className="px-3 py-1 text-xs font-medium"> */}
-                    {contact.$approval_state || "N/A"}
-                    {/* </span> */}
-                  </td>
-                  <td className="py-3 px-4 text-center font-medium text-gray-800">
-                    ${contact.value?.toLocaleString()}
-                  </td>
-                  <td className="py-3 px-4 text-center text-gray-600">
-                    {contact.metadata?.ai_analysis?.score || "N/A"}
-                  </td>
-                  <td className="py-3 px-4 text-center text-gray-600">
-                    {contact.updated_at
-                      ? new Date(contact.updated_at).toLocaleDateString()
-                      : "N/A"}
-                  </td>
+                  <td className="py-3 px-3 text-gray-900">{contact.Last_Name || "-"}</td>
+                  <td className="py-3 px-3 text-gray-900">{contact.First_Name || "-"}</td>
+                  <td className="py-3 px-3 text-blue-600 italic font-medium">{contact.Email_1 || "-"}</td>
+                  <td className="py-3 px-3 text-gray-600">{contact.Address || "-"}</td>
+                  <td className="py-3 px-3 text-gray-900">{contact.Postal_Code || "-"}</td>
+                  <td className="py-3 px-3 text-gray-900">{contact.City || "-"}</td>
+                  <td className="py-3 px-3 text-gray-900">{contact.Date_of_Birth || "-"}</td>
+                  <td className="py-3 px-3 font-semibold text-gray-900">{contact.Phone || "-"}</td>
                 </tr>
               ))}
             </tbody>

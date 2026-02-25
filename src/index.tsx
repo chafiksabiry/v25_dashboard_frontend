@@ -8,11 +8,11 @@ const initialState = { userId: null };
 const actions = initGlobalState(initialState);
 
 // Listen for changes (for debugging)
-actions.onGlobalStateChange((state, /*prev*/) => {
-  console.log('[Main App] Global state changed:', state);
-});
+// actions.onGlobalStateChange((state, /*prev*/) => {
+//   console.log('[Main App] Global state changed:', state);
+// });
 
-console.log("qiankun is here");
+// console.log("qiankun is here");
 
 // Register microfrontends
 registerMicroApps([
@@ -66,14 +66,14 @@ const startQiankun = async () => {
       },
       singular: false,
       fetch: (url, options) => {
-        console.log(`[Host] Fetching: ${url}`);
+        // console.log(`[Host] Fetching: ${url}`);
         return fetch(url, {
           ...options,
           mode: "cors",
         });
       },
     });
-    console.log('[Host] Qiankun started successfully');
+    // console.log('[Host] Qiankun started successfully');
   } catch (error) {
     console.error('[Host] Failed to start Qiankun:', error);
   }
@@ -92,6 +92,6 @@ root.render(<App />);
 startQiankun();
 
 // Add debug logs for route changes
-window.addEventListener('popstate', () => {
-  console.log('[Host] Route changed to:', window.location.pathname);
-}); 
+// window.addEventListener('popstate', () => {
+//   console.log('[Host] Route changed to:', window.location.pathname);
+// }); 

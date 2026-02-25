@@ -21,7 +21,7 @@ let tokenCache = {
 
 const refreshToken = async (req) => {
   console.log("Rafraîchissement du token en cours...");
-  
+
   // Vérifier si le token actuel est encore valide
   if (tokenCache.access_token && tokenCache.expires_at && Date.now() < tokenCache.expires_at) {
     console.log("Token existant encore valide");
@@ -50,7 +50,7 @@ const refreshToken = async (req) => {
       tokenCache = {
         access_token: response.data.access_token,
         refresh_token: config.refresh_token,
-        expires_at: Date.now() + (response.data.expires_in * 1000 - 300000) // 5 minutes before expiration
+        expires_at: Date.now() + (response.data.expires_in * 1000 - 30000) // 5 minutes before expiration
       };
 
       return response.data.access_token;
@@ -100,7 +100,7 @@ const getLeadsByPipeline = async (req, res) => {
 
     const result = await executeWithTokenRefresh(req, res, async (token) => {
       await rateLimiter.wait(); // Attendre avant de faire la requête
-      
+
       const baseURL = "https://www.zohoapis.com/crm/v2.1/Deals";
       let params = {
         fields: "Deal_Name,Stage,Pipeline,Amount,Closing_Date,Account_Name,Contact_Name,Description,Email,Phone,Owner,Created_Time,Modified_Time,Last_Activity_Time,Next_Step,Probability,Lead_Source,Type,Expected_Revenue,Overall_Sales_Duration,Stage_Duration"
@@ -112,7 +112,7 @@ const getLeadsByPipeline = async (req, res) => {
 
       const response = await axios.get(baseURL, {
         params: params,
-        headers: { 
+        headers: {
           Authorization: `Zoho-oauthtoken ${token}`,
           "Content-Type": "application/json"
         },
@@ -168,7 +168,7 @@ const getPipelines = async (req, res) => {
           params: {
             module: "Deals"
           },
-          headers: { 
+          headers: {
             Authorization: `Zoho-oauthtoken ${token}`,
             "Content-Type": "application/json"
           },
@@ -195,7 +195,7 @@ const getPipelines = async (req, res) => {
           params: {
             layout_id: layoutId
           },
-          headers: { 
+          headers: {
             Authorization: `Zoho-oauthtoken ${token}`,
             "Content-Type": "application/json"
           },
@@ -221,9 +221,9 @@ const getPipelines = async (req, res) => {
     if (error.response) {
       console.error("Réponse d'erreur:", error.response.data);
     }
-    
-    res.status(500).json({ 
-      success: false, 
+
+    res.status(500).json({
+      success: false,
       message: "Erreur lors de la récupération des pipelines",
       error: error.message
     });

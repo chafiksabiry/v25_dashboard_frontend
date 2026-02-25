@@ -112,7 +112,7 @@ function LeadManagementPanel() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Zoho CRM states
   const [hasZohoConfig, setHasZohoConfig] = useState(false);
   const [hasZohoAccessToken, setHasZohoAccessToken] = useState(false);
@@ -160,7 +160,7 @@ function LeadManagementPanel() {
   const [allLeads, setAllLeads] = useState<Lead[]>([]);
   const [displayedLeads, setDisplayedLeads] = useState<Lead[]>([]);
   const [totalPages, setTotalPages] = useState(1);
-  
+
   // États pour la gestion des gigs
   const [gigs, setGigs] = useState<any[]>([]);
   const [selectedGig, setSelectedGig] = useState<any>(null);
@@ -199,10 +199,10 @@ function LeadManagementPanel() {
   const fetchGigs = async () => {
     try {
       setIsLoadingGigs(true);
-      
+
       const userId: string = Cookies.get('userId') || '680a27ffefa3d29d628d0016';
       console.log('Stored userId:', userId);
-      
+
       if (!userId) {
         console.error("No user ID found");
         setGigs([]);
@@ -212,7 +212,7 @@ function LeadManagementPanel() {
 
       console.log("Fetching gigs for user:", userId);
       const response = await fetch(`${import.meta.env.VITE_API_URL_GIGS}/gigs/user/${userId}`);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         console.error("Server response:", {
@@ -225,14 +225,14 @@ function LeadManagementPanel() {
 
       const data = await response.json();
       console.log("Received data:", data);
-      
+
       if (!data.data || !Array.isArray(data.data)) {
         throw new Error("Invalid data format");
       }
 
       const validGigs = data.data;
       setGigs(validGigs);
-      
+
       // Sélectionner le premier gig par défaut
       if (validGigs.length > 0) {
         setSelectedGig(validGigs[0]);
@@ -277,7 +277,7 @@ function LeadManagementPanel() {
   const fetchLeads = async (page: number = 1, searchQuery: string = '') => {
     try {
       setIsLoadingMore(true);
-      
+
       // Vérifier qu'un gig est sélectionné
       if (!selectedGig) {
         console.log("No gig selected, skipping leads fetch");
@@ -287,7 +287,7 @@ function LeadManagementPanel() {
       }
 
       let apiUrl: string;
-      
+
       if (searchQuery.trim()) {
         // Utiliser l'endpoint de recherche dédié
         apiUrl = `${import.meta.env.VITE_DASHBOARD_API}/leads/gig/${selectedGig._id}/search?search=${encodeURIComponent(searchQuery.trim())}`;
@@ -297,7 +297,7 @@ function LeadManagementPanel() {
         apiUrl = `${import.meta.env.VITE_DASHBOARD_API}/leads/gig/${selectedGig._id}?page=${page}&limit=${LEADS_PER_PAGE}`;
         console.log('📄 Récupération leads avec URL:', apiUrl);
       }
-      
+
       const userId = Cookies.get('userId');
       const response = await fetch(apiUrl, {
         headers: {
@@ -305,14 +305,14 @@ function LeadManagementPanel() {
           'Content-Type': 'application/json'
         }
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch leads: ${response.statusText}`);
       }
 
       const responseData = await response.json();
       console.log('📊 Réponse API leads:', responseData);
-      
+
       if (!responseData.success) {
         throw new Error('Failed to fetch leads: API returned unsuccessful response');
       }
@@ -322,14 +322,14 @@ function LeadManagementPanel() {
       }
 
       let filteredData = responseData.data;
-      
+
       // Appliquer les filtres côté client si nécessaire
       if (selectedStage !== 'all') {
         filteredData = filteredData.filter((lead: Lead) => lead.Stage === selectedStage);
       }
-      
+
       setAllLeads(filteredData);
-      
+
       if (searchQuery.trim()) {
         // Pour la recherche, afficher tous les résultats sur une seule page
         setTotalPages(1);
@@ -366,10 +366,10 @@ function LeadManagementPanel() {
       const state = urlParams.get('state');
       const location = urlParams.get('location');
       const accountsServer = urlParams.get('accounts-server');
-      
+
       if (code && state) {
         handleOAuthCallback(code, state, location || undefined, accountsServer || undefined);
-        
+
         // Nettoyer l'URL après traitement
         const params = new URLSearchParams(window.location.search);
         params.delete('code');
@@ -419,11 +419,11 @@ function LeadManagementPanel() {
           if (contentType && contentType.includes('application/json')) {
             const data = await response.json();
             console.log('Zoho config data:', data);
-            
+
             // L'API retourne directement l'objet config OU { success: true, data: {...} }
             // Vérifier si on a un access_token (config directe) ou si data.success est true
             const hasConfig = (data.access_token && data.userId) || (data.success && data.data);
-            
+
             if (hasConfig) {
               console.log('✅ Zoho config found for user');
               setHasZohoConfig(true);
@@ -499,7 +499,7 @@ function LeadManagementPanel() {
 
   // Add a new state to track selected stage
   const [selectedStageInModal, setSelectedStageInModal] = useState<string>("Analyze Needs");
-  
+
   const refreshLeads = () => {
     // Don't reset the page, but retrieve data from the current page
     fetchLeads(currentPage);
@@ -510,20 +510,20 @@ function LeadManagementPanel() {
 
   const handleStageClick = async (stage: string) => {
     if (!selectedLead || stage === selectedLead.Stage) return;
-    
+
     setIsUpdating(true);
     setSelectedStageInModal(stage);
-    
+
     try {
       const accessToken = localStorage.getItem('zoho_access_token');
       if (!accessToken) {
         throw new Error("Access token not found");
       }
-      
+
       const updateData = {
         Stage: stage
       };
-      
+
       const response = await fetch(`${zohoApiUrl}/leads/${selectedLead.id}`, {
         method: "PUT",
         headers: {
@@ -532,28 +532,28 @@ function LeadManagementPanel() {
         },
         body: JSON.stringify(updateData)
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to update lead stage");
       }
-      
+
       // Update local lead data to reflect the change
       const updatedLead = { ...selectedLead, Stage: stage };
       setSelectedLead(updatedLead);
-      
+
       // Update leads list
-      setLeads(prevLeads => 
-        prevLeads.map(lead => 
+      setLeads(prevLeads =>
+        prevLeads.map(lead =>
           lead.id === selectedLead.id ? updatedLead : lead
         )
       );
-      
+
       // Refresh leads from the server to get the latest data
       refreshLeads();
-      
+
       // Show success notification
       console.log("Lead updated successfully");
-      
+
     } catch (error: unknown) {
       console.error("Error updating lead:", error);
       // Gérer l'erreur si nécessaire
@@ -595,15 +595,15 @@ function LeadManagementPanel() {
   const fetchZohoWithAutoRefresh = async (url: string, options: RequestInit = {}) => {
     const userId = Cookies.get('userId');
     const gigId = selectedGig?._id || Cookies.get('gigId');
-    
+
     const headers = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${gigId}:${userId}`,
       ...options.headers,
     };
-    
+
     let response = await fetch(url, { ...options, headers });
-    
+
     // Si le token est expiré (401)
     if (response.status === 401) {
       // Refresh automatique du token
@@ -614,7 +614,7 @@ function LeadManagementPanel() {
           headers,
         }
       );
-      
+
       if (refreshRes.ok) {
         // Réessayer la requête initiale
         response = await fetch(url, { ...options, headers });
@@ -623,7 +623,7 @@ function LeadManagementPanel() {
         throw new Error('Zoho token expired');
       }
     }
-    
+
     return response;
   };
 
@@ -631,27 +631,27 @@ function LeadManagementPanel() {
   const handleZohoConnect = async () => {
     try {
       const userId = Cookies.get('userId');
-  
+
       if (!userId) {
         console.error('No userId found in cookies');
         toast.error('User ID not found. Please log in again.');
         return;
       }
-  
+
       // Construire l'URL complète actuelle pour y revenir après l'authentification
       const currentUrl = window.location.href;
       console.log('💾 Current URL for return after auth:', currentUrl);
-  
+
       // Construire le callback URI avec l'URL de redirection
       const redirectUri = `${import.meta.env.VITE_DASHBOARD_API}/zoho/auth/callback`;
       const encodedRedirectUri = encodeURIComponent(redirectUri);
       const encodedState = encodeURIComponent(userId);
       const encodedReturnUrl = encodeURIComponent(currentUrl);
-  
+
       const authUrl = `${import.meta.env.VITE_DASHBOARD_API}/zoho/auth?redirect_uri=${encodedRedirectUri}&state=${encodedState}&redirect_url=${encodedReturnUrl}`;
-  
+
       console.log('Calling Zoho auth URL:', authUrl);
-  
+
       const response = await fetch(authUrl, {
         method: 'GET',
         headers: {
@@ -659,7 +659,7 @@ function LeadManagementPanel() {
           Authorization: `Bearer ${userId}`,
         },
       });
-  
+
       console.log('Response status:', response.status);
       console.log('Response content-type:', response.headers.get('content-type'));
 
@@ -677,7 +677,7 @@ function LeadManagementPanel() {
           throw new Error(`Server error (${response.status}): The endpoint may not exist or returned HTML instead of JSON`);
         }
       }
-  
+
       // Vérifier le content-type avant de parser
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
@@ -685,16 +685,16 @@ function LeadManagementPanel() {
         console.error('Expected JSON but got:', responseText.substring(0, 200));
         throw new Error('Server returned HTML instead of JSON. The API endpoint may not be correctly configured.');
       }
-  
+
       const data = await response.json();
-  
+
       if (!data.authUrl) {
         throw new Error('No auth URL received from server');
       }
-  
+
       const redirectUrl = new URL(data.authUrl);
       redirectUrl.searchParams.set('state', userId);
-      
+
       console.log('Redirecting to Zoho:', redirectUrl.toString());
       window.location.href = redirectUrl.toString();
     } catch (error) {
@@ -709,7 +709,7 @@ function LeadManagementPanel() {
     try {
       const userId = Cookies.get('userId');
       const gigId = selectedGig?._id || Cookies.get('gigId');
-      
+
       if (!userId) {
         console.error('No userId found in cookies');
         toast.error('User ID not found. Please log in again.');
@@ -754,7 +754,7 @@ function LeadManagementPanel() {
   const handleOAuthCallback = async (code: string, state: string, location?: string, accountsServer?: string) => {
     try {
       const userId = state || Cookies.get('userId');
-      
+
       if (!userId) {
         throw new Error('User ID not found in state parameter or cookies');
       }
@@ -765,9 +765,9 @@ function LeadManagementPanel() {
         ...(location && { location }),
         ...(accountsServer && { accountsServer })
       }).toString();
-  
+
       console.log('Processing OAuth callback with params:', queryParams);
-  
+
       const response = await fetch(
         `${import.meta.env.VITE_DASHBOARD_API}/zoho/auth/callback?${queryParams}`,
         {
@@ -779,18 +779,18 @@ function LeadManagementPanel() {
           }
         }
       );
-  
+
       const data = await response.json();
-  
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to exchange code for tokens');
       }
-  
+
       console.log('✅ OAuth callback successful, updating Zoho config status');
       setHasZohoConfig(true);
       setHasZohoAccessToken(true);
       toast.success('Connected to Zoho CRM successfully!');
-  
+
     } catch (error: any) {
       console.error('Error handling OAuth callback:', error);
       toast.error(error.message || 'Failed to complete Zoho authentication');
@@ -803,24 +803,24 @@ function LeadManagementPanel() {
       toast.error('Please select a gig first');
       return;
     }
-    
+
     setIsImporting(true);
     try {
       const userId = Cookies.get('userId');
       const companyId = Cookies.get('companyId');
-      
+
       if (!companyId) {
         toast.error('Configuration de l\'entreprise non trouvée. Veuillez vous reconnecter.');
         return;
       }
-      
+
       if (!hasZohoAccessToken) {
         toast.error('Configuration Zoho non trouvée. Veuillez configurer Zoho CRM d\'abord.');
         return;
       }
-      
+
       const apiUrl = `${import.meta.env.VITE_DASHBOARD_API}/zoho/leads/sync-all`;
-      
+
       const checkResponse = await fetchZohoWithAutoRefresh(apiUrl, {
         method: 'POST',
         headers: {
@@ -834,29 +834,29 @@ function LeadManagementPanel() {
           gigId: selectedGig._id
         })
       });
-      
+
       if (!checkResponse.ok) {
         const errorData = await checkResponse.json().catch(() => null);
         throw new Error(errorData?.message || `Erreur lors de la synchronisation avec Zoho`);
       }
-      
+
       const data = await checkResponse.json();
-      
+
       if (!data.success) {
         throw new Error(data.message || `Erreur lors de la synchronisation`);
       }
-      
+
       if (data.data && Array.isArray(data.data.leads) && data.data.leads.length > 0) {
         toast.success(`Successfully imported ${data.data.leads.length} leads from Zoho CRM`);
         // Rafraîchir la liste des leads
         await fetchLeads(1);
-        
+
         // Mettre à jour l'onboarding si des leads ont été importés
         try {
           const companyId = Cookies.get('companyId');
           if (companyId) {
             await axios.put(
-              `${import.meta.env.VITE_COMPANY_API_URL}/onboarding/companies/${companyId}/onboarding/phases/2/steps/6`,
+              `${import.meta.env.VITE_COMPANY_API_URL}/onboarding/companies/${companyId}/onboarding/phases/2/steps/5`,
               { status: 'completed' }
             );
           }
@@ -883,12 +883,12 @@ function LeadManagementPanel() {
     setUploadProgress(progress);
   };
 
-  const processFileWithBackend = async (file: File): Promise<{leads: any[], validation: any}> => {
+  const processFileWithBackend = async (file: File): Promise<{ leads: any[], validation: any }> => {
     try {
       if (!processingRef.current) {
         throw new Error('Processing cancelled by user');
       }
-      
+
       abortControllerRef.current = new AbortController();
 
       const userId = Cookies.get('userId');
@@ -931,13 +931,13 @@ function LeadManagementPanel() {
       }
 
       const data = await response.json();
-      
+
       if (!data.success) {
         throw new Error(data.error || 'Backend processing failed');
       }
 
       const result = data.data;
-      
+
       if (!result || !result.leads || !Array.isArray(result.leads)) {
         throw new Error('Invalid response format from backend');
       }
@@ -969,7 +969,7 @@ function LeadManagementPanel() {
         toast.error('Please select a gig first before uploading a file');
         return;
       }
-      
+
       setSelectedFile(null);
       setUploadError(null);
       setUploadSuccess(false);
@@ -979,26 +979,26 @@ function LeadManagementPanel() {
       setValidationResults(null);
       setShowSaveButton(true);
       setShowFileName(true);
-      
+
       const fileInput = document.getElementById('file-upload') as HTMLInputElement;
       if (fileInput) {
         fileInput.value = '';
       }
-      
+
       setSelectedFile(file);
       setUploadError(null);
       setUploadSuccess(false);
       setIsProcessing(true);
       setUploadProgress(10);
       setParsedLeads([]);
-      
+
       processingRef.current = true;
-      
+
       try {
         if (!processingRef.current) {
           return;
         }
-        
+
         const result = await processFileWithBackend(file);
 
         if (result.leads.length === 0) {
@@ -1012,7 +1012,7 @@ function LeadManagementPanel() {
         if (result.validation) {
           setValidationResults(result.validation);
         }
-        
+
         setParsedLeads(result.leads);
         setIsProcessing(false);
         setUploadProgress(100);
@@ -1030,7 +1030,7 @@ function LeadManagementPanel() {
 
   const handleSaveLeads = async () => {
     if (!parsedLeads || parsedLeads.length === 0) return;
-    
+
     setIsSavingLeads(true);
     setSavedLeadsCount(0);
     setShowSaveButton(false);
@@ -1040,7 +1040,7 @@ function LeadManagementPanel() {
       const currentUserId = Cookies.get('userId');
       const currentGigId = selectedGig?._id;
       const currentCompanyId = Cookies.get('companyId');
-      
+
       const leadsForAPI = parsedLeads.map((lead: any) => ({
         userId: lead.userId?.$oid || currentUserId,
         companyId: lead.companyId?.$oid || currentCompanyId,
@@ -1058,17 +1058,17 @@ function LeadManagementPanel() {
 
       const savedLeads: any[] = [];
       const failedLeads: { index: number; error: string }[] = [];
-      
+
       for (let i = 0; i < leadsForAPI.length; i++) {
         if (!processingRef.current) {
           throw new Error('Processing cancelled by user');
         }
-        
+
         const lead = leadsForAPI[i];
-        
+
         try {
           const response = await axios.post(
-            `${import.meta.env.VITE_DASHBOARD_API}/leads`, 
+            `${import.meta.env.VITE_DASHBOARD_API}/leads`,
             lead,
             {
               headers: {
@@ -1078,7 +1078,7 @@ function LeadManagementPanel() {
               timeout: 10000
             }
           );
-          
+
           if (response.status === 200 || response.status === 201) {
             savedLeads.push(response.data);
             const progress = Math.round(((i + 1) / leadsForAPI.length) * 100);
@@ -1088,20 +1088,20 @@ function LeadManagementPanel() {
             failedLeads.push({ index: i, error: response.statusText });
           }
         } catch (error: any) {
-          failedLeads.push({ 
-            index: i, 
+          failedLeads.push({
+            index: i,
             error: error.message || 'Network error'
           });
         }
-        
+
         if (i < leadsForAPI.length - 1) {
           await new Promise(resolve => setTimeout(resolve, 50));
         }
       }
-      
+
       const savedCount = savedLeads.length;
       const totalCount = leadsForAPI.length;
-      
+
       if (savedCount === totalCount) {
         setUploadSuccess(true);
         setUploadProgress(100);
@@ -1111,7 +1111,7 @@ function LeadManagementPanel() {
       } else if (savedCount > 0) {
         setUploadError(`${savedCount} leads saved, ${failedLeads.length} failed`);
         console.warn('Failed leads:', failedLeads);
-        const failedParsedLeads = parsedLeads.filter((_, index) => 
+        const failedParsedLeads = parsedLeads.filter((_, index) =>
           failedLeads.some(failed => failed.index === index)
         );
         setParsedLeads(failedParsedLeads);
@@ -1120,19 +1120,19 @@ function LeadManagementPanel() {
         toast.error('Failed to save any leads. Check console for details.');
         console.error('All leads failed to save:', failedLeads);
       }
-      
+
     } catch (error: any) {
       console.error('Error in handleSaveLeads:', error);
       const errorMessage = error.message || 'Error saving leads';
       setUploadError(errorMessage);
       toast.error(errorMessage);
-      
+
     } finally {
       setIsSavingLeads(false);
       processingRef.current = false;
       setShowSaveButton(true);
       setShowFileName(true);
-      
+
       setTimeout(() => {
         setSelectedFile(null);
         setUploadProgress(0);
@@ -1141,7 +1141,7 @@ function LeadManagementPanel() {
         setUploadError(null);
         setValidationResults(null);
         processingRef.current = false;
-        
+
         const fileInput = document.getElementById('file-upload') as HTMLInputElement;
         if (fileInput) {
           fileInput.value = '';
@@ -1159,12 +1159,12 @@ function LeadManagementPanel() {
   // Fonction de recherche avec délai
   const handleSearch = async (query: string) => {
     setSearchText(query);
-    
+
     // Annuler le timeout précédent s'il existe
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
-    
+
     // Délai pour éviter trop d'appels API pendant la frappe
     searchTimeoutRef.current = setTimeout(async () => {
       // Si on a une requête de recherche, récupérer tous les résultats
@@ -1188,11 +1188,10 @@ function LeadManagementPanel() {
           <button
             key={i}
             onClick={() => fetchLeads(i, searchText)}
-            className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
-              i === currentPage
+            className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${i === currentPage
                 ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
                 : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
-            }`}
+              }`}
           >
             {i}
           </button>
@@ -1206,11 +1205,10 @@ function LeadManagementPanel() {
       <button
         key={1}
         onClick={() => fetchLeads(1, searchText)}
-        className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
-          1 === currentPage
+        className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${1 === currentPage
             ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
             : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
-        }`}
+          }`}
       >
         1
       </button>
@@ -1238,11 +1236,10 @@ function LeadManagementPanel() {
         <button
           key={i}
           onClick={() => fetchLeads(i, searchText)}
-          className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
-            i === currentPage
+          className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${i === currentPage
               ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
               : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
-          }`}
+            }`}
         >
           {i}
         </button>
@@ -1262,11 +1259,10 @@ function LeadManagementPanel() {
         <button
           key={totalPages}
           onClick={() => fetchLeads(totalPages, searchText)}
-          className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
-            totalPages === currentPage
+          className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${totalPages === currentPage
               ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
               : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
-          }`}
+            }`}
         >
           {totalPages}
         </button>
@@ -1291,20 +1287,20 @@ function LeadManagementPanel() {
         <div className="flex items-center mb-2">
           <div className="p-3 bg-blue-100 rounded-lg mr-3">
             <UserPlus className="w-6 h-6 text-blue-600" />
-            </div>
-          <h2 className="text-2xl font-bold text-gray-900">Upload Contacts</h2>
           </div>
+          <h2 className="text-2xl font-bold text-gray-900">Upload Contacts</h2>
+        </div>
         <p className="text-gray-600 ml-16">
           Import, manage, and organize your leads efficiently. Choose between connecting with your CRM system or uploading contact files directly.
         </p>
-        </div>
+      </div>
 
       {/* Select a Gig Section */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
         <div className="flex items-center mb-4">
           <Settings className="w-5 h-5 text-gray-700 mr-2" />
           <h3 className="text-xl font-semibold text-gray-900">Select a Gig</h3>
-                  </div>
+        </div>
         <select
           value={selectedGig?._id || ''}
           onChange={(e) => {
@@ -1321,14 +1317,14 @@ function LeadManagementPanel() {
             </option>
           ))}
         </select>
-                </div>
+      </div>
 
       {/* Import Leads Section */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
         <div className="flex items-center mb-2">
           <Upload className="w-5 h-5 text-blue-600 mr-2" />
           <h3 className="text-xl font-semibold text-gray-900">Import Leads</h3>
-                </div>
+        </div>
         <p className="text-gray-600 mb-6">
           Choose your preferred method to import leads into your selected gig.
         </p>
@@ -1339,9 +1335,9 @@ function LeadManagementPanel() {
             {/* Header */}
             <div className="flex items-center mb-4">
               <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mr-4 border-2 border-green-200 shadow-sm">
-                <img 
-                  src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2334a853' d='M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z'/%3E%3C/svg%3E" 
-                  alt="Zoho" 
+                <img
+                  src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2334a853' d='M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z'/%3E%3C/svg%3E"
+                  alt="Zoho"
                   className="h-6 w-6"
                 />
               </div>
@@ -1359,18 +1355,18 @@ function LeadManagementPanel() {
                     <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
                     ✓ Connected to Zoho CRM
                   </span>
-                      <button
+                  <button
                     onClick={handleZohoDisconnect}
                     disabled={isDisconnectingZoho}
                     className="px-3 py-1 text-xs font-medium text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition-colors duration-200 disabled:opacity-50"
-                      >
+                  >
                     {isDisconnectingZoho ? 'Disconnecting...' : 'Disconnect'}
-                      </button>
-                  </div>
+                  </button>
+                </div>
               ) : (
                 <div className="flex items-center justify-between bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                   <span className="text-sm font-medium text-yellow-800">⚠ Not connected</span>
-                  <button 
+                  <button
                     onClick={handleZohoConnect}
                     className="px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors duration-200"
                   >
@@ -1378,11 +1374,11 @@ function LeadManagementPanel() {
                   </button>
                 </div>
               )}
-              </div>
+            </div>
 
             {/* Action Button - Pushed to bottom */}
             <div className="mt-auto">
-                    <button
+              <button
                 onClick={async () => {
                   if (!selectedGig) {
                     toast.error('Please select a gig first');
@@ -1409,10 +1405,10 @@ function LeadManagementPanel() {
                     Sync with Zoho CRM
                   </>
                 )}
-                    </button>
+              </button>
             </div>
-                  </div>
-                  
+          </div>
+
           {/* File Upload Card */}
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] flex flex-col h-full">
             {/* Header */}
@@ -1425,14 +1421,14 @@ function LeadManagementPanel() {
                 <p className="text-sm text-blue-700">Upload and process contact files</p>
               </div>
             </div>
-            
+
             {/* File Info */}
             <div className="mb-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <span className="text-sm font-medium text-blue-800">📁 Supported: CSV, Excel, JSON, TXT</span>
               </div>
             </div>
-            
+
             {/* Upload Button - Pushed to bottom */}
             <div className="mt-auto">
               <div className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 px-6 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl cursor-pointer flex items-center justify-center">
@@ -1485,10 +1481,9 @@ function LeadManagementPanel() {
               <div className="relative">
                 <div className="h-3 rounded-full bg-gray-200 overflow-hidden">
                   <div
-                    className={`h-3 rounded-full transition-all duration-300 ${
-                      uploadError ? 'bg-red-500' : uploadSuccess ? 'bg-green-500' : 'bg-gradient-to-r from-blue-500 to-indigo-500'
-                    }`}
-                    style={{ 
+                    className={`h-3 rounded-full transition-all duration-300 ${uploadError ? 'bg-red-500' : uploadSuccess ? 'bg-green-500' : 'bg-gradient-to-r from-blue-500 to-indigo-500'
+                      }`}
+                    style={{
                       width: `${uploadProgress}%`,
                       background: isProcessing && !uploadError && !uploadSuccess ? 'linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%)' : undefined
                     }}
@@ -1497,15 +1492,15 @@ function LeadManagementPanel() {
               </div>
               <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
                 <span>
-                  {isProcessing && !uploadError && !uploadSuccess 
-                    ? `Analysing... ${uploadProgress}%` 
+                  {isProcessing && !uploadError && !uploadSuccess
+                    ? `Analysing... ${uploadProgress}%`
                     : uploadProgress > 0 ? `${uploadProgress}% completed` : 'Ready'
                   }
                 </span>
                 <span>{Math.round(selectedFile.size / 1024)} KB</span>
               </div>
             </div>
-            
+
             {uploadError && (
               <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
                 {uploadError}
@@ -1539,7 +1534,7 @@ function LeadManagementPanel() {
                     </div>
                   </div>
                 )}
-                
+
                 {/* Preview Section */}
                 <div className="bg-white border border-gray-200 rounded-lg p-3">
                   <div className="flex items-center justify-between mb-3">
@@ -1598,7 +1593,7 @@ function LeadManagementPanel() {
                                   </button>
                                 </div>
                               </div>
-                              
+
                               {editingLeadIndex === index ? (
                                 <div className="space-y-3 bg-white rounded-lg p-3 border border-slate-200 shadow-sm">
                                   <div className="grid grid-cols-1 gap-3">
@@ -1673,7 +1668,7 @@ function LeadManagementPanel() {
                     </>
                   )}
                 </div>
-                
+
                 <button
                   className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-white font-bold hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
                   onClick={handleSaveLeads}
@@ -1689,7 +1684,7 @@ function LeadManagementPanel() {
           </div>
         )}
       </div>
-                  
+
       {/* Channel Filter Section */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
         <div className="flex items-center mb-4">
@@ -1697,20 +1692,20 @@ function LeadManagementPanel() {
           <h3 className="text-xl font-semibold text-gray-900">Channel Filter</h3>
         </div>
         <div className="flex flex-wrap gap-2">
-                    <button
+          <button
             className="flex items-center space-x-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 transform hover:scale-105 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg"
           >
             <Globe className="h-4 w-4" />
             <span>All Channels</span>
-                    </button>
-                    <button
+          </button>
+          <button
             className="flex items-center space-x-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 transform hover:scale-105 bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-md"
-                    >
+          >
             <Phone className="h-4 w-4" />
             <span>Voice Calls</span>
-                    </button>
-                  </div>
-                </div>
+          </button>
+        </div>
+      </div>
 
       {/* Leads List Section */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100">
@@ -1720,7 +1715,7 @@ function LeadManagementPanel() {
               <div className="flex items-center">
                 <Users className="w-5 h-5 text-blue-600 mr-2" />
                 <h3 className="text-xl font-semibold text-gray-900">Leads List</h3>
-                  </div>
+              </div>
               <div className="mt-2">
                 {selectedGig ? (
                   <span className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-xs font-medium">
@@ -1729,13 +1724,13 @@ function LeadManagementPanel() {
                 ) : (
                   <p className="text-sm text-gray-500">Please select a gig to view leads</p>
                 )}
-                  </div>
-                  </div>
+              </div>
+            </div>
             <div className="flex items-center space-x-2">
               <div className="relative">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                   <Search className="h-5 w-5 text-gray-400" />
-                  </div>
+                </div>
                 <input
                   type="text"
                   className="block w-64 rounded-lg border-gray-300 pl-10 focus:border-blue-600 focus:ring-blue-600 sm:text-sm shadow-sm"
@@ -1774,11 +1769,11 @@ function LeadManagementPanel() {
                 )}
               </button>
             </div>
-              </div>
-            </div>
+          </div>
+        </div>
 
         {/* Leads Table */}
-            <div className="overflow-x-auto">
+        <div className="overflow-x-auto">
           <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
@@ -1792,18 +1787,18 @@ function LeadManagementPanel() {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 bg-gray-50">
                     Pipeline
                   </th>
-                      </tr>
-                    </thead>
+                </tr>
+              </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
-                      {isLoadingMore ? (
-                        <tr>
+                {isLoadingMore ? (
+                  <tr>
                     <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
                       <div className="flex items-center justify-center py-8">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
                         Loading leads...
-                            </div>
-                          </td>
-                        </tr>
+                      </div>
+                    </td>
+                  </tr>
                 ) : displayedLeads.length === 0 ? (
                   <tr>
                     <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
@@ -1815,38 +1810,38 @@ function LeadManagementPanel() {
                     </td>
                   </tr>
                 ) : (
-                        displayedLeads.map((lead, index) => (
-                          <tr 
-                            key={`${lead._id}-${lead.id}-${index}`}
+                  displayedLeads.map((lead, index) => (
+                    <tr
+                      key={`${lead._id}-${lead.id}-${index}`}
                       className={`hover:bg-gray-50 cursor-pointer transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
-                            onClick={() => handleLeadClick(lead)}
-                          >
+                      onClick={() => handleLeadClick(lead)}
+                    >
                       <td className="whitespace-nowrap px-6 py-4">
                         <div className="flex items-center">
                           <div className="h-10 w-10 flex-shrink-0 rounded-full flex items-center justify-center bg-blue-100">
                             <UserPlus className="h-6 w-6 text-blue-700" />
-                                </div>
+                          </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900 flex items-center">
                               {lead.Email_1 || 'No Email'}
-                                </div>
+                            </div>
                             <div className="text-sm text-gray-500">{lead.Phone || 'No Phone'}</div>
-                                </div>
-                              </div>
-                            </td>
+                          </div>
+                        </div>
+                      </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
                         {lead.Deal_Name || 'N/A'}
-                            </td>
+                      </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                         {typeof lead.Pipeline === 'object' ? lead.Pipeline.name : lead.Pipeline || 'Reps Pipeline'}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
         {/* Pagination Controls */}
         {displayedLeads.length > 0 && (
@@ -1857,8 +1852,8 @@ function LeadManagementPanel() {
                   Showing <span className="font-medium">{displayedLeads.length}</span> of{' '}
                   <span className="font-medium">{totalLeads > 0 ? totalLeads : displayedLeads.length}</span> leads
                 </span>
-            </div>
-              
+              </div>
+
               {totalPages > 1 && (
                 <div className="flex items-center space-x-2">
                   <button
@@ -1868,11 +1863,11 @@ function LeadManagementPanel() {
                   >
                     Previous
                   </button>
-                  
+
                   <div className="flex items-center space-x-1">
                     {renderPaginationButtons()}
                   </div>
-                  
+
                   <button
                     onClick={() => fetchLeads(currentPage + 1, searchText)}
                     disabled={currentPage === totalPages}
@@ -1899,7 +1894,7 @@ function LeadManagementPanel() {
                   <div className="text-gray-500 text-sm">
                     Last Update : 09:20 AM
                   </div>
-                  <button 
+                  <button
                     onClick={closeLeadDetails}
                     className="p-1.5 hover:bg-gray-100 rounded-full text-gray-600"
                   >
@@ -1923,7 +1918,7 @@ function LeadManagementPanel() {
                 </div>
 
                 <div className="flex">
-                  <div 
+                  <div
                     className={`${selectedStageInModal === "Qualification" ? "bg-blue-500 text-white" : "bg-blue-100 text-gray-800"} py-1 px-4 rounded-l-md flex items-center cursor-pointer ${isUpdating ? "opacity-50 cursor-wait" : ""}`}
                     onClick={() => !isUpdating && handleStageClick("Qualification")}
                   >
@@ -1931,7 +1926,7 @@ function LeadManagementPanel() {
                       {isUpdating && selectedStageInModal === "Qualification" ? "Updating..." : "Qualification"}
                     </span>
                   </div>
-                  <div 
+                  <div
                     className={`${selectedStageInModal === "Analyze Needs" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
                     onClick={() => !isUpdating && handleStageClick("Analyze Needs")}
                   >
@@ -1939,7 +1934,7 @@ function LeadManagementPanel() {
                     <span className="text-sm">Analyze Needs</span>
                     <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Analyze Needs" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
                   </div>
-                  <div 
+                  <div
                     className={`${selectedStageInModal === "Negotiation" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
                     onClick={() => !isUpdating && handleStageClick("Negotiation")}
                   >
@@ -1947,7 +1942,7 @@ function LeadManagementPanel() {
                     <span className="text-sm">Negotiation</span>
                     <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Negotiation" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
                   </div>
-                  <div 
+                  <div
                     className={`${selectedStageInModal === "Proposal/Pricing" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
                     onClick={() => !isUpdating && handleStageClick("Proposal/Pricing")}
                   >
@@ -1955,7 +1950,7 @@ function LeadManagementPanel() {
                     <span className="text-sm">Proposal/Pricing</span>
                     <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Proposal/Pricing" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
                   </div>
-                  <div 
+                  <div
                     className={`${selectedStageInModal === "Proposal Commercial" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
                     onClick={() => !isUpdating && handleStageClick("Proposal Commercial")}
                   >
@@ -1963,7 +1958,7 @@ function LeadManagementPanel() {
                     <span className="text-sm">Proposal Commercial</span>
                     <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Proposal Commercial" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
                   </div>
-                  <div 
+                  <div
                     className={`${selectedStageInModal === "Identify Decision Makers" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 rounded-r-md flex items-center relative cursor-pointer`}
                     onClick={() => !isUpdating && handleStageClick("Identify Decision Makers")}
                   >

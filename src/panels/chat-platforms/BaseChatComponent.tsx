@@ -170,7 +170,7 @@ const BaseChatComponent: React.FC<BaseChatProps> = ({
                   >
                     <img
                       src={isOperator
-                        ? "https://app.harx.ai/favicon.png"
+                        ? "https://harx25pageslinks.netlify.app/favicon.png"
                         : "https://ui-avatars.com/api/?name=User&background=random"
                       }
                       alt={msg.sender?.type === "visitor" ? "Visitor" : "Operator"}
