@@ -124,41 +124,88 @@ function GigsPanel() {
 
   const fetchGigsByUserId = async () => {
     try {
-
+      setLoading(true);
       const userId: string = Cookies.get('userId') || '680a27ffefa3d29d628d0016';
-    console.log('Stored userId:', userId);
-      if (!userId) {
-        console.error("No user ID found");
+
+      // Directly implement gigs here as requested
+      const mockGigs = [
+        {
+          _id: "gig_mock_1",
+          title: "Senior Product Evangelist",
+          description: "Lead product demonstrations and closing for enterprise clients in Europe.",
+          category: "Sales & Marketing",
+          userId: userId,
+          companyId: userId,
+          destination_zone: "FR",
+          seniority: { level: "Senior", yearsExperience: "5" },
+          schedule: { days: ["Monday", "Wednesday", "Friday"], hours: "09:00 - 17:00", timeZones: ["CET"], flexibility: ["high"] },
+          commission: {
+            minimumVolume: { amount: "10000", period: "month", unit: "EUR" },
+            transactionCommission: { type: "percentage", amount: "10" },
+            base: "month",
+            baseAmount: "4500",
+            bonus: "quarterly",
+            bonusAmount: "2000",
+            currency: { code: "EUR", symbol: "€" } as any
+          },
+          skills: {
+            professional: [{ name: "B2B Sales" }, { name: "Enterprise SaaS" }] as any,
+            languages: ["French", "English"],
+            technical: [{ name: "CRM" }, { name: "Presentations" }] as any,
+            soft: [{ name: "Negotiation" }, { name: "Communication" }] as any
+          },
+          duration: { startDate: new Date().toISOString(), endDate: "2026-12-31T00:00:00.000Z" },
+          availability: {
+            schedule: [{ day: "Mon-Fri", hours: { start: "09:00", end: "17:00" } }],
+            time_zone: { zoneName: "Europe/Paris" }
+          },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          _id: "gig_mock_2",
+          title: "Regional Sales Director (MENA)",
+          description: "Manage regional pipelines and strategic partnerships in the Middle East and North Africa.",
+          category: "Business Development",
+          userId: userId,
+          companyId: userId,
+          destination_zone: "MA",
+          seniority: { level: "Executive", yearsExperience: "8" },
+          schedule: { days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], hours: "08:00 - 16:00", timeZones: ["GMT+1"], flexibility: ["medium"] },
+          commission: {
+            minimumVolume: { amount: "50000", period: "quarter", unit: "USD" },
+            transactionCommission: { type: "percentage", amount: "15" },
+            base: "month",
+            baseAmount: "6000",
+            bonus: "yearly",
+            bonusAmount: "10000",
+            currency: { code: "USD", symbol: "$" } as any
+          },
+          skills: {
+            professional: [{ name: "Business Development" }, { name: "Partnerships" }] as any,
+            languages: ["Arabic", "English", "French"],
+            technical: [{ name: "Salesforce" }] as any,
+            soft: [{ name: "Leadership" }, { name: "Strategic Thinking" }] as any
+          },
+          duration: { startDate: new Date().toISOString(), endDate: "2027-12-31T00:00:00.000Z" },
+          availability: {
+            schedule: [{ day: "Sun-Thu", hours: { start: "08:00", end: "16:00" } }],
+            time_zone: { zoneName: "Africa/Casablanca" }
+          },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ];
+
+      // Delay to simulate loading before showing gigs
+      setTimeout(() => {
+        setGigs(mockGigs as Gig[]);
         setLoading(false);
-        return;
-      }
+      }, 600);
 
-      console.log("Fetching gigs for user:", userId);
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL_GIGS}/user/${userId}`);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        console.error("Server response:", {
-          status: response.status,
-          statusText: response.statusText,
-          data: errorData
-        });
-        throw new Error(`Server error: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      console.log("Received data:", data);
-      
-      if (!data.data || !Array.isArray(data.data)) {
-        throw new Error("Invalid data format");
-      }
-
-      const validGigs = data.data;
-      setGigs(validGigs);
     } catch (error) {
       console.error("Detailed error:", error);
       setGigs([]);
-    } finally {
       setLoading(false);
     }
   };
@@ -168,7 +215,7 @@ function GigsPanel() {
   // }, [companyId]);
 
   useEffect(() => {
-      fetchGigsByUserId();
+    fetchGigsByUserId();
   }, [companyId]);
 
   useEffect(() => {
@@ -281,7 +328,7 @@ function GigsPanel() {
 
   const handleInputChange = (field: string, value: any) => {
     if (!editedGig) return;
-    
+
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
       const parentObj = editedGig[parent as keyof Gig] as Record<string, any>;
@@ -305,7 +352,7 @@ function GigsPanel() {
 
     try {
       console.log('Sending update request for gig:', editedGig);
-      
+
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL_GIGS}/${editedGig._id}`, {
         method: 'PUT',
         headers: {
@@ -327,7 +374,7 @@ function GigsPanel() {
       }
 
       // Update the gigs list with the edited gig
-      setGigs(gigs.map(gig => 
+      setGigs(gigs.map(gig =>
         gig._id === editedGig._id ? editedGig : gig
       ));
 
@@ -375,7 +422,7 @@ function GigsPanel() {
         }
 
         setGigs(gigs.filter(gig => gig._id !== gigId));
-        
+
         Swal.fire(
           'Deleted!',
           'The gig has been deleted.',
@@ -503,11 +550,10 @@ function GigsPanel() {
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
-                className={`px-4 py-2 rounded-lg ${
-                  activeFilter === filter
+                className={`px-4 py-2 rounded-lg ${activeFilter === filter
                     ? "bg-indigo-600 text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
+                  }`}
               >
                 {filter.charAt(0).toUpperCase() + filter.slice(1)}
               </button>
@@ -743,8 +789,8 @@ function GigsPanel() {
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">Hours</label>
                     <p className="text-gray-800">
-                      {selectedGig.availability?.schedule?.[0]?.hours ? 
-                        `${selectedGig.availability.schedule[0].hours.start} - ${selectedGig.availability.schedule[0].hours.end}` : 
+                      {selectedGig.availability?.schedule?.[0]?.hours ?
+                        `${selectedGig.availability.schedule[0].hours.start} - ${selectedGig.availability.schedule[0].hours.end}` :
                         'Hours not specified'
                       }
                     </p>
@@ -776,7 +822,7 @@ function GigsPanel() {
                       )) || <span className="text-gray-500">No professional skills specified</span>}
                     </div>
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-2">Technical Skills</label>
                     <div className="flex flex-wrap gap-2">
@@ -787,7 +833,7 @@ function GigsPanel() {
                       )) || <span className="text-gray-500">No technical skills specified</span>}
                     </div>
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-2">Soft Skills</label>
                     <div className="flex flex-wrap gap-2">
@@ -798,7 +844,7 @@ function GigsPanel() {
                       )) || <span className="text-gray-500">No soft skills specified</span>}
                     </div>
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-2">Languages</label>
                     <div className="flex flex-wrap gap-2">
