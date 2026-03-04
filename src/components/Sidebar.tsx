@@ -30,6 +30,9 @@ export function Sidebar() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [hasCompany, setHasCompany] = useState(false);
   const [hasGigs, setHasGigs] = useState(false);
+  const [hasLeads, setHasLeads] = useState(false);
+  const [hasKb, setHasKb] = useState(false);
+  const [hasRepMatching, setHasRepMatching] = useState(false);
 
   // Get hidden sections from configuration
   const hiddenSections = getHiddenSections();
@@ -47,40 +50,48 @@ export function Sidebar() {
           const companyExists = companyData.success && companyData.data;
           setHasCompany(companyExists);
 
-          // 2. If they have a company, check the full onboarding progress to see if step 3 (Gigs) is completed
+          // 2. If they have a company, check the full onboarding progress
           if (companyExists && companyData.data._id) {
             try {
               const progressRes = await fetch(`${import.meta.env.VITE_BACKEND_URL_COMPANY}/onboarding/companies/${companyData.data._id}/onboarding`);
 
-              let stepCompleted = false;
+              let stepGigs = false;
+              let stepLeads = false;
+              let stepKb = false;
+              let stepRepMatching = false;
               let payload: any = null;
+
               if (progressRes.ok) {
                 const progressData = await progressRes.json();
                 console.log("📊 Sidebar Onboarding Progress Data:", progressData);
 
-                // Orchestrator keeps a Master list of completed steps. Step 3 is "Create Gigs".
                 // Handle both direct object form and wrapped { data: { ... } } form
                 payload = progressData.data ? progressData.data : progressData;
 
                 if (payload && Array.isArray(payload.completedSteps)) {
-                  if (payload.completedSteps.includes(3)) {
-                    stepCompleted = true;
-                  }
+                  // Step 3 = Gigs
+                  if (payload.completedSteps.includes(3)) stepGigs = true;
+                  // Step 5 = Upload Contacts (Leads)
+                  if (payload.completedSteps.includes(5)) stepLeads = true;
+                  // Step 8, 9, 10 = Knowledge Base phase roughly, step 9 is specifically KB
+                  if (payload.completedSteps.includes(8) || payload.completedSteps.includes(9)) stepKb = true;
+                  // Step 13 = Match HARX REPS
+                  if (payload.completedSteps.includes(13)) stepRepMatching = true;
                 }
               }
 
-              // Fallback to cookies if API check fails or indicates not completed (for immediate UI sync)
-              if (!stepCompleted) {
-                if (Cookies.get('createGigStepCompleted') === 'true') {
-                  stepCompleted = true;
-                }
-              }
+              // Fallbacks or final setters
+              setHasGigs(stepGigs || Cookies.get('createGigStepCompleted') === 'true');
+              setHasLeads(stepLeads);
+              setHasKb(stepKb);
+              setHasRepMatching(stepRepMatching);
 
-              console.log("📊 Sidebar Gigs Status (stepCompleted):", stepCompleted, "from completedSteps:", payload?.completedSteps);
-              setHasGigs(stepCompleted);
             } catch (err) {
               console.error("Error checking onboarding progress", err);
               setHasGigs(false);
+              setHasLeads(false);
+              setHasKb(false);
+              setHasRepMatching(false);
             }
           }
         }
@@ -95,17 +106,21 @@ export function Sidebar() {
   const allMenuItems = [
     { icon: <LayoutDashboard size={20} />, label: 'Overview', path: '/', key: 'overview', alwaysShow: true },
     { icon: <Building2 size={20} />, label: 'Company', path: '/company', key: 'company', alwaysShow: true },
+    // Needs Gigs
     { icon: <Briefcase size={20} />, label: 'Gigs', path: '/gigs', key: 'gigs', requiresGigs: true },
-    { icon: <UserPlus size={20} />, label: 'Leads', path: '/leads', key: 'leads', requiresGigs: true },
-    { icon: <Users size={20} />, label: 'Rep Matching', path: '/rep-matching', key: 'rep-matching', requiresGigs: true },
-    { icon: <Phone size={20} />, label: 'Calls', path: '/calls', key: 'calls', requiresGigs: true },
-    { icon: <Calendar size={20} />, label: 'Scheduler', path: '/scheduler', key: 'scheduler', requiresGigs: true },
-    { icon: <Phone size={20} />, label: 'Telnyx Call Test', path: '/telnyx-call-test', key: 'telnyx-call-test', requiresGigs: true },
-    { icon: <Mail size={20} />, label: 'Emails', path: '/emails', key: 'emails', requiresGigs: true },
-    { icon: <MessageSquare size={20} />, label: 'Live Chat', path: '/chat', key: 'live-chat', requiresGigs: true },
-    { icon: <ClipboardCheck size={20} />, label: 'Quality Assurance', path: '/quality-assurance', key: 'quality-assurance', requiresGigs: true },
-    { icon: <ScrollText size={20} />, label: 'Operations', path: '/operations', key: 'operations', requiresGigs: true },
-    { icon: <TrendingUp size={20} />, label: 'Analytics', path: '/analytics', key: 'analytics', requiresGigs: true },
+    // Needs Leads
+    { icon: <UserPlus size={20} />, label: 'Leads', path: '/leads', key: 'leads', requiresLeads: true },
+    // Needs Rep Matching
+    { icon: <Users size={20} />, label: 'Rep Matching', path: '/rep-matching', key: 'rep-matching', requiresRepMatching: true },
+    // After that, requires Rep Matching ideally, but for now we link it to leads/gigs as a baseline
+    { icon: <Phone size={20} />, label: 'Calls', path: '/calls', key: 'calls', requiresRepMatching: true },
+    { icon: <Calendar size={20} />, label: 'Scheduler', path: '/scheduler', key: 'scheduler', requiresRepMatching: true },
+    { icon: <Phone size={20} />, label: 'Telnyx Call Test', path: '/telnyx-call-test', key: 'telnyx-call-test', requiresRepMatching: true },
+    { icon: <Mail size={20} />, label: 'Emails', path: '/emails', key: 'emails', requiresRepMatching: true },
+    { icon: <MessageSquare size={20} />, label: 'Live Chat', path: '/chat', key: 'live-chat', requiresRepMatching: true },
+    { icon: <ClipboardCheck size={20} />, label: 'Quality Assurance', path: '/quality-assurance', key: 'quality-assurance', requiresRepMatching: true },
+    { icon: <ScrollText size={20} />, label: 'Operations', path: '/operations', key: 'operations', requiresRepMatching: true },
+    { icon: <TrendingUp size={20} />, label: 'Analytics', path: '/analytics', key: 'analytics', requiresRepMatching: true },
     { icon: <Plug size={20} />, label: 'Integrations', path: '/integrations', key: 'integrations', alwaysShow: true },
     { icon: <Settings size={20} />, label: 'Settings', path: '/settings', key: 'settings', alwaysShow: true },
   ];
@@ -114,7 +129,10 @@ export function Sidebar() {
   const menuItems = allMenuItems.filter(item => {
     if (hiddenSections.includes(item.key)) return false;
     if (item.alwaysShow) return true;
-    if (item.requiresGigs && !hasGigs) return false;
+
+    if ((item as any).requiresGigs && !hasGigs) return false;
+    if ((item as any).requiresLeads && !hasLeads) return false;
+    if ((item as any).requiresRepMatching && !hasRepMatching) return false;
     if ((item as any).requiresCompany && !hasCompany) return false;
     return true;
   });
@@ -146,49 +164,50 @@ export function Sidebar() {
             </NavLink>
           ))}
 
-          {/* Knowledge Base - Collapsible Section */}
-          <div>
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="flex items-center justify-between w-full p-3 rounded-lg transition-colors hover:bg-gray-800 text-gray-300 hover:text-white"
-            >
-              <div className="flex items-center gap-3">
-                <Book size={20} />
-                <span>Knowledge Base</span>
-              </div>
-              {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-            </button>
-
-            {isExpanded && (
-              <div className="ml-6 space-y-2">
-                <NavLink
-                  to="/knowledge-base"
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 w-full p-2 rounded-lg transition-colors ${isActive
-                      ? "bg-blue-600 text-white"
-                      : "hover:bg-gray-800 text-gray-300 hover:text-white"
-                    }`
-                  }
-                >
-                  <Book size={18} />
+          {/* Knowledge Base - Collapsible Section (Depends on hasKb) */}
+          {hasKb && (
+            <div>
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="flex items-center justify-between w-full p-3 rounded-lg transition-colors hover:bg-gray-800 text-gray-300 hover:text-white"
+              >
+                <div className="flex items-center gap-3">
+                  <Book size={20} />
                   <span>Knowledge Base</span>
-                </NavLink>
-                <NavLink
-                  to="/kb-insight"
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 w-full p-2 rounded-lg transition-colors ${isActive
-                      ? "bg-blue-600 text-white"
-                      : "hover:bg-gray-800 text-gray-300 hover:text-white"
-                    }`
-                  }
-                >
-                  <Lightbulb size={18} />
-                  <span>KB Insight</span>
-                </NavLink>
-              </div>
-            )}
-          </div>
+                </div>
+                {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              </button>
 
+              {isExpanded && (
+                <div className="ml-6 space-y-2 mt-2">
+                  <NavLink
+                    to="/knowledge-base"
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 w-full p-2 rounded-lg transition-colors ${isActive
+                        ? "bg-blue-600 text-white"
+                        : "hover:bg-gray-800 text-gray-300 hover:text-white"
+                      }`
+                    }
+                  >
+                    <Book size={18} />
+                    <span>Knowledge Base</span>
+                  </NavLink>
+                  <NavLink
+                    to="/kb-insight"
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 w-full p-2 rounded-lg transition-colors ${isActive
+                        ? "bg-blue-600 text-white"
+                        : "hover:bg-gray-800 text-gray-300 hover:text-white"
+                      }`
+                    }
+                  >
+                    <Lightbulb size={18} />
+                    <span>Knowledge Base Insight</span>
+                  </NavLink>
+                </div>
+              )}
+            </div>
+          )}
         </nav>
       </div>
     </div>
