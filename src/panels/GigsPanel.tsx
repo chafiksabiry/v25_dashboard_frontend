@@ -127,81 +127,21 @@ function GigsPanel() {
       setLoading(true);
       const userId: string = Cookies.get('userId') || '680a27ffefa3d29d628d0016';
 
-      // Directly implement gigs here as requested
-      const mockGigs = [
-        {
-          _id: "gig_mock_1",
-          title: "Senior Product Evangelist",
-          description: "Lead product demonstrations and closing for enterprise clients in Europe.",
-          category: "Sales & Marketing",
-          userId: userId,
-          companyId: userId,
-          destination_zone: "FR",
-          seniority: { level: "Senior", yearsExperience: "5" },
-          schedule: { days: ["Monday", "Wednesday", "Friday"], hours: "09:00 - 17:00", timeZones: ["CET"], flexibility: ["high"] },
-          commission: {
-            minimumVolume: { amount: "10000", period: "month", unit: "EUR" },
-            transactionCommission: { type: "percentage", amount: "10" },
-            base: "month",
-            baseAmount: "4500",
-            bonus: "quarterly",
-            bonusAmount: "2000",
-            currency: { code: "EUR", symbol: "€" } as any
-          },
-          skills: {
-            professional: [{ name: "B2B Sales" }, { name: "Enterprise SaaS" }] as any,
-            languages: ["French", "English"],
-            technical: [{ name: "CRM" }, { name: "Presentations" }] as any,
-            soft: [{ name: "Negotiation" }, { name: "Communication" }] as any
-          },
-          duration: { startDate: new Date().toISOString(), endDate: "2026-12-31T00:00:00.000Z" },
-          availability: {
-            schedule: [{ day: "Mon-Fri", hours: { start: "09:00", end: "17:00" } }],
-            time_zone: { zoneName: "Europe/Paris" }
-          },
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          _id: "gig_mock_2",
-          title: "Regional Sales Director (MENA)",
-          description: "Manage regional pipelines and strategic partnerships in the Middle East and North Africa.",
-          category: "Business Development",
-          userId: userId,
-          companyId: userId,
-          destination_zone: "MA",
-          seniority: { level: "Executive", yearsExperience: "8" },
-          schedule: { days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], hours: "08:00 - 16:00", timeZones: ["GMT+1"], flexibility: ["medium"] },
-          commission: {
-            minimumVolume: { amount: "50000", period: "quarter", unit: "USD" },
-            transactionCommission: { type: "percentage", amount: "15" },
-            base: "month",
-            baseAmount: "6000",
-            bonus: "yearly",
-            bonusAmount: "10000",
-            currency: { code: "USD", symbol: "$" } as any
-          },
-          skills: {
-            professional: [{ name: "Business Development" }, { name: "Partnerships" }] as any,
-            languages: ["Arabic", "English", "French"],
-            technical: [{ name: "Salesforce" }] as any,
-            soft: [{ name: "Leadership" }, { name: "Strategic Thinking" }] as any
-          },
-          duration: { startDate: new Date().toISOString(), endDate: "2027-12-31T00:00:00.000Z" },
-          availability: {
-            schedule: [{ day: "Sun-Thu", hours: { start: "08:00", end: "16:00" } }],
-            time_zone: { zoneName: "Africa/Casablanca" }
-          },
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      ];
+      const response = await fetch(`${import.meta.env.VITE_API_URL_GIGS}/gigs/user/${userId}`);
 
-      // Delay to simulate loading before showing gigs
-      setTimeout(() => {
-        setGigs(mockGigs as Gig[]);
-        setLoading(false);
-      }, 600);
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        setGigs(Array.isArray(data.data) ? data.data : [data.data]);
+      } else {
+        setGigs([]);
+      }
+
+      setLoading(false);
 
     } catch (error) {
       console.error("Detailed error:", error);
@@ -551,8 +491,8 @@ function GigsPanel() {
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
                 className={`px-4 py-2 rounded-lg ${activeFilter === filter
-                    ? "bg-indigo-600 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
               >
                 {filter.charAt(0).toUpperCase() + filter.slice(1)}
