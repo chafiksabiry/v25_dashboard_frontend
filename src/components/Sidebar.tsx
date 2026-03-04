@@ -23,36 +23,73 @@ import {
   Lightbulb
 } from 'lucide-react';
 import { getHiddenSections } from '../config/sections';
+import Cookies from 'js-cookie';
 
 export function Sidebar() {
   const location = useLocation();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [hasCompany, setHasCompany] = useState(false);
+  const [hasGigs, setHasGigs] = useState(false);
 
   // Get hidden sections from configuration
   const hiddenSections = getHiddenSections();
 
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      const userId = Cookies.get('userId');
+      if (!userId) return;
+
+      try {
+        // 1. Check if user has a company
+        const companyRes = await fetch(`${import.meta.env.VITE_BACKEND_URL_COMPANY}/companies/user/${userId}`);
+        if (companyRes.ok) {
+          const companyData = await companyRes.json();
+          const companyExists = companyData.success && companyData.data;
+          setHasCompany(companyExists);
+
+          // 2. If they have a company, check if they have gigs
+          if (companyExists) {
+            const gigsRes = await fetch(`${import.meta.env.VITE_API_URL_GIGS}/gigs/user/${userId}`);
+            if (gigsRes.ok) {
+              const gigsData = await gigsRes.json();
+              setHasGigs(gigsData.success && gigsData.data && gigsData.data.length > 0);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error checking onboarding status:", error);
+      }
+    };
+
+    checkOnboardingStatus();
+  }, [location.pathname]); // Re-check when route changes, as they might have just created one
+
   const allMenuItems = [
-    { icon: <LayoutDashboard size={20} />, label: 'Overview', path: '/', key: 'overview' },
-    { icon: <Building2 size={20} />, label: 'Company', path: '/company', key: 'company' },
-    { icon: <Briefcase size={20} />, label: 'Gigs', path: '/gigs', key: 'gigs' },
-    { icon: <UserPlus size={20} />, label: 'Leads', path: '/leads', key: 'leads' },
-    { icon: <Users size={20} />, label: 'Rep Matching', path: '/rep-matching', key: 'rep-matching' },
-    { icon: <Phone size={20} />, label: 'Calls', path: '/calls', key: 'calls' },
-    // { icon: <DollarSign size={20} />, label: 'Deals', path: '/deals' },
-    // { icon: <ContactIcon size={20} />, label: 'Contacts', path: '/contacts' },
-    { icon: <Calendar size={20} />, label: 'Scheduler', path: '/scheduler', key: 'scheduler' },
-    { icon: <Phone size={20} />, label: 'Telnyx Call Test', path: '/telnyx-call-test', key: 'telnyx-call-test' },
-    { icon: <Mail size={20} />, label: 'Emails', path: '/emails', key: 'emails' },
-    { icon: <MessageSquare size={20} />, label: 'Live Chat', path: '/chat', key: 'live-chat' },
-    { icon: <ClipboardCheck size={20} />, label: 'Quality Assurance', path: '/quality-assurance', key: 'quality-assurance' },
-    { icon: <ScrollText size={20} />, label: 'Operations', path: '/operations', key: 'operations' },
-    { icon: <TrendingUp size={20} />, label: 'Analytics', path: '/analytics', key: 'analytics' },
-    { icon: <Plug size={20} />, label: 'Integrations', path: '/integrations', key: 'integrations' },
-    { icon: <Settings size={20} />, label: 'Settings', path: '/settings', key: 'settings' },
+    { icon: <LayoutDashboard size={20} />, label: 'Overview', path: '/', key: 'overview', alwaysShow: true },
+    { icon: <Building2 size={20} />, label: 'Company', path: '/company', key: 'company', alwaysShow: true },
+    { icon: <Briefcase size={20} />, label: 'Gigs', path: '/gigs', key: 'gigs', requiresCompany: true },
+    { icon: <UserPlus size={20} />, label: 'Leads', path: '/leads', key: 'leads', requiresGigs: true },
+    { icon: <Users size={20} />, label: 'Rep Matching', path: '/rep-matching', key: 'rep-matching', requiresGigs: true },
+    { icon: <Phone size={20} />, label: 'Calls', path: '/calls', key: 'calls', requiresGigs: true },
+    { icon: <Calendar size={20} />, label: 'Scheduler', path: '/scheduler', key: 'scheduler', requiresGigs: true },
+    { icon: <Phone size={20} />, label: 'Telnyx Call Test', path: '/telnyx-call-test', key: 'telnyx-call-test', requiresGigs: true },
+    { icon: <Mail size={20} />, label: 'Emails', path: '/emails', key: 'emails', requiresGigs: true },
+    { icon: <MessageSquare size={20} />, label: 'Live Chat', path: '/chat', key: 'live-chat', requiresGigs: true },
+    { icon: <ClipboardCheck size={20} />, label: 'Quality Assurance', path: '/quality-assurance', key: 'quality-assurance', requiresGigs: true },
+    { icon: <ScrollText size={20} />, label: 'Operations', path: '/operations', key: 'operations', requiresGigs: true },
+    { icon: <TrendingUp size={20} />, label: 'Analytics', path: '/analytics', key: 'analytics', requiresGigs: true },
+    { icon: <Plug size={20} />, label: 'Integrations', path: '/integrations', key: 'integrations', alwaysShow: true },
+    { icon: <Settings size={20} />, label: 'Settings', path: '/settings', key: 'settings', alwaysShow: true },
   ];
 
-  // Filter out hidden sections
-  const menuItems = allMenuItems.filter(item => !hiddenSections.includes(item.key));
+  // Filter out hidden sections and apply onboarding logic
+  const menuItems = allMenuItems.filter(item => {
+    if (hiddenSections.includes(item.key)) return false;
+    if (item.alwaysShow) return true;
+    if (item.requiresGigs && !hasGigs) return false;
+    if (item.requiresCompany && !hasCompany) return false;
+    return true;
+  });
 
   return (
     <div className="w-64 bg-gray-900 h-screen fixed left-0 top-0 text-white p-4 flex flex-col">
@@ -70,10 +107,9 @@ export function Sidebar() {
               key={item.label}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-3 w-full p-3 rounded-lg transition-colors ${
-                  isActive
-                    ? "bg-blue-600 text-white"
-                    : "hover:bg-gray-800 text-gray-300 hover:text-white"
+                `flex items-center gap-3 w-full p-3 rounded-lg transition-colors ${isActive
+                  ? "bg-blue-600 text-white"
+                  : "hover:bg-gray-800 text-gray-300 hover:text-white"
                 }`
               }
             >
@@ -100,10 +136,9 @@ export function Sidebar() {
                 <NavLink
                   to="/knowledge-base"
                   className={({ isActive }) =>
-                    `flex items-center gap-3 w-full p-2 rounded-lg transition-colors ${
-                      isActive
-                        ? "bg-blue-600 text-white"
-                        : "hover:bg-gray-800 text-gray-300 hover:text-white"
+                    `flex items-center gap-3 w-full p-2 rounded-lg transition-colors ${isActive
+                      ? "bg-blue-600 text-white"
+                      : "hover:bg-gray-800 text-gray-300 hover:text-white"
                     }`
                   }
                 >
@@ -113,10 +148,9 @@ export function Sidebar() {
                 <NavLink
                   to="/kb-insight"
                   className={({ isActive }) =>
-                    `flex items-center gap-3 w-full p-2 rounded-lg transition-colors ${
-                      isActive
-                        ? "bg-blue-600 text-white"
-                        : "hover:bg-gray-800 text-gray-300 hover:text-white"
+                    `flex items-center gap-3 w-full p-2 rounded-lg transition-colors ${isActive
+                      ? "bg-blue-600 text-white"
+                      : "hover:bg-gray-800 text-gray-300 hover:text-white"
                     }`
                   }
                 >
