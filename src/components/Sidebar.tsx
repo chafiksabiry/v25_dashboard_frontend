@@ -52,7 +52,14 @@ export function Sidebar() {
             const gigsRes = await fetch(`${import.meta.env.VITE_API_URL_GIGS}/gigs/user/${userId}`);
             if (gigsRes.ok) {
               const gigsData = await gigsRes.json();
-              setHasGigs(gigsData.success && gigsData.data && gigsData.data.length > 0);
+
+              if (gigsData.success && gigsData.data && gigsData.data.length > 0) {
+                // Filter out any mock gigs which may have ids like 'gig_mock_1'
+                const realGigs = gigsData.data.filter((gig: any) => !gig._id?.startsWith('gig_mock'));
+                setHasGigs(realGigs.length > 0);
+              } else {
+                setHasGigs(false);
+              }
             }
           }
         }
