@@ -53,13 +53,14 @@ export function Sidebar() {
               const progressRes = await fetch(`${import.meta.env.VITE_BACKEND_URL_COMPANY}/onboarding/companies/${companyData.data._id}/onboarding`);
 
               let stepCompleted = false;
+              let payload: any = null;
               if (progressRes.ok) {
                 const progressData = await progressRes.json();
                 console.log("📊 Sidebar Onboarding Progress Data:", progressData);
 
                 // Orchestrator keeps a Master list of completed steps. Step 3 is "Create Gigs".
                 // Handle both direct object form and wrapped { data: { ... } } form
-                const payload = progressData.data ? progressData.data : progressData;
+                payload = progressData.data ? progressData.data : progressData;
 
                 if (payload && Array.isArray(payload.completedSteps)) {
                   if (payload.completedSteps.includes(3)) {
@@ -68,6 +69,14 @@ export function Sidebar() {
                 }
               }
 
+              // Fallback to cookies if API check fails or indicates not completed (for immediate UI sync)
+              if (!stepCompleted) {
+                if (Cookies.get('createGigStepCompleted') === 'true') {
+                  stepCompleted = true;
+                }
+              }
+
+              console.log("📊 Sidebar Gigs Status (stepCompleted):", stepCompleted, "from completedSteps:", payload?.completedSteps);
               setHasGigs(stepCompleted);
             } catch (err) {
               console.error("Error checking onboarding progress", err);
