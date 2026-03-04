@@ -47,24 +47,30 @@ export function Sidebar() {
           const companyExists = companyData.success && companyData.data;
           setHasCompany(companyExists);
 
-          // 2. If they have a company, check if they have gigs
-          if (companyExists) {
-            const gigsRes = await fetch(`${import.meta.env.VITE_API_URL_GIGS}/gigs/user/${userId}`);
-            if (gigsRes.ok) {
-              const gigsData = await gigsRes.json();
+          // 2. If they have a company, check if the "Create Gigs" onboarding step is completed
+          if (companyExists && companyData.data._id) {
+            try {
+              const stepRes = await fetch(`${import.meta.env.VITE_BACKEND_URL_COMPANY}/onboarding/companies/${companyData.data._id}/onboarding/phases/2/steps/3`);
 
-              if (gigsData.success && gigsData.data) {
-                const gigsArray = Array.isArray(gigsData.data) ? gigsData.data : [gigsData.data];
-
-                // Keep only valid gigs that actually have an ID and it's not a mock ID
-                const realGigs = gigsArray.filter((gig: any) =>
-                  gig && typeof gig === 'object' && gig._id && !String(gig._id).startsWith('gig_mock')
-                );
-
-                setHasGigs(realGigs.length > 0);
-              } else {
-                setHasGigs(false);
+              let stepCompleted = false;
+              if (stepRes.ok) {
+                const stepData = await stepRes.json();
+                if (stepData && stepData.status === 'completed') {
+                  stepCompleted = true;
+                }
               }
+
+              // Fallback to cookies if API check fails or indicates not completed (for immediate UI sync)
+              if (!stepCompleted) {
+                if (Cookies.get('createGigStepCompleted') === 'true') {
+                  stepCompleted = true;
+                }
+              }
+
+              setHasGigs(stepCompleted);
+            } catch (err) {
+              console.error("Error checking gig step status", err);
+              setHasGigs(Cookies.get('createGigStepCompleted') === 'true');
             }
           }
         }
