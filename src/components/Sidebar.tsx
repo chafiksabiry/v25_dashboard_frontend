@@ -53,9 +53,11 @@ export function Sidebar() {
             if (gigsRes.ok) {
               const gigsData = await gigsRes.json();
 
-              if (gigsData.success && gigsData.data && gigsData.data.length > 0) {
+              if (gigsData.success && gigsData.data) {
+                const gigsArray = Array.isArray(gigsData.data) ? gigsData.data : [gigsData.data];
+
                 // Filter out any mock gigs which may have ids like 'gig_mock_1'
-                const realGigs = gigsData.data.filter((gig: any) => !gig._id?.startsWith('gig_mock'));
+                const realGigs = gigsArray.filter((gig: any) => !String(gig._id).startsWith('gig_mock'));
                 setHasGigs(realGigs.length > 0);
               } else {
                 setHasGigs(false);
