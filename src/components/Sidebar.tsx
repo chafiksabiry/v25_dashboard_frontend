@@ -56,8 +56,11 @@ export function Sidebar() {
               if (gigsData.success && gigsData.data) {
                 const gigsArray = Array.isArray(gigsData.data) ? gigsData.data : [gigsData.data];
 
-                // Filter out any mock gigs which may have ids like 'gig_mock_1'
-                const realGigs = gigsArray.filter((gig: any) => !String(gig._id).startsWith('gig_mock'));
+                // Keep only valid gigs that actually have an ID and it's not a mock ID
+                const realGigs = gigsArray.filter((gig: any) =>
+                  gig && typeof gig === 'object' && gig._id && !String(gig._id).startsWith('gig_mock')
+                );
+
                 setHasGigs(realGigs.length > 0);
               } else {
                 setHasGigs(false);

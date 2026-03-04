@@ -136,7 +136,14 @@ function GigsPanel() {
       const data = await response.json();
 
       if (data.success && data.data) {
-        setGigs(Array.isArray(data.data) ? data.data : [data.data]);
+        const gigsArray = Array.isArray(data.data) ? data.data : [data.data];
+
+        // Keep only valid gigs that actually have an ID and it's not a mock ID
+        const realGigs = gigsArray.filter((gig: any) =>
+          gig && typeof gig === 'object' && gig._id && !String(gig._id).startsWith('gig_mock')
+        );
+
+        setGigs(realGigs);
       } else {
         setGigs([]);
       }
