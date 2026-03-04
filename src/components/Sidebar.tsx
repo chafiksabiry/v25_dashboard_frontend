@@ -95,7 +95,7 @@ export function Sidebar() {
   const allMenuItems = [
     { icon: <LayoutDashboard size={20} />, label: 'Overview', path: '/', key: 'overview', alwaysShow: true },
     { icon: <Building2 size={20} />, label: 'Company', path: '/company', key: 'company', alwaysShow: true },
-    { icon: <Briefcase size={20} />, label: 'Gigs', path: '/gigs', key: 'gigs', requiresCompany: true },
+    { icon: <Briefcase size={20} />, label: 'Gigs', path: '/gigs', key: 'gigs', requiresGigs: true },
     { icon: <UserPlus size={20} />, label: 'Leads', path: '/leads', key: 'leads', requiresGigs: true },
     { icon: <Users size={20} />, label: 'Rep Matching', path: '/rep-matching', key: 'rep-matching', requiresGigs: true },
     { icon: <Phone size={20} />, label: 'Calls', path: '/calls', key: 'calls', requiresGigs: true },
@@ -115,7 +115,7 @@ export function Sidebar() {
     if (hiddenSections.includes(item.key)) return false;
     if (item.alwaysShow) return true;
     if (item.requiresGigs && !hasGigs) return false;
-    if (item.requiresCompany && !hasCompany) return false;
+    if ((item as any).requiresCompany && !hasCompany) return false;
     return true;
   });
 
