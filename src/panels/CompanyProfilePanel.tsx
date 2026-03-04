@@ -18,10 +18,6 @@ import {
   Coffee,
   Trophy,
   Award,
-  Users,
-  Rocket,
-  Briefcase,
-  GraduationCap,
   Code,
   Edit2,
   Upload,
@@ -878,88 +874,6 @@ function CompanyProfile() {
                   </div>
                 </section>
               </div>
-
-              {/* Work Environment */}
-              <section className="bg-gradient-to-br from-gray-50 via-white to-gray-50 rounded-2xl p-8 border border-gray-100/50 shadow-sm">
-                <div className="flex items-start gap-6">
-                  <div className="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center flex-shrink-0">
-                    <Users className="text-purple-600" size={24} />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                      Work Environment
-                    </h3>
-                    <EditableField
-                      value={profile.culture.workEnvironment}
-                      field="culture.workEnvironment"
-                      className="text-gray-700 leading-relaxed"
-                    />
-                  </div>
-                </div>
-              </section>
-
-              {/* Career Growth */}
-              <section className="space-y-8">
-                <div className="flex items-start gap-6">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-                    <Rocket className="text-blue-600" size={24} />
-                  </div>
-                  <div className="flex-1">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                      Career Growth & Opportunities
-                    </h2>
-                    <div className="grid md:grid-cols-2 gap-8">
-                      <div className="space-y-4">
-                        <h3 className="text-xl font-semibold text-gray-800">
-                          Available Roles
-                        </h3>
-                        {profile.opportunities.roles && profile.opportunities.roles.map((role: string, index: number) => (
-                          <EditableField
-                            key={index}
-                            value={role}
-                            field={`opportunities.roles.${index}`}
-                            icon={Briefcase}
-                            className="p-4 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:scale-[1.02] transition-all duration-300"
-                          />
-                        ))}
-                        {editMode && profile.opportunities.roles && profile.opportunities.roles.length === 0 && (
-                          <div className="p-4 bg-gray-50 rounded-xl border border-dashed border-gray-300 text-center text-gray-500">
-                            Add available roles in edit mode
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="space-y-6">
-                        <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100/50">
-                          <h3 className="text-xl font-semibold text-gray-800 mb-3">
-                            Growth Potential
-                          </h3>
-                          <EditableField
-                            value={profile.opportunities.growthPotential}
-                            field="opportunities.growthPotential"
-                            className="text-gray-700"
-                          />
-                        </div>
-                        <div className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border border-indigo-100/50">
-                          <h3 className="text-xl font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                            <GraduationCap
-                              size={20}
-                              className="text-indigo-500"
-                            />
-                            Training & Development
-                          </h3>
-                          <EditableField
-                            value={profile.opportunities.training}
-                            field="opportunities.training"
-                            className="text-gray-700"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
 
             </div>
           </div>
