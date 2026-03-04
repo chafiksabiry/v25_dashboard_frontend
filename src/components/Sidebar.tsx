@@ -47,30 +47,27 @@ export function Sidebar() {
           const companyExists = companyData.success && companyData.data;
           setHasCompany(companyExists);
 
-          // 2. If they have a company, check if the "Create Gigs" onboarding step is completed
+          // 2. If they have a company, check the full onboarding progress to see if step 3 (Gigs) is completed
           if (companyExists && companyData.data._id) {
             try {
-              const stepRes = await fetch(`${import.meta.env.VITE_BACKEND_URL_COMPANY}/onboarding/companies/${companyData.data._id}/onboarding/phases/2/steps/3`);
+              const progressRes = await fetch(`${import.meta.env.VITE_BACKEND_URL_COMPANY}/onboarding/companies/${companyData.data._id}/onboarding`);
 
               let stepCompleted = false;
-              if (stepRes.ok) {
-                const stepData = await stepRes.json();
-                if (stepData && stepData.status === 'completed') {
-                  stepCompleted = true;
-                }
-              }
+              if (progressRes.ok) {
+                const progressData = await progressRes.json();
 
-              // Fallback to cookies if API check fails or indicates not completed (for immediate UI sync)
-              if (!stepCompleted) {
-                if (Cookies.get('createGigStepCompleted') === 'true') {
-                  stepCompleted = true;
+                // Orchestrator keeps a Master list of completed steps. Step 3 is "Create Gigs".
+                if (progressData && Array.isArray(progressData.completedSteps)) {
+                  if (progressData.completedSteps.includes(3)) {
+                    stepCompleted = true;
+                  }
                 }
               }
 
               setHasGigs(stepCompleted);
             } catch (err) {
-              console.error("Error checking gig step status", err);
-              setHasGigs(Cookies.get('createGigStepCompleted') === 'true');
+              console.error("Error checking onboarding progress", err);
+              setHasGigs(false);
             }
           }
         }
