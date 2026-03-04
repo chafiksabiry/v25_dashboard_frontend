@@ -55,6 +55,7 @@ export function Sidebar() {
               let stepCompleted = false;
               if (progressRes.ok) {
                 const progressData = await progressRes.json();
+                console.log("📊 Sidebar Onboarding Progress Data:", progressData);
 
                 // Orchestrator keeps a Master list of completed steps. Step 3 is "Create Gigs".
                 if (progressData && Array.isArray(progressData.completedSteps)) {
