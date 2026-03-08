@@ -5,6 +5,7 @@ interface AuthContextType {
   currentUser: { id: string } | null;
   loading: boolean;
   error: string | null;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -14,13 +15,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const logout = () => {
+    // Clear all related auth data
+    Cookies.remove('userId');
+    Cookies.remove('token');
+    localStorage.removeItem('token');
+    localStorage.removeItem('zoho_access_token');
+    localStorage.removeItem('zoho_refresh_token');
+    setCurrentUser(null);
+
+    // Redirect to login or home
+    window.location.href = 'https://harxv25dashboardfrontend.netlify.app';
+  };
+
   // Set current user based on userId cookie
   useEffect(() => {
-    const userId = import.meta.env.VITE_ENV === 'test' 
+    const userId = import.meta.env.VITE_ENV === 'test'
       ? '6807abfc2c1ca099fe2b13c5'
       : Cookies.get('userId');
     console.log('Stored userId:', userId);
-    
+
     if (userId) {
       setCurrentUser({ id: userId });
     } else {
@@ -30,10 +44,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <AuthContext.Provider value={{ 
+    <AuthContext.Provider value={{
       currentUser,
       loading,
-      error
+      error,
+      logout
     }}>
       {children}
     </AuthContext.Provider>
