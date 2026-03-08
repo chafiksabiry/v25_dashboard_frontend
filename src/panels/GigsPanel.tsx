@@ -436,52 +436,7 @@ function GigsPanel() {
           </button>
         </div>
 
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <Briefcase className="w-5 h-5 text-blue-600" />
-              <span className="font-medium">Active Gigs</span>
-            </div>
-            <div className="text-2xl font-bold">{gigs.length}</div>
-            <div className="text-sm text-green-600 flex items-center gap-1">
-              <ArrowUpRight className="w-4 h-4" />
-              12% increase
-            </div>
-          </div>
-          <div className="bg-green-50 p-4 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <DollarSign className="w-5 h-5 text-green-600" />
-              <span className="font-medium">Revenue</span>
-            </div>
-            <div className="text-2xl font-bold">$45,250</div>
-            <div className="text-sm text-green-600 flex items-center gap-1">
-              <ArrowUpRight className="w-4 h-4" />
-              8% increase
-            </div>
-          </div>
-          <div className="bg-yellow-50 p-4 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <Clock className="w-5 h-5 text-yellow-600" />
-              <span className="font-medium">Avg Duration</span>
-            </div>
-            <div className="text-2xl font-bold">4.2m</div>
-            <div className="text-sm text-red-600 flex items-center gap-1">
-              <ArrowDownRight className="w-4 h-4" />
-              3% decrease
-            </div>
-          </div>
-          <div className="bg-purple-50 p-4 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <Star className="w-5 h-5 text-purple-600" />
-              <span className="font-medium">Rating</span>
-            </div>
-            <div className="text-2xl font-bold">4.8</div>
-            <div className="text-sm text-green-600 flex items-center gap-1">
-              <ArrowUpRight className="w-4 h-4" />
-              5% increase
-            </div>
-          </div>
-        </div>
+
 
         <div className="flex items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-2">

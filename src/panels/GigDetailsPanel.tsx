@@ -222,6 +222,32 @@ function GigDetailsPanel() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Basic Information */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-medium text-gray-900 mb-2">Description</h3>
+                  <p className="text-gray-600 leading-relaxed">{gig.description}</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="font-medium text-gray-900 mb-2">Category</h3>
+                    <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                      {gig.category}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-gray-900 mb-2">Location</h3>
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <MapPin className="w-4 h-4" />
+                      {gig.destination_zone?.name?.common || 'Not specified'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Commission */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
@@ -297,31 +323,6 @@ function GigDetailsPanel() {
                   <p className="text-gray-600 text-sm leading-relaxed">{gig.commission.additionalDetails}</p>
                 </div>
               )}
-            </div>
-            {/* Basic Information */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-medium text-gray-900 mb-2">Description</h3>
-                  <p className="text-gray-600 leading-relaxed">{gig.description}</p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="font-medium text-gray-900 mb-2">Category</h3>
-                    <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                      {gig.category}
-                    </span>
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-gray-900 mb-2">Location</h3>
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <MapPin className="w-4 h-4" />
-                      {gig.destination_zone?.name?.common || 'Not specified'}
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Skills */}
