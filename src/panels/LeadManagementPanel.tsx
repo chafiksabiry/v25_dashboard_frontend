@@ -1296,7 +1296,7 @@ function LeadManagementPanel() {
           <div className="p-3 bg-blue-100 rounded-lg mr-3">
             <UserPlus className="w-6 h-6 text-blue-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">Upload Contacts</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Leads</h2>
         </div>
         <p className="text-gray-600 ml-16">
           Import, manage, and organize your leads efficiently. Choose between connecting with your CRM system or uploading contact files directly.
