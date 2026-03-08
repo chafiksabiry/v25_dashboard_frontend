@@ -1,5 +1,4 @@
-import React from 'react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -223,6 +222,82 @@ function GigDetailsPanel() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Commission */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-indigo-600" />
+                Commission
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Per Call Compensation */}
+                <div className="flex flex-col p-4 rounded-xl bg-green-50/50 border border-green-100 h-full">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-green-100 rounded-lg text-green-600 flex-shrink-0">
+                      <Phone className="w-4 h-4" />
+                    </div>
+                    <span className="text-sm text-gray-600 font-semibold leading-tight">Per call compensation</span>
+                  </div>
+                  <div className="mt-auto flex items-baseline gap-1">
+                    <span className="text-2xl font-bold text-gray-900">{gig.commission?.commission_per_call || 0}</span>
+                    <span className="text-sm font-medium text-gray-500">{gig.commission?.currency?.symbol || '€'}</span>
+                  </div>
+                </div>
+
+                {/* Transaction Commission */}
+                <div className="flex flex-col p-4 rounded-xl bg-purple-50/50 border border-purple-100 h-full">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-purple-100 rounded-lg text-purple-600 flex-shrink-0">
+                      <ArrowRightLeft className="w-4 h-4" />
+                    </div>
+                    <span className="text-sm text-gray-600 font-semibold leading-tight">Transaction Commission</span>
+                  </div>
+                  <div className="mt-auto flex items-baseline gap-1">
+                    <span className="text-2xl font-bold text-gray-900">{gig.commission?.transactionCommission || 0}</span>
+                    <span className="text-sm font-medium text-gray-500">{gig.commission?.currency?.symbol || '€'}</span>
+                  </div>
+                </div>
+
+                {/* Bonus & Incentives */}
+                <div className="flex flex-col p-4 rounded-xl bg-amber-50/50 border border-amber-100 h-full">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-amber-100 rounded-lg text-amber-600 flex-shrink-0">
+                      <Star className="w-4 h-4" />
+                    </div>
+                    <span className="text-sm text-gray-600 font-semibold leading-tight">Bonus & Incentives</span>
+                  </div>
+                  <div className="mt-auto flex items-baseline gap-1">
+                    <span className="text-2xl font-bold text-gray-900">{gig.commission?.bonusAmount || 0}</span>
+                    <span className="text-sm font-medium text-gray-500">{gig.commission?.currency?.symbol || '€'}</span>
+                  </div>
+                </div>
+
+                {/* Minimum Volume Requirements */}
+                <div className="flex flex-col p-4 rounded-xl bg-orange-50/50 border border-orange-100 h-full">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-orange-100 rounded-lg text-orange-600 flex-shrink-0">
+                      <Target className="w-4 h-4" />
+                    </div>
+                    <span className="text-sm text-gray-600 font-semibold leading-tight">Minimum Volume Requirements</span>
+                  </div>
+                  <div className="mt-auto flex items-center gap-2 justify-between">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-bold text-gray-900">{gig.commission?.minimumVolume?.amount || 0}</span>
+                    </div>
+                    <span className="px-2 py-1 bg-white text-gray-500 text-[10px] font-bold rounded shadow-sm border border-orange-100 uppercase tracking-wider">
+                      {gig.commission?.minimumVolume?.period || 'Monthly'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {gig.commission?.additionalDetails && (
+                <div className="mt-6 pt-6 border-t border-gray-100">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wider">Additional Details</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">{gig.commission.additionalDetails}</p>
+                </div>
+              )}
+            </div>
             {/* Basic Information */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
@@ -339,80 +414,6 @@ function GigDetailsPanel() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Commission */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                <DollarSign className="w-5 h-5" />
-                Commission
-              </h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Per Call Compensation */}
-                <div className="flex items-center justify-between p-4 rounded-xl bg-green-50/50 border border-green-100">
-                  <div className="flex items-center gap-4">
-                    <div className="p-2.5 bg-green-100 rounded-lg text-green-600">
-                      <Phone className="w-5 h-5" />
-                    </div>
-                    <span className="text-gray-600 font-medium">Per call compensation</span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-xl font-bold text-gray-900">{gig.commission?.commission_per_call || 0}</span>
-                    <span className="text-gray-500 font-medium">{gig.commission?.currency?.symbol || '€'}</span>
-                  </div>
-                </div>
-
-                {/* Transaction Commission */}
-                <div className="flex items-center justify-between p-4 rounded-xl bg-purple-50/50 border border-purple-100">
-                  <div className="flex items-center gap-4">
-                    <div className="p-2.5 bg-purple-100 rounded-lg text-purple-600">
-                      <ArrowRightLeft className="w-5 h-5" />
-                    </div>
-                    <span className="text-gray-600 font-medium">Transaction Commission</span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-xl font-bold text-gray-900">{gig.commission?.transactionCommission || 0}</span>
-                    <span className="text-gray-500 font-medium">{gig.commission?.currency?.symbol || '€'}</span>
-                  </div>
-                </div>
-
-                {/* Bonus & Incentives */}
-                <div className="flex items-center justify-between p-4 rounded-xl bg-amber-50/50 border border-amber-100">
-                  <div className="flex items-center gap-4">
-                    <div className="p-2.5 bg-amber-100 rounded-lg text-amber-600">
-                      <Star className="w-5 h-5" />
-                    </div>
-                    <span className="text-gray-600 font-medium">Bonus & Incentives</span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-xl font-bold text-gray-900">{gig.commission?.bonusAmount || 0}</span>
-                    <span className="text-gray-500 font-medium">{gig.commission?.currency?.symbol || '€'}</span>
-                  </div>
-                </div>
-
-                {/* Minimum Volume Requirements */}
-                <div className="flex items-center justify-between p-4 rounded-xl bg-orange-50/50 border border-orange-100">
-                  <div className="flex items-center gap-4">
-                    <div className="p-2.5 bg-orange-100 rounded-lg text-orange-600">
-                      <Target className="w-5 h-5" />
-                    </div>
-                    <span className="text-gray-600 font-medium">Minimum Volume Requirements</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl font-bold text-gray-900">{gig.commission?.minimumVolume?.amount || 0}</span>
-                    <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs font-semibold rounded uppercase">
-                      {gig.commission?.minimumVolume?.period || 'Monthly'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {gig.commission?.additionalDetails && (
-                <div className="mt-6 pt-6 border-t border-gray-100">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wider">Additional Details</h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">{gig.commission.additionalDetails}</p>
-                </div>
-              )}
-            </div>
 
             {/* Schedule */}
             <div className="bg-white rounded-lg shadow-sm p-6">
