@@ -4,7 +4,6 @@ import Cookies from 'js-cookie';
 interface AuthContextType {
   currentUser: { id: string } | null;
   loading: boolean;
-  error: string | null;
   logout: () => void;
 }
 
@@ -13,7 +12,6 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const logout = () => {
     // Clear all related auth data
@@ -24,8 +22,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('zoho_refresh_token');
     setCurrentUser(null);
 
-    // Redirect to login or home
-    window.location.href = 'https://harxv25dashboardfrontend.netlify.app';
+    // Redirect to login
+    window.location.href = '/auth';
   };
 
   // Set current user based on userId cookie
@@ -47,7 +45,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider value={{
       currentUser,
       loading,
-      error,
       logout
     }}>
       {children}

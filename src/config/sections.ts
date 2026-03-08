@@ -3,12 +3,13 @@
 
 export const HIDDEN_SECTIONS = [
   'scheduler',
-  'emails', 
+  'emails',
   'live-chat',
   'quality-assurance',
   'operations',
   'analytics',
-  'integrations'
+  'integrations',
+  'settings'
 ];
 
 // Get hidden sections from environment variable or use default

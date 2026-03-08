@@ -1,11 +1,10 @@
-import React from 'react';
 import { LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export function DashboardPanel() {
   const { logout } = useAuth();
   const handleOrchestratorClick = () => {
-    window.location.href = '/app11';
+    window.location.href = '/auth';
   };
 
   return (
