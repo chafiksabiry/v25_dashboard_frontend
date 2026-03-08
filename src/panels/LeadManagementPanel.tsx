@@ -64,6 +64,11 @@ interface Lead {
   id: string; // Zoho CRM ID
   Last_Activity_Time: string | null;
   Deal_Name: string;
+  First_Name?: string;
+  Last_Name?: string;
+  Address?: string;
+  City?: string;
+  Postal_Code?: string;
   Stage: string;
   Email_1: string;
   Phone?: string;
@@ -1782,13 +1787,19 @@ function LeadManagementPanel() {
               <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
                 <tr>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 bg-gray-50">
-                    Lead
+                    Nom
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 bg-gray-50">
-                    Lead Name
+                    Prénom
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 bg-gray-50">
-                    Pipeline
+                    Email
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 bg-gray-50">
+                    Adresse
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 bg-gray-50">
+                    MOBILE
                   </th>
                 </tr>
               </thead>
@@ -1819,24 +1830,24 @@ function LeadManagementPanel() {
                       className={`hover:bg-gray-50 cursor-pointer transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
                       onClick={() => handleLeadClick(lead)}
                     >
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <div className="flex items-center">
-                          <div className="h-10 w-10 flex-shrink-0 rounded-full flex items-center justify-center bg-blue-100">
-                            <UserPlus className="h-6 w-6 text-blue-700" />
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900 flex items-center">
-                              {lead.Email_1 || 'No Email'}
-                            </div>
-                            <div className="text-sm text-gray-500">{lead.Phone || 'No Phone'}</div>
-                          </div>
-                        </div>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900 font-medium">
+                        {lead.Last_Name || (lead.Deal_Name ? lead.Deal_Name.split(' ').slice(1).join(' ') : 'N/A')}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
-                        {lead.Deal_Name || 'N/A'}
+                        {lead.First_Name || (lead.Deal_Name ? lead.Deal_Name.split(' ')[0] : 'N/A')}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {typeof lead.Pipeline === 'object' ? lead.Pipeline.name : lead.Pipeline || 'Reps Pipeline'}
+                        {lead.Email_1 || 'No Email'}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                        {lead.Address ? `${lead.Address}${lead.City ? `, ${lead.City}` : ''}` : 'N/A'}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900 font-medium">
+                        {(() => {
+                          const phone = lead.Phone || '';
+                          if (!phone) return 'N/A';
+                          return phone.startsWith('+') ? phone : `+${phone}`;
+                        })()}
                       </td>
                     </tr>
                   ))
