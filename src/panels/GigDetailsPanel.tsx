@@ -8,7 +8,6 @@ import {
   Users,
   Tags,
   Building2,
-  Clock,
   Globe,
   Phone,
   ArrowRightLeft,
@@ -486,31 +485,6 @@ function GigDetailsPanel() {
               </div>
             </div>
 
-            {/* Meta Information */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Clock className="w-5 h-5" />
-                Meta Information
-              </h2>
-              <div className="space-y-3 text-sm">
-                <div>
-                  <h3 className="font-medium text-gray-900">Created</h3>
-                  <p className="text-gray-600">
-                    {new Date(gig.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900">Last Updated</h3>
-                  <p className="text-gray-600">
-                    {new Date(gig.updatedAt).toLocaleDateString()}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900">Gig ID</h3>
-                  <p className="text-gray-600 font-mono text-xs">{gig._id}</p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>

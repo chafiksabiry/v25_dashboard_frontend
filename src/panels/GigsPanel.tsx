@@ -6,7 +6,6 @@ import '../styles/modal.css';
 import {
   Briefcase,
   Calendar,
-  Clock,
   DollarSign,
   Users,
   CheckCircle2,
@@ -15,9 +14,6 @@ import {
   Filter,
   Search,
   Plus,
-  ArrowUpRight,
-  ArrowDownRight,
-  Star,
   MapPin,
   Building2,
   Tags,
