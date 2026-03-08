@@ -110,6 +110,11 @@ function GigsPanel() {
 
 
   const companyId = Cookies.get('userId');
+  console.log('🏗️ GigsPanel Component Render:', {
+    companyId,
+    userIdFromCookie: Cookies.get('userId'),
+    allCookies: document.cookie
+  });
 
   // const fetchCompanyDetails = async () => {
   //   try {
@@ -126,25 +131,39 @@ function GigsPanel() {
     try {
       setLoading(true);
       const userId: string = Cookies.get('userId') || '680a27ffefa3d29d628d0016';
+      const apiUrl = `${import.meta.env.VITE_API_URL_GIGS}/gigs/user/${userId}`;
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL_GIGS}/gigs/user/${userId}`);
+      console.log('🔍 FETCHING GIGS:', {
+        userId,
+        apiUrl,
+        rawUserIdFromCookie: Cookies.get('userId'),
+        VITE_API_URL_GIGS: import.meta.env.VITE_API_URL_GIGS
+      });
+
+      const response = await fetch(apiUrl);
+
+      console.log('📡 API RESPONSE STATUS:', response.status, response.statusText);
 
       if (!response.ok) {
         throw new Error(`Server error: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('📦 API DATA RECEIVED:', data);
 
       if (data.success && data.data) {
         const gigsArray = Array.isArray(data.data) ? data.data : [data.data];
+        console.log('📋 GIGS ARRAY BEFORE FILTER:', gigsArray);
 
         // Keep only valid gigs that actually have an ID and it's not a mock ID
         const realGigs = gigsArray.filter((gig: any) =>
           gig && typeof gig === 'object' && gig._id && !String(gig._id).startsWith('gig_mock')
         );
 
+        console.log('✨ REAL GIGS AFTER FILTER:', realGigs);
         setGigs(realGigs);
       } else {
+        console.warn('⚠️ No gigs found in response or success is false');
         setGigs([]);
       }
 
@@ -162,6 +181,7 @@ function GigsPanel() {
   // }, [companyId]);
 
   useEffect(() => {
+    console.log('🔄 Triggering fetchGigsByUserId due to companyId change:', companyId);
     fetchGigsByUserId();
   }, [companyId]);
 
