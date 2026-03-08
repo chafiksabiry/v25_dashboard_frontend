@@ -491,10 +491,10 @@ export function IntegrationsPanel() {
     },
     {
       id: 'zoho-crm',
-      name: 'Zoho CRM',
-      description: 'Customer relationship management and sales automation',
+      name: 'Zoho CRM (Disabled)',
+      description: 'Customer relationship management and sales automation (Currently unavailable)',
       category: 'crm',
-      status: 'connected',
+      status: 'pending',
       icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=zohocrm',
       config: {
         fields: [
@@ -536,10 +536,10 @@ export function IntegrationsPanel() {
     },
     {
       id: 'zoho-mail',
-      name: 'Zoho Mail',
-      description: 'Professional email and collaboration platform',
+      name: 'Zoho Mail (Disabled)',
+      description: 'Professional email and collaboration platform (Currently unavailable)',
       category: 'email',
-      status: 'connected',
+      status: 'pending',
       icon_url: 'https://api.dicebear.com/7.x/shapes/svg?seed=zohomail',
       config: {
         fields: [

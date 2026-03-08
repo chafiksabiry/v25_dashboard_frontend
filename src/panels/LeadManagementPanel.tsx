@@ -112,7 +112,7 @@ function LeadManagementPanel() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Zoho CRM states
+  // Zoho CRM states (DISABLED for now as requested)
   const [hasZohoConfig, setHasZohoConfig] = useState(false);
   const [hasZohoAccessToken, setHasZohoAccessToken] = useState(false);
   const [isDisconnectingZoho, setIsDisconnectingZoho] = useState(false);
@@ -385,7 +385,8 @@ function LeadManagementPanel() {
     }
   }, []);
 
-  // Vérifier la configuration Zoho au montage
+  // Vérifier la configuration Zoho au montage (DISABLED)
+  /*
   useEffect(() => {
     const checkZohoConfig = async () => {
       try {
@@ -449,6 +450,7 @@ function LeadManagementPanel() {
 
     checkZohoConfig();
   }, [selectedGig]);
+  */
 
   // Effet pour récupérer les leads quand un gig est sélectionné
   useEffect(() => {
@@ -507,6 +509,10 @@ function LeadManagementPanel() {
 
   const handleStageClick = async (stage: string) => {
     if (!selectedLead || stage === selectedLead.Stage) return;
+
+    // Zoho integration disabled for now
+    toast.error("Zoho integration is currently disabled.");
+    return;
 
     setIsUpdating(true);
     setSelectedStageInModal(stage);
@@ -1330,7 +1336,7 @@ function LeadManagementPanel() {
           {/* Zoho CRM Integration Card */}
           <div className="bg-gradient-to-br from-green-50 to-teal-50 border-2 border-green-200 rounded-2xl p-6 hover:border-green-300 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] flex flex-col h-full">
             {/* Header */}
-            <div className="flex items-center mb-4">
+            <div className="flex items-center mb-4 opacity-50 grayscale">
               <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mr-4 border-2 border-green-200 shadow-sm">
                 <img
                   src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2334a853' d='M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z'/%3E%3C/svg%3E"
@@ -1340,7 +1346,7 @@ function LeadManagementPanel() {
               </div>
               <div className="flex-1">
                 <h4 className="text-xl font-bold text-green-900">Zoho CRM Integration</h4>
-                <p className="text-sm text-green-700">Connect and sync with your Zoho CRM</p>
+                <p className="text-sm text-green-700">Connect and sync with your Zoho CRM (Disabled)</p>
               </div>
             </div>
 
