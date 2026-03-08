@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -8,9 +8,12 @@ import {
   Users,
   Tags,
   Building2,
-  Briefcase,
   Clock,
-  Globe
+  Globe,
+  Phone,
+  ArrowRightLeft,
+  Star,
+  Target
 } from 'lucide-react';
 
 interface GigDetails {
@@ -76,15 +79,20 @@ interface GigDetails {
     flexibility: string[];
   };
   commission: {
-    baseAmount: string;
-    base: string;
-    bonusAmount: string;
-    currency: {
+    commission_per_call?: number;
+    transactionCommission?: number;
+    bonusAmount?: string;
+    currency?: {
       symbol: string;
       code: string;
       name: string;
     };
-    additionalDetails: string;
+    minimumVolume?: {
+      amount: string;
+      period: string;
+      unit: string;
+    };
+    additionalDetails?: string;
   };
   industries: Array<{
     name: string;
@@ -118,14 +126,14 @@ function GigDetailsPanel() {
       try {
         setLoading(true);
         const response = await fetch(`${import.meta.env.VITE_API_URL_GIGS}/gigs/${gigId}`);
-        
+
         if (!response.ok) {
           throw new Error(`Failed to fetch gig details: ${response.status} ${response.statusText}`);
         }
-        
+
         const data = await response.json();
         console.log('Gig details:', data);
-        
+
         if (data.message === "Gig retrieved successfully" && data.data) {
           setGig(data.data);
         } else {
@@ -198,11 +206,10 @@ function GigDetailsPanel() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                gig.status === 'active' ? 'bg-green-100 text-green-800' :
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${gig.status === 'active' ? 'bg-green-100 text-green-800' :
                 gig.status === 'to_activate' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-gray-100 text-gray-800'
-              }`}>
+                  'bg-gray-100 text-gray-800'
+                }`}>
                 {gig.status}
               </span>
             </div>
@@ -333,32 +340,77 @@ function GigDetailsPanel() {
           <div className="space-y-6">
             {/* Commission */}
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
                 <DollarSign className="w-5 h-5" />
                 Commission
               </h2>
-              <div className="space-y-3">
-                <div>
-                  <h3 className="font-medium text-gray-900">Base Rate</h3>
-                  <p className="text-gray-600">
-                    {gig.commission?.currency?.symbol || '€'} {gig.commission?.baseAmount || '0'} / {gig.commission?.base || 'period'}
-                  </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Per Call Compensation */}
+                <div className="flex items-center justify-between p-4 rounded-xl bg-green-50/50 border border-green-100">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2.5 bg-green-100 rounded-lg text-green-600">
+                      <Phone className="w-5 h-5" />
+                    </div>
+                    <span className="text-gray-600 font-medium">Per call compensation</span>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xl font-bold text-gray-900">{gig.commission?.commission_per_call || 0}</span>
+                    <span className="text-gray-500 font-medium">{gig.commission?.currency?.symbol || '€'}</span>
+                  </div>
                 </div>
-                {gig.commission?.bonusAmount && (
-                  <div>
-                    <h3 className="font-medium text-gray-900">Bonus</h3>
-                    <p className="text-gray-600">
-                      {gig.commission.currency?.symbol || '€'} {gig.commission.bonusAmount}
-                    </p>
+
+                {/* Transaction Commission */}
+                <div className="flex items-center justify-between p-4 rounded-xl bg-purple-50/50 border border-purple-100">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2.5 bg-purple-100 rounded-lg text-purple-600">
+                      <ArrowRightLeft className="w-5 h-5" />
+                    </div>
+                    <span className="text-gray-600 font-medium">Transaction Commission</span>
                   </div>
-                )}
-                {gig.commission?.additionalDetails && (
-                  <div>
-                    <h3 className="font-medium text-gray-900">Additional Details</h3>
-                    <p className="text-gray-600 text-sm">{gig.commission.additionalDetails}</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xl font-bold text-gray-900">{gig.commission?.transactionCommission || 0}</span>
+                    <span className="text-gray-500 font-medium">{gig.commission?.currency?.symbol || '€'}</span>
                   </div>
-                )}
+                </div>
+
+                {/* Bonus & Incentives */}
+                <div className="flex items-center justify-between p-4 rounded-xl bg-amber-50/50 border border-amber-100">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2.5 bg-amber-100 rounded-lg text-amber-600">
+                      <Star className="w-5 h-5" />
+                    </div>
+                    <span className="text-gray-600 font-medium">Bonus & Incentives</span>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xl font-bold text-gray-900">{gig.commission?.bonusAmount || 0}</span>
+                    <span className="text-gray-500 font-medium">{gig.commission?.currency?.symbol || '€'}</span>
+                  </div>
+                </div>
+
+                {/* Minimum Volume Requirements */}
+                <div className="flex items-center justify-between p-4 rounded-xl bg-orange-50/50 border border-orange-100">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2.5 bg-orange-100 rounded-lg text-orange-600">
+                      <Target className="w-5 h-5" />
+                    </div>
+                    <span className="text-gray-600 font-medium">Minimum Volume Requirements</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl font-bold text-gray-900">{gig.commission?.minimumVolume?.amount || 0}</span>
+                    <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs font-semibold rounded uppercase">
+                      {gig.commission?.minimumVolume?.period || 'Monthly'}
+                    </span>
+                  </div>
+                </div>
               </div>
+
+              {gig.commission?.additionalDetails && (
+                <div className="mt-6 pt-6 border-t border-gray-100">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wider">Additional Details</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">{gig.commission.additionalDetails}</p>
+                </div>
+              )}
             </div>
 
             {/* Schedule */}
@@ -381,8 +433,8 @@ function GigDetailsPanel() {
                 <div>
                   <h3 className="font-medium text-gray-900">Hours</h3>
                   <p className="text-gray-600 text-sm">
-                    {gig.availability?.schedule?.[0]?.hours ? 
-                      `${gig.availability.schedule[0].hours.start} - ${gig.availability.schedule[0].hours.end}` : 
+                    {gig.availability?.schedule?.[0]?.hours ?
+                      `${gig.availability.schedule[0].hours.start} - ${gig.availability.schedule[0].hours.end}` :
                       'Hours not specified'
                     }
                   </p>

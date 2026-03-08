@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import '../styles/modal.css';
@@ -22,7 +22,6 @@ import {
   Building2,
   Tags,
 } from "lucide-react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
 import Cookies from 'js-cookie';
 import axios from 'axios';
 import countries from 'i18n-iso-countries';
@@ -110,11 +109,6 @@ function GigsPanel() {
 
 
   const companyId = Cookies.get('userId');
-  console.log('🏗️ GigsPanel Component Render:', {
-    companyId,
-    userIdFromCookie: Cookies.get('userId'),
-    allCookies: document.cookie
-  });
 
   // const fetchCompanyDetails = async () => {
   //   try {
@@ -133,22 +127,13 @@ function GigsPanel() {
       const userId: string = Cookies.get('userId') || '680a27ffefa3d29d628d0016';
       const apiUrl = `${import.meta.env.VITE_API_URL_GIGS}/gigs/user/${userId}`;
 
-      console.log('🔍 FETCHING GIGS:', {
-        userId,
-        apiUrl,
-        rawUserIdFromCookie: Cookies.get('userId'),
-        VITE_API_URL_GIGS: import.meta.env.VITE_API_URL_GIGS
-      });
-
       const response = await fetch(apiUrl);
-      console.log('📡 API RESPONSE STATUS:', response.status, response.statusText);
 
       if (!response.ok) {
         throw new Error(`Server error: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('📦 API COMPLETE RESPONSE:', data);
 
       let gigsArray = null;
       if (Array.isArray(data)) {
@@ -162,11 +147,9 @@ function GigsPanel() {
       }
 
       if (gigsArray) {
-        console.log('📋 GIGS ARRAY BEFORE FILTER:', gigsArray);
         const realGigs = gigsArray.filter((gig: any) =>
           gig && typeof gig === 'object' && (gig._id || gig.id) && !String(gig._id || gig.id).startsWith('gig_mock')
         );
-        console.log('✨ REAL GIGS AFTER FILTER:', realGigs);
         setGigs(realGigs);
       } else {
         console.warn('⚠️ No valid gigs array found in response:', data);
@@ -185,7 +168,6 @@ function GigsPanel() {
   // }, [companyId]);
 
   useEffect(() => {
-    console.log('🔄 Triggering fetchGigsByUserId due to companyId change:', companyId);
     fetchGigsByUserId();
   }, [companyId]);
 
@@ -460,7 +442,7 @@ function GigsPanel() {
               <Briefcase className="w-5 h-5 text-blue-600" />
               <span className="font-medium">Active Gigs</span>
             </div>
-            <div className="text-2xl font-bold">24</div>
+            <div className="text-2xl font-bold">{gigs.length}</div>
             <div className="text-sm text-green-600 flex items-center gap-1">
               <ArrowUpRight className="w-4 h-4" />
               12% increase
