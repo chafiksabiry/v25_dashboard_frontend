@@ -2,19 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Users,
   Search,
-  Filter,
-  Clock,
-  DollarSign,
-  Building2,
-  Tags,
-  ArrowUpRight,
-  ArrowDownRight,
-  Brain,
-  Sparkles,
-  Bot,
+  TicketCheck,
   Edit,
   Upload,
-  AlertCircle,
   Phone,
   Mail,
   Settings,
@@ -31,12 +21,22 @@ import {
   Info,
 } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
-import { leadsApi } from '../services/api/leads';
 import Cookies from 'js-cookie';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 
-const zohoApiUrl = import.meta.env.VITE_ZOHO_API_URL;
+const dashboardApiUrl = import.meta.env.VITE_DASHBOARD_API || 'https://api-dashboard.harx.ai/api';
+// Fallback if the environment variable incorrectly points to the frontend itself
+const getDashboardApiUrl = () => {
+  const envUrl = import.meta.env.VITE_DASHBOARD_API;
+  if (!envUrl || envUrl.includes('harxv25dashboardfrontend.netlify.app')) {
+    return 'https://api-dashboard.harx.ai/api';
+  }
+  return envUrl;
+};
+
+const FINAL_DASHBOARD_API = getDashboardApiUrl();
+const zohoApiUrl = import.meta.env.VITE_ZOHO_API_URL || `${FINAL_DASHBOARD_API}/zoho`;
 
 // Add this custom hook at the top of the file, after imports
 function useDebounce<T>(value: T, delay: number): T {
@@ -109,7 +109,6 @@ interface Lead {
 }
 
 function LeadManagementPanel() {
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -168,10 +167,8 @@ function LeadManagementPanel() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Modify these new states to handle advanced filters
-  const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const debouncedSearchText = useDebounce(searchText, 300); // 300ms delay
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // File upload states
@@ -290,11 +287,11 @@ function LeadManagementPanel() {
 
       if (searchQuery.trim()) {
         // Utiliser l'endpoint de recherche dédié
-        apiUrl = `${import.meta.env.VITE_DASHBOARD_API}/leads/gig/${selectedGig._id}/search?search=${encodeURIComponent(searchQuery.trim())}`;
+        apiUrl = `${FINAL_DASHBOARD_API}/leads/gig/${selectedGig._id}/search?search=${encodeURIComponent(searchQuery.trim())}`;
         console.log('🔍 Recherche leads avec URL:', apiUrl);
       } else {
         // Utiliser l'endpoint normal avec pagination
-        apiUrl = `${import.meta.env.VITE_DASHBOARD_API}/leads/gig/${selectedGig._id}?page=${page}&limit=${LEADS_PER_PAGE}`;
+        apiUrl = `${FINAL_DASHBOARD_API}/leads/gig/${selectedGig._id}?page=${page}&limit=${LEADS_PER_PAGE}`;
         console.log('📄 Récupération leads avec URL:', apiUrl);
       }
 
@@ -398,7 +395,7 @@ function LeadManagementPanel() {
           return;
         }
 
-        const apiUrl = `${import.meta.env.VITE_DASHBOARD_API}/zoho/config/user/${userId}`;
+        const apiUrl = `${FINAL_DASHBOARD_API}/zoho/config/user/${userId}`;
         console.log('Checking Zoho config for user:', userId);
         console.log('API URL:', apiUrl);
 
@@ -608,7 +605,7 @@ function LeadManagementPanel() {
     if (response.status === 401) {
       // Refresh automatique du token
       const refreshRes = await fetch(
-        `${import.meta.env.VITE_DASHBOARD_API}/zoho/config/user/${userId}/refresh-token`,
+        `${FINAL_DASHBOARD_API}/zoho/config/user/${userId}/refresh-token`,
         {
           method: 'POST',
           headers,
@@ -643,12 +640,12 @@ function LeadManagementPanel() {
       console.log('💾 Current URL for return after auth:', currentUrl);
 
       // Construire le callback URI avec l'URL de redirection
-      const redirectUri = `${import.meta.env.VITE_DASHBOARD_API}/zoho/auth/callback`;
+      const redirectUri = `${FINAL_DASHBOARD_API}/zoho/auth/callback`;
       const encodedRedirectUri = encodeURIComponent(redirectUri);
       const encodedState = encodeURIComponent(userId);
       const encodedReturnUrl = encodeURIComponent(currentUrl);
 
-      const authUrl = `${import.meta.env.VITE_DASHBOARD_API}/zoho/auth?redirect_uri=${encodedRedirectUri}&state=${encodedState}&redirect_url=${encodedReturnUrl}`;
+      const authUrl = `${FINAL_DASHBOARD_API}/zoho/auth?redirect_uri=${encodedRedirectUri}&state=${encodedState}&redirect_url=${encodedReturnUrl}`;
 
       console.log('Calling Zoho auth URL:', authUrl);
 
@@ -718,7 +715,7 @@ function LeadManagementPanel() {
 
       console.log('Disconnecting from Zoho for user:', userId);
 
-      const response = await fetch(`${import.meta.env.VITE_DASHBOARD_API}/zoho/disconnect`, {
+      const response = await fetch(`${FINAL_DASHBOARD_API}/zoho/disconnect`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -769,7 +766,7 @@ function LeadManagementPanel() {
       console.log('Processing OAuth callback with params:', queryParams);
 
       const response = await fetch(
-        `${import.meta.env.VITE_DASHBOARD_API}/zoho/auth/callback?${queryParams}`,
+        `${FINAL_DASHBOARD_API}/zoho/auth/callback?${queryParams}`,
         {
           method: 'GET',
           headers: {
@@ -1189,8 +1186,8 @@ function LeadManagementPanel() {
             key={i}
             onClick={() => fetchLeads(i, searchText)}
             className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${i === currentPage
-                ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
-                : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+              ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
+              : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
               }`}
           >
             {i}
@@ -1206,8 +1203,8 @@ function LeadManagementPanel() {
         key={1}
         onClick={() => fetchLeads(1, searchText)}
         className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${1 === currentPage
-            ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
-            : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+          ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
+          : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
           }`}
       >
         1
@@ -1237,8 +1234,8 @@ function LeadManagementPanel() {
           key={i}
           onClick={() => fetchLeads(i, searchText)}
           className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${i === currentPage
-              ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
-              : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+            ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
+            : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
             }`}
         >
           {i}
@@ -1260,8 +1257,8 @@ function LeadManagementPanel() {
           key={totalPages}
           onClick={() => fetchLeads(totalPages, searchText)}
           className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${totalPages === currentPage
-              ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
-              : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+            ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
+            : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
             }`}
         >
           {totalPages}

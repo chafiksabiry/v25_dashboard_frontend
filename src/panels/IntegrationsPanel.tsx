@@ -3,17 +3,13 @@ import {
   Plug,
   Search,
   Filter,
-  Plus,
   Phone,
   Mail,
-  MessageSquare,
-  Share2,
   TicketCheck,
   MessagesSquare,
   Users,
   Lock,
   AlertCircle,
-  Settings2,
   X,
   CheckCircle2,
   ArrowUpRight,
@@ -21,17 +17,25 @@ import {
   Building2,
   Clock,
   Network,
-  Key
 } from 'lucide-react';
-import { 
-  checkZohoTokenValidity, 
+import {
+  checkZohoTokenValidity,
   disconnectZoho,
   configureZoho
 } from '../services/zohoService';
 import Cookies from 'js-cookie';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE_URL_ZOHO = import.meta.env.VITE_ZOHO_API_URL;
+const getDashboardApiUrl = () => {
+  const envUrl = import.meta.env.VITE_DASHBOARD_API;
+  if (!envUrl || envUrl.includes('harxv25dashboardfrontend.netlify.app')) {
+    return 'https://api-dashboard.harx.ai/api';
+  }
+  return envUrl;
+};
+
+const FINAL_DASHBOARD_API = getDashboardApiUrl();
+const API_BASE_URL_ZOHO = import.meta.env.VITE_ZOHO_API_URL || `${FINAL_DASHBOARD_API}/zoho`;
 
 interface UserConfig {
   clientId: string;
@@ -92,19 +96,19 @@ const ZohoTokenService = {
   getToken: (): string | null => {
     return localStorage.getItem("zoho_access_token");
   },
-  
+
   setToken: (token: string): void => {
     localStorage.setItem("zoho_access_token", token);
   },
-  
+
   removeToken: (): void => {
     localStorage.removeItem("zoho_access_token");
   },
-  
+
   isTokenValid: async (): Promise<boolean> => {
     const token = ZohoTokenService.getToken();
     if (!token) return false;
-    
+
     return await checkZohoTokenValidity();
   }
 };
@@ -158,11 +162,11 @@ const getZohoConfigFromDB = async (): Promise<ZohoDBConfig | null> => {
         'Authorization': `Bearer ${token}`
       }
     });
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch Zoho configuration');
     }
-    
+
     const data = await response.json();
     return data.config;
   } catch (error) {
@@ -689,7 +693,7 @@ export function IntegrationsPanel() {
   const [integrationStates, setIntegrationStates] = useState<Record<string, Integration>>(() => {
     const states: Record<string, Integration> = {};
     const zohoToken = ZohoTokenService.getToken();
-    
+
     integrations.forEach(integration => {
       states[integration.id] = {
         ...integration,
@@ -731,7 +735,7 @@ export function IntegrationsPanel() {
   useEffect(() => {
     const verifyToken = async () => {
       const isValid = await ZohoTokenService.isTokenValid();
-      
+
       // Mettre à jour le statut en fonction de la validité
       setIntegrationStates(prev => ({
         ...prev,
@@ -740,14 +744,14 @@ export function IntegrationsPanel() {
           status: isValid ? 'connected' : 'error' as const
         }
       }));
-      
+
       // Si le token n'est pas valide, afficher un message d'erreur
       if (!isValid) {
         setError('Zoho token has expired or is invalid. Please reconnect to Zoho.');
         ZohoTokenService.removeToken();
       }
     };
-    
+
     // Vérifier uniquement s'il y a un token
     if (ZohoTokenService.getToken()) {
       verifyToken();
@@ -758,13 +762,13 @@ export function IntegrationsPanel() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token");
-    
+
     if (token) {
       ZohoTokenService.setToken(token);
-      
+
       // Nettoyer l'URL (remplacer l'historique sans le paramètre token)
       window.history.replaceState({}, document.title, "/integrations");
-      
+
       // Mettre à jour le statut de l'intégration
       setIntegrationStates(prev => ({
         ...prev,
@@ -773,13 +777,13 @@ export function IntegrationsPanel() {
           status: 'connected' as const
         }
       }));
-      
+
       setIsZohoTokenValid(true);
       setError(null); // Effacer les erreurs précédentes
-      
+
       // Afficher un message de succès
       console.log("Zoho successfully connected!");
-      
+
       // Charger la configuration depuis la base de données après connexion
       getZohoConfigFromDB().then(config => {
         if (config) {
@@ -871,7 +875,7 @@ export function IntegrationsPanel() {
           client_secret: '',
           refresh_token: ''
         });
-        
+
         // Si on a déjà une configuration, on la charge
         const existingConfig = await getZohoConfigFromDB();
         if (existingConfig) {
@@ -912,7 +916,7 @@ export function IntegrationsPanel() {
 
       if (integration.id === 'zoho-crm') {
         const token = ZohoTokenService.getToken();
-        
+
         // Check if token exists and is valid
         if (!token) {
           // If no token exists, just clear local state
@@ -956,7 +960,7 @@ export function IntegrationsPanel() {
           });
 
           const data = await response.json();
-          
+
           if (!response.ok) {
             // If we get a 401, treat it as a successful disconnect
             if (response.status === 401) {
@@ -974,13 +978,13 @@ export function IntegrationsPanel() {
             }
             throw new Error(data.message || 'Failed to disconnect from Zoho');
           }
-          
+
           if (data.success) {
             // Remove local token
             ZohoTokenService.removeToken();
             setZohoDBConfig(null);
             setIsZohoTokenValid(false);
-            
+
             // Update integration status
             setIntegrationStates(prev => ({
               ...prev,
@@ -1011,11 +1015,11 @@ export function IntegrationsPanel() {
       }
     } catch (error) {
       console.error('Disconnect error:', error);
-      const errorMessage = error instanceof Error 
-        ? error.message 
+      const errorMessage = error instanceof Error
+        ? error.message
         : 'Failed to disconnect integration';
       setError(errorMessage);
-      
+
       setIntegrationStates(prev => ({
         ...prev,
         [integration.id]: {
@@ -1036,7 +1040,7 @@ export function IntegrationsPanel() {
         client_secret: '',
         refresh_token: ''
       });
-      
+
       // Si on a déjà une configuration, on la charge
       const existingConfig = await getZohoConfigFromDB();
       if (existingConfig) {
@@ -1061,9 +1065,9 @@ export function IntegrationsPanel() {
         cleanValue = value;
       }
     }
-    
+
     setConfigValues(prev => ({ ...prev, [key]: cleanValue }));
-    
+
     if (errors[key]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -1088,7 +1092,7 @@ export function IntegrationsPanel() {
         try {
           // Nettoyer et valider les valeurs
           let clientSecret = configValues.client_secret;
-          
+
           // Si le client_secret est un JSON string, essayer de l'extraire
           if (clientSecret.startsWith('[')) {
             try {
@@ -1148,7 +1152,7 @@ export function IntegrationsPanel() {
                 if (data.error === 'Access Denied' && data.error_description?.includes('too many requests')) {
                   // Rate limit error - wait and retry
                   const delay = baseDelay * Math.pow(2, retryCount);
-                  const retryMessage = `Trop de requêtes. Nouvelle tentative dans ${delay/1000} secondes... (${retryCount + 1}/${maxRetries})`;
+                  const retryMessage = `Trop de requêtes. Nouvelle tentative dans ${delay / 1000} secondes... (${retryCount + 1}/${maxRetries})`;
                   setError(retryMessage);
                   await new Promise(resolve => setTimeout(resolve, delay));
                   retryCount++;
@@ -1205,7 +1209,7 @@ export function IntegrationsPanel() {
             ? 'Trop de tentatives de connexion. Veuillez patienter quelques minutes avant de réessayer.'
             : 'Échec de la configuration de Zoho CRM après plusieurs tentatives';
           setError(errorMessage);
-          
+
           setIntegrationStates(prev => ({
             ...prev,
             'zoho-crm': {
@@ -1217,7 +1221,7 @@ export function IntegrationsPanel() {
           console.error('Configuration error:', error);
           const errorMessage = error instanceof Error ? error.message : 'Échec de la configuration de Zoho CRM';
           setError(errorMessage);
-          
+
           setIntegrationStates(prev => ({
             ...prev,
             'zoho-crm': {
@@ -1357,11 +1361,10 @@ export function IntegrationsPanel() {
               <button
                 key={category.id}
                 onClick={() => setActiveFilter(category.id)}
-                className={`px-4 py-2 rounded-lg ${
-                  activeFilter === category.id
-                    ? 'bg-cyan-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
+                className={`px-4 py-2 rounded-lg ${activeFilter === category.id
+                  ? 'bg-cyan-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
               >
                 {category.label}
               </button>
@@ -1477,9 +1480,8 @@ export function IntegrationsPanel() {
                     <select
                       value={configValues[field.key] || ''}
                       onChange={e => handleFieldChange(field.key, e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
-                        errors[field.key] ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 ${errors[field.key] ? 'border-red-500' : 'border-gray-300'
+                        }`}
                     >
                       <option value="">Select...</option>
                       {field.options?.map(option => (
@@ -1494,9 +1496,8 @@ export function IntegrationsPanel() {
                       value={configValues[field.key] || ''}
                       onChange={e => handleFieldChange(field.key, e.target.value)}
                       placeholder={field.placeholder}
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
-                        errors[field.key] ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 ${errors[field.key] ? 'border-red-500' : 'border-gray-300'
+                        }`}
                     />
                   )}
                   {errors[field.key] && (
