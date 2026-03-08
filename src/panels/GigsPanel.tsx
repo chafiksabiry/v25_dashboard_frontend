@@ -141,7 +141,6 @@ function GigsPanel() {
       });
 
       const response = await fetch(apiUrl);
-
       console.log('📡 API RESPONSE STATUS:', response.status, response.statusText);
 
       if (!response.ok) {
@@ -149,29 +148,34 @@ function GigsPanel() {
       }
 
       const data = await response.json();
-      console.log('📦 API DATA RECEIVED:', data);
+      console.log('📦 API COMPLETE RESPONSE:', data);
 
-      if (data.success && data.data) {
-        const gigsArray = Array.isArray(data.data) ? data.data : [data.data];
+      let gigsArray = null;
+      if (Array.isArray(data)) {
+        gigsArray = data;
+      } else if (data.data && Array.isArray(data.data)) {
+        gigsArray = data.data;
+      } else if (data.gigs && Array.isArray(data.gigs)) {
+        gigsArray = data.gigs;
+      } else if (data.data) {
+        gigsArray = [data.data];
+      }
+
+      if (gigsArray) {
         console.log('📋 GIGS ARRAY BEFORE FILTER:', gigsArray);
-
-        // Keep only valid gigs that actually have an ID and it's not a mock ID
         const realGigs = gigsArray.filter((gig: any) =>
-          gig && typeof gig === 'object' && gig._id && !String(gig._id).startsWith('gig_mock')
+          gig && typeof gig === 'object' && (gig._id || gig.id) && !String(gig._id || gig.id).startsWith('gig_mock')
         );
-
         console.log('✨ REAL GIGS AFTER FILTER:', realGigs);
         setGigs(realGigs);
       } else {
-        console.warn('⚠️ No gigs found in response or success is false');
+        console.warn('⚠️ No valid gigs array found in response:', data);
         setGigs([]);
       }
-
-      setLoading(false);
-
     } catch (error) {
-      console.error("Detailed error:", error);
+      console.error("❌ fetchGigsByUserId Error:", error);
       setGigs([]);
+    } finally {
       setLoading(false);
     }
   };
