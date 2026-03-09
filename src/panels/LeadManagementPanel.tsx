@@ -978,27 +978,22 @@ function LeadManagementPanel() {
         return;
       }
 
-      setSelectedFile(null);
-      setUploadError(null);
-      setUploadSuccess(false);
-      setIsProcessing(false);
-      setUploadProgress(0);
-      setParsedLeads([]);
-      setValidationResults(null);
-      setShowSaveButton(true);
-      setShowFileName(true);
-
-      const fileInput = document.getElementById('file-upload') as HTMLInputElement;
-      if (fileInput) {
-        fileInput.value = '';
+      // Cancel any pending cleanup timer from a previous save so it doesn't wipe this new file
+      if ((window as any).__leadCleanupTimer) {
+        clearTimeout((window as any).__leadCleanupTimer);
+        (window as any).__leadCleanupTimer = null;
       }
 
+      // Reset state for the new file
       setSelectedFile(file);
       setUploadError(null);
       setUploadSuccess(false);
       setIsProcessing(true);
       setUploadProgress(10);
       setParsedLeads([]);
+      setValidationResults(null);
+      setShowSaveButton(true);
+      setShowFileName(true);
 
       processingRef.current = true;
 
@@ -1025,6 +1020,12 @@ function LeadManagementPanel() {
         setIsProcessing(false);
         setUploadProgress(100);
         processingRef.current = false;
+
+        // Reset input value AFTER processing so the same filename can be re-selected
+        const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+        if (fileInput) {
+          fileInput.value = '';
+        }
       } catch (error: any) {
         console.error('Error uploading file:', error);
         const errorMessage = error.message || 'Error uploading file';
@@ -1141,7 +1142,9 @@ function LeadManagementPanel() {
       setShowSaveButton(true);
       setShowFileName(true);
 
-      setTimeout(() => {
+      // Store the timer so a new upload can cancel it before it wipes the new file's state
+      (window as any).__leadCleanupTimer = setTimeout(() => {
+        (window as any).__leadCleanupTimer = null;
         setSelectedFile(null);
         setUploadProgress(0);
         setUploadSuccess(false);
@@ -1519,7 +1522,7 @@ function LeadManagementPanel() {
                 File uploaded successfully!
               </div>
             )}
-            {parsedLeads.length > 0 && !uploadSuccess && !uploadError && showSaveButton && (
+            {parsedLeads.length > 0 && !uploadSuccess && !isProcessing && showSaveButton && (
               <div className="mt-4 space-y-4">
                 {validationResults && (
                   <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3">
@@ -1799,6 +1802,12 @@ function LeadManagementPanel() {
                     Adresse
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 bg-gray-50">
+                    Ville
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 bg-gray-50">
+                    Code Postal
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 bg-gray-50">
                     MOBILE
                   </th>
                 </tr>
@@ -1840,7 +1849,13 @@ function LeadManagementPanel() {
                         {lead.Email_1 || 'No Email'}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                        {lead.Address ? `${lead.Address}${lead.City ? `, ${lead.City}` : ''}` : 'N/A'}
+                        {lead.Address || '-'}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                        {lead.City || '-'}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                        {lead.Postal_Code || '-'}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900 font-medium">
                         {(() => {
