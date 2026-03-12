@@ -17,8 +17,8 @@ function AnalyticsPanel() {
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-indigo-100 rounded-lg">
-              <BarChart className="w-6 h-6 text-indigo-600" />
+            <div className="p-3 bg-rose-100 rounded-lg">
+              <BarChart className="w-6 h-6 text-rose-500" />
             </div>
             <h2 className="text-xl font-semibold">Analytics Overview</h2>
           </div>
@@ -26,16 +26,16 @@ function AnalyticsPanel() {
             <button className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">
               Export
             </button>
-            <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+            <button className="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600">
               Generate Report
             </button>
           </div>
         </div>
 
         <div className="grid grid-cols-4 gap-4 mb-6">
-          <div className="bg-blue-50 p-4 rounded-lg">
+          <div className="bg-rose-50 p-4 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
-              <Users className="w-5 h-5 text-blue-600" />
+              <Users className="w-5 h-5 text-rose-500" />
               <span className="font-medium">Total Users</span>
             </div>
             <div className="text-2xl font-bold">1,234</div>

@@ -1200,7 +1200,7 @@ function LeadManagementPanel() {
             key={i}
             onClick={() => fetchLeads(i, searchText)}
             className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${i === currentPage
-              ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
+              ? 'z-10 bg-rose-500 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-500'
               : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
               }`}
           >
@@ -1217,7 +1217,7 @@ function LeadManagementPanel() {
         key={1}
         onClick={() => fetchLeads(1, searchText)}
         className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${1 === currentPage
-          ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
+          ? 'z-10 bg-rose-500 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-500'
           : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
           }`}
       >
@@ -1248,7 +1248,7 @@ function LeadManagementPanel() {
           key={i}
           onClick={() => fetchLeads(i, searchText)}
           className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${i === currentPage
-            ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
+            ? 'z-10 bg-rose-500 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-500'
             : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
             }`}
         >
@@ -1271,7 +1271,7 @@ function LeadManagementPanel() {
           key={totalPages}
           onClick={() => fetchLeads(totalPages, searchText)}
           className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${totalPages === currentPage
-            ? 'z-10 bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
+            ? 'z-10 bg-rose-500 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-500'
             : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
             }`}
         >
@@ -1286,7 +1286,7 @@ function LeadManagementPanel() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rose-400"></div>
       </div>
     );
   }
@@ -1296,8 +1296,8 @@ function LeadManagementPanel() {
       {/* Header Section */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
         <div className="flex items-center mb-2">
-          <div className="p-3 bg-blue-100 rounded-lg mr-3">
-            <UserPlus className="w-6 h-6 text-blue-600" />
+          <div className="p-3 bg-rose-100 rounded-lg mr-3">
+            <UserPlus className="w-6 h-6 text-rose-500" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900">Leads</h2>
         </div>
@@ -1318,7 +1318,7 @@ function LeadManagementPanel() {
             const gig = gigs.find(g => g._id === e.target.value);
             if (gig) handleGigChange(gig);
           }}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 font-medium"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-400 bg-white text-gray-900 font-medium"
           disabled={isLoadingGigs}
         >
           <option value="">Select a Gig</option>
@@ -1333,7 +1333,7 @@ function LeadManagementPanel() {
       {/* Import Leads Section */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
         <div className="flex items-center mb-2">
-          <Upload className="w-5 h-5 text-blue-600 mr-2" />
+          <Upload className="w-5 h-5 text-rose-500 mr-2" />
           <h3 className="text-xl font-semibold text-gray-900">Import Leads</h3>
         </div>
         <p className="text-gray-600 mb-6">
@@ -1379,7 +1379,7 @@ function LeadManagementPanel() {
                   <span className="text-sm font-medium text-yellow-800">⚠ Not connected</span>
                   <button
                     onClick={handleZohoConnect}
-                    className="px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors duration-200"
+                    className="px-3 py-1 text-xs font-medium text-rose-600 bg-rose-100 hover:bg-rose-200 rounded-lg transition-colors duration-200"
                   >
                     Connect
                   </button>
@@ -1421,28 +1421,28 @@ function LeadManagementPanel() {
           </div>
 
           {/* File Upload Card */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] flex flex-col h-full">
+          <div className="bg-gradient-to-br from-rose-50 to-rose-50 border-2 border-rose-200 rounded-2xl p-6 hover:border-rose-300 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] flex flex-col h-full">
             {/* Header */}
             <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mr-4 border-2 border-blue-200 shadow-sm">
-                <FileSpreadsheet className="h-6 w-6 text-blue-700" />
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mr-4 border-2 border-rose-200 shadow-sm">
+                <FileSpreadsheet className="h-6 w-6 text-rose-600" />
               </div>
               <div className="flex-1">
-                <h4 className="text-xl font-bold text-blue-900">File Upload</h4>
-                <p className="text-sm text-blue-700">Upload and process contact files</p>
+                <h4 className="text-xl font-bold text-rose-500">File Upload</h4>
+                <p className="text-sm text-rose-600">Upload and process contact files</p>
               </div>
             </div>
 
             {/* File Info */}
             <div className="mb-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <span className="text-sm font-medium text-blue-800">📁 Supported: CSV, Excel</span>
+              <div className="bg-rose-50 border border-rose-200 rounded-lg p-3">
+                <span className="text-sm font-medium text-rose-500">📁 Supported: CSV, Excel</span>
               </div>
             </div>
 
             {/* Upload Button - Pushed to bottom */}
             <div className="mt-auto">
-              <div className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 px-6 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl cursor-pointer flex items-center justify-center">
+              <div className="w-full bg-gradient-to-r from-rose-500 to-rose-500 text-white font-bold py-4 px-6 rounded-xl hover:from-rose-600 hover:to-rose-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl cursor-pointer flex items-center justify-center">
                 <label htmlFor="file-upload" className="cursor-pointer flex items-center justify-center w-full">
                   <FileSpreadsheet className="h-5 w-5 mr-3 text-white" />
                   <span className="text-base font-semibold text-white">
@@ -1474,7 +1474,7 @@ function LeadManagementPanel() {
           <div className="mt-4 p-3 bg-gray-50 rounded-lg">
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center">
-                <FileText className="mr-2 h-4 w-4 text-blue-600" />
+                <FileText className="mr-2 h-4 w-4 text-rose-500" />
                 <span className="font-medium text-gray-900">{selectedFile.name}</span>
               </div>
               <button onClick={() => {
@@ -1492,7 +1492,7 @@ function LeadManagementPanel() {
               <div className="relative">
                 <div className="h-3 rounded-full bg-gray-200 overflow-hidden">
                   <div
-                    className={`h-3 rounded-full transition-all duration-300 ${uploadError ? 'bg-red-500' : uploadSuccess ? 'bg-green-500' : 'bg-gradient-to-r from-blue-500 to-indigo-500'
+                    className={`h-3 rounded-full transition-all duration-300 ${uploadError ? 'bg-red-500' : uploadSuccess ? 'bg-green-500' : 'bg-gradient-to-r from-rose-400 to-rose-400'
                       }`}
                     style={{
                       width: `${uploadProgress}%`,
@@ -1525,14 +1525,14 @@ function LeadManagementPanel() {
             {parsedLeads.length > 0 && !uploadSuccess && !isProcessing && showSaveButton && (
               <div className="mt-4 space-y-4">
                 {validationResults && (
-                  <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3">
-                    <h4 className="text-sm font-semibold text-blue-800 mb-2 flex items-center">
+                  <div className="bg-gradient-to-r from-rose-50 to-rose-100 border border-rose-200 rounded-lg p-3">
+                    <h4 className="text-sm font-semibold text-rose-500 mb-2 flex items-center">
                       <Info className="mr-2 h-4 w-4" />
                       AI Processing Results
                     </h4>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="text-blue-600 font-medium">Total Rows:</span> {validationResults.totalRows}
+                        <span className="text-rose-500 font-medium">Total Rows:</span> {validationResults.totalRows}
                       </div>
                       <div>
                         <span className="text-green-600 font-medium">Valid Rows:</span> {validationResults.validRows > 0 ? validationResults.validRows : parsedLeads.length}
@@ -1681,7 +1681,7 @@ function LeadManagementPanel() {
                 </div>
 
                 <button
-                  className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-white font-bold hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                  className="w-full rounded-xl bg-gradient-to-r from-rose-500 to-rose-500 px-4 py-3 text-white font-bold hover:from-rose-600 hover:to-rose-600 disabled:opacity-50 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
                   onClick={handleSaveLeads}
                   disabled={isSavingLeads}
                 >
@@ -1699,12 +1699,12 @@ function LeadManagementPanel() {
       {/* Channel Filter Section */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
         <div className="flex items-center mb-4">
-          <Globe className="w-5 h-5 text-blue-600 mr-2" />
+          <Globe className="w-5 h-5 text-rose-500 mr-2" />
           <h3 className="text-xl font-semibold text-gray-900">Channel Filter</h3>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
-            className="flex items-center space-x-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 transform hover:scale-105 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg"
+            className="flex items-center space-x-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 transform hover:scale-105 bg-gradient-to-r from-rose-500 to-rose-500 text-white shadow-lg"
           >
             <Globe className="h-4 w-4" />
             <span>All Channels</span>
@@ -1724,12 +1724,12 @@ function LeadManagementPanel() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="flex items-center">
-                <Users className="w-5 h-5 text-blue-600 mr-2" />
+                <Users className="w-5 h-5 text-rose-500 mr-2" />
                 <h3 className="text-xl font-semibold text-gray-900">Leads List</h3>
               </div>
               <div className="mt-2">
                 {selectedGig ? (
-                  <span className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-xs font-medium">
+                  <span className="bg-rose-50 text-rose-600 px-3 py-1 rounded-full text-xs font-medium">
                     Showing {displayedLeads.length} of {totalLeads} leads
                   </span>
                 ) : (
@@ -1744,14 +1744,14 @@ function LeadManagementPanel() {
                 </div>
                 <input
                   type="text"
-                  className="block w-64 rounded-lg border-gray-300 pl-10 focus:border-blue-600 focus:ring-blue-600 sm:text-sm shadow-sm"
+                  className="block w-64 rounded-lg border-gray-300 pl-10 focus:border-rose-500 focus:ring-rose-500 sm:text-sm shadow-sm"
                   placeholder="Search leads..."
                   value={searchText}
                   onChange={(e) => handleSearch(e.target.value)}
                 />
               </div>
               <select
-                className="rounded-lg border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-600 focus:outline-none focus:ring-blue-600 sm:text-sm shadow-sm"
+                className="rounded-lg border-gray-300 py-2 pl-3 pr-10 text-base focus:border-rose-500 focus:outline-none focus:ring-rose-500 sm:text-sm shadow-sm"
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
               >
@@ -1764,7 +1764,7 @@ function LeadManagementPanel() {
                   setSearchText('');
                   fetchLeads(1);
                 }}
-                className="flex items-center rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-md hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 transform hover:scale-105"
+                className="flex items-center rounded-lg bg-gradient-to-r from-rose-500 to-rose-500 px-4 py-2 text-sm font-medium text-white shadow-md hover:from-rose-600 hover:to-rose-600 transition-all duration-200 transform hover:scale-105"
                 disabled={isLoadingMore || !selectedGig}
               >
                 {isLoadingMore ? (
@@ -1817,7 +1817,7 @@ function LeadManagementPanel() {
                   <tr>
                     <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
                       <div className="flex items-center justify-center py-8">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-rose-500 mr-3"></div>
                         Loading leads...
                       </div>
                     </td>
@@ -1917,7 +1917,7 @@ function LeadManagementPanel() {
             <div className="p-6">
               <div className="flex mb-4">
                 <div className="flex space-x-4">
-                  <button className="px-6 py-2 bg-white text-gray-800 border-b-2 border-blue-600 font-medium">Overview</button>
+                  <button className="px-6 py-2 bg-white text-gray-800 border-b-2 border-rose-500 font-medium">Overview</button>
                 </div>
                 <div className="ml-auto flex items-center gap-2">
                   <div className="text-gray-500 text-sm">
@@ -1948,7 +1948,7 @@ function LeadManagementPanel() {
 
                 <div className="flex">
                   <div
-                    className={`${selectedStageInModal === "Qualification" ? "bg-blue-500 text-white" : "bg-blue-100 text-gray-800"} py-1 px-4 rounded-l-md flex items-center cursor-pointer ${isUpdating ? "opacity-50 cursor-wait" : ""}`}
+                    className={`${selectedStageInModal === "Qualification" ? "bg-rose-400 text-white" : "bg-rose-100 text-gray-800"} py-1 px-4 rounded-l-md flex items-center cursor-pointer ${isUpdating ? "opacity-50 cursor-wait" : ""}`}
                     onClick={() => !isUpdating && handleStageClick("Qualification")}
                   >
                     <span className="text-sm">
@@ -1956,42 +1956,42 @@ function LeadManagementPanel() {
                     </span>
                   </div>
                   <div
-                    className={`${selectedStageInModal === "Analyze Needs" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
+                    className={`${selectedStageInModal === "Analyze Needs" ? "bg-rose-400 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
                     onClick={() => !isUpdating && handleStageClick("Analyze Needs")}
                   >
-                    <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Qualification" ? "border-t-blue-500 border-b-blue-500" : "border-t-blue-100 border-b-blue-100"} -ml-[12px]`}></div>
+                    <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Qualification" ? "border-t-rose-400 border-b-rose-400" : "border-t-rose-100 border-b-rose-100"} -ml-[12px]`}></div>
                     <span className="text-sm">Analyze Needs</span>
-                    <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Analyze Needs" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
+                    <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Analyze Needs" ? "border-t-rose-400 border-b-rose-400" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
                   </div>
                   <div
-                    className={`${selectedStageInModal === "Negotiation" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
+                    className={`${selectedStageInModal === "Negotiation" ? "bg-rose-400 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
                     onClick={() => !isUpdating && handleStageClick("Negotiation")}
                   >
-                    <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Analyze Needs" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
+                    <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Analyze Needs" ? "border-t-rose-400 border-b-rose-400" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
                     <span className="text-sm">Negotiation</span>
-                    <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Negotiation" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
+                    <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Negotiation" ? "border-t-rose-400 border-b-rose-400" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
                   </div>
                   <div
-                    className={`${selectedStageInModal === "Proposal/Pricing" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
+                    className={`${selectedStageInModal === "Proposal/Pricing" ? "bg-rose-400 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
                     onClick={() => !isUpdating && handleStageClick("Proposal/Pricing")}
                   >
-                    <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Negotiation" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
+                    <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Negotiation" ? "border-t-rose-400 border-b-rose-400" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
                     <span className="text-sm">Proposal/Pricing</span>
-                    <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Proposal/Pricing" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
+                    <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Proposal/Pricing" ? "border-t-rose-400 border-b-rose-400" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
                   </div>
                   <div
-                    className={`${selectedStageInModal === "Proposal Commercial" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
+                    className={`${selectedStageInModal === "Proposal Commercial" ? "bg-rose-400 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 flex items-center relative cursor-pointer`}
                     onClick={() => !isUpdating && handleStageClick("Proposal Commercial")}
                   >
-                    <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Proposal/Pricing" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
+                    <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Proposal/Pricing" ? "border-t-rose-400 border-b-rose-400" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
                     <span className="text-sm">Proposal Commercial</span>
-                    <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Proposal Commercial" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
+                    <div className={`absolute right-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Proposal Commercial" ? "border-t-rose-400 border-b-rose-400" : "border-t-gray-100 border-b-gray-100"} ml-[12px] z-10 rotate-180 -mr-[12px]`}></div>
                   </div>
                   <div
-                    className={`${selectedStageInModal === "Identify Decision Makers" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 rounded-r-md flex items-center relative cursor-pointer`}
+                    className={`${selectedStageInModal === "Identify Decision Makers" ? "bg-rose-400 text-white" : "bg-gray-100 text-gray-800"} py-1 px-4 rounded-r-md flex items-center relative cursor-pointer`}
                     onClick={() => !isUpdating && handleStageClick("Identify Decision Makers")}
                   >
-                    <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Proposal Commercial" ? "border-t-blue-500 border-b-blue-500" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
+                    <div className={`absolute left-0 top-0 bottom-0 border-l-[12px] border-l-transparent border-t-[15px] border-b-[15px] ${selectedStageInModal === "Proposal Commercial" ? "border-t-rose-400 border-b-rose-400" : "border-t-gray-100 border-b-gray-100"} -ml-[12px]`}></div>
                     <span className="text-sm">Identify Decision Makers</span>
                   </div>
                 </div>

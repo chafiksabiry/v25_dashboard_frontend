@@ -213,7 +213,7 @@ const GlobalAIAssistant: React.FC = () => {
     return (
       <button
         onClick={() => globalState.setMinimized(false)}
-        className="fixed bottom-4 right-4 p-4 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors z-50"
+        className="fixed bottom-4 right-4 p-4 bg-rose-500 text-white rounded-full shadow-lg hover:bg-rose-600 transition-colors z-50"
       >
         <MessageSquare className="w-6 h-6" />
         {globalState.messages.length > 0 && (
@@ -238,7 +238,7 @@ const GlobalAIAssistant: React.FC = () => {
     const baseStyle = "p-3 rounded-lg mt-1 shadow-sm border";
     switch (category) {
       case 'suggestion':
-        return `${baseStyle} bg-blue-50 border-blue-100`;
+        return `${baseStyle} bg-rose-50 border-rose-100`;
       case 'alert':
         return `${baseStyle} ${priority === 'high' ? 'bg-red-50 border-red-100' : 'bg-yellow-50 border-yellow-100'}`;
       case 'action':
@@ -272,12 +272,12 @@ const GlobalAIAssistant: React.FC = () => {
   
   return (
     <div className="fixed bottom-4 right-4 w-96 bg-white rounded-lg shadow-xl z-50">
-      <div className="p-4 border-b flex justify-between items-center bg-blue-600 text-white rounded-t-lg">
+      <div className="p-4 border-b flex justify-between items-center bg-rose-500 text-white rounded-t-lg">
         <h3 className="font-semibold">AI Assistant</h3>
         <div className="flex items-center gap-2">
           <button 
             onClick={handleMinimize}
-            className="text-white hover:bg-blue-700 rounded-lg p-1"
+            className="text-white hover:bg-rose-600 rounded-lg p-1"
           >
             <span className="sr-only">Minimize</span>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -287,7 +287,7 @@ const GlobalAIAssistant: React.FC = () => {
           {globalState.callEnded && (
             <button 
               onClick={handleClose}
-              className="text-white hover:bg-blue-700 rounded-lg p-1"
+              className="text-white hover:bg-rose-600 rounded-lg p-1"
               title="Close AI Assistant"
             >
               <span className="sr-only">Close</span>
@@ -312,7 +312,7 @@ const GlobalAIAssistant: React.FC = () => {
               onClick={() => globalState.setSelectedCategory(category.id)}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${
                 globalState.selectedCategory === category.id
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-rose-500 text-white'
                   : 'bg-white text-gray-700 hover:bg-gray-100'
               }`}
             >
@@ -321,7 +321,7 @@ const GlobalAIAssistant: React.FC = () => {
               {count > 0 && (
                 <span className={`ml-1 px-1.5 py-0.5 rounded-full text-xs ${
                   globalState.selectedCategory === category.id
-                    ? 'bg-white text-blue-600'
+                    ? 'bg-white text-rose-500'
                     : 'bg-gray-100 text-gray-600'
                 }`}>
                   {count}

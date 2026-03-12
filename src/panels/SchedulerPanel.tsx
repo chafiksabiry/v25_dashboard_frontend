@@ -85,14 +85,14 @@ function SchedulerPanel() {
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <CalendarIcon className="w-6 h-6 text-blue-600" />
+            <div className="p-3 bg-rose-100 rounded-lg">
+              <CalendarIcon className="w-6 h-6 text-rose-500" />
             </div>
             <h2 className="text-xl font-semibold">Schedule Management</h2>
           </div>
           <button 
             onClick={() => setShowNewScheduleModal(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+            className="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
             New Schedule
@@ -100,13 +100,13 @@ function SchedulerPanel() {
         </div>
 
         <div className="grid grid-cols-4 gap-4 mb-6">
-          <div className="bg-blue-50 p-4 rounded-lg">
+          <div className="bg-rose-50 p-4 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
-              <Users className="w-5 h-5 text-blue-600" />
+              <Users className="w-5 h-5 text-rose-500" />
               <span className="font-medium">Available Reps</span>
             </div>
             <div className="text-2xl font-bold">12</div>
-            <div className="text-sm text-blue-600">Current shift</div>
+            <div className="text-sm text-rose-500">Current shift</div>
           </div>
           <div className="bg-green-50 p-4 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
@@ -141,7 +141,7 @@ function SchedulerPanel() {
               <input
                 type="text"
                 placeholder="Search schedules..."
-                className="pl-10 pr-4 py-2 border rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="pl-10 pr-4 py-2 border rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-rose-400"
               />
             </div>
             <Filter className="w-5 h-5 text-gray-400" />
@@ -150,7 +150,7 @@ function SchedulerPanel() {
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSelectedDate(new Date())}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600"
             >
               Today
             </button>
@@ -214,9 +214,9 @@ function SchedulerPanel() {
                     <span
                       className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${
                         isToday
-                          ? 'bg-blue-600 text-white'
+                          ? 'bg-rose-500 text-white'
                           : isSelected
-                          ? 'bg-blue-100 text-blue-600'
+                          ? 'bg-rose-100 text-rose-500'
                           : ''
                       }`}
                     >
@@ -232,7 +232,7 @@ function SchedulerPanel() {
                     {daySchedules.map(schedule => (
                       <div
                         key={schedule.id}
-                        className="text-xs p-1 bg-blue-100 text-blue-600 rounded"
+                        className="text-xs p-1 bg-rose-100 text-rose-500 rounded"
                       >
                         {new Date(schedule.start_time).toLocaleTimeString([], {
                           hour: '2-digit',
@@ -247,7 +247,7 @@ function SchedulerPanel() {
           </div>
         </div>
 
-        <div className="mt-3 text-sm text-blue-600">
+        <div className="mt-3 text-sm text-rose-500">
           <strong>Pro Tips:</strong>
           <ul className="mt-1">
             <li>• Morning slots (9-10 AM) are limited to 4 reps</li>
@@ -280,7 +280,7 @@ function SchedulerPanel() {
                   type="date"
                   value={selectedDate.toISOString().split('T')[0]}
                   onChange={(e) => setSelectedDate(new Date(e.target.value))}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-400"
                 />
               </div>
 
@@ -291,7 +291,7 @@ function SchedulerPanel() {
                 <select
                   value={selectedSlot || ''}
                   onChange={(e) => setSelectedSlot(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-400"
                 >
                   <option value="">Select a time slot</option>
                   {timeSlots.map(slot => (
@@ -312,7 +312,7 @@ function SchedulerPanel() {
                 <button
                   onClick={() => setShowNewScheduleModal(false)}
                   disabled={!selectedSlot}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
+                  className="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 disabled:bg-orange-400"
                 >
                   Create Schedule
                 </button>

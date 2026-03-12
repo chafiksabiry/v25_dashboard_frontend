@@ -62,32 +62,32 @@ const SalesInboxChat: React.FC = () => {
     chatBg: "bg-gray-50",
     headerBg: "bg-white",
     headerText: "text-gray-800",
-    messageSenderBg: "bg-blue-600",
+    messageSenderBg: "bg-rose-500",
     messageReceiverBg: "bg-white",
     messageReceiverText: "text-gray-800",
     messageSenderText: "text-white",
-    messageSenderName: "text-blue-100",
-    messageReceiverName: "text-blue-700 font-semibold",
-    buttonColor: "bg-blue-600 hover:bg-blue-700",
-    ringColor: "focus:ring-blue-500",
-    nameColor: "text-blue-600",
-    statsBg: "bg-blue-50",
-    statsIcon: "text-blue-600",
-    statsTitle: "text-blue-700",
-    statsValue: "text-blue-800",
-    statsSubtext: "text-blue-600",
+    messageSenderName: "text-rose-100",
+    messageReceiverName: "text-rose-600 font-semibold",
+    buttonColor: "bg-rose-500 hover:bg-rose-600",
+    ringColor: "focus:ring-rose-400",
+    nameColor: "text-rose-500",
+    statsBg: "bg-rose-50",
+    statsIcon: "text-rose-500",
+    statsTitle: "text-rose-600",
+    statsValue: "text-rose-500",
+    statsSubtext: "text-rose-500",
     activeChatBg: "bg-gray-100",
-    addButtonBg: "bg-blue-100 text-blue-600",
+    addButtonBg: "bg-rose-100 text-rose-500",
     statusColor: "text-gray-500"
   };
 
   const actionButtons = (
     <>
-      <button className="p-2 rounded-lg hover:bg-indigo-100">
-        <Video className="w-5 h-5 text-indigo-600" />
+      <button className="p-2 rounded-lg hover:bg-rose-100">
+        <Video className="w-5 h-5 text-rose-500" />
       </button>
-      <button className="p-2 rounded-lg hover:bg-indigo-100">
-        <Share2 className="w-5 h-5 text-indigo-600" />
+      <button className="p-2 rounded-lg hover:bg-rose-100">
+        <Share2 className="w-5 h-5 text-rose-500" />
       </button>
     </>
   );
@@ -377,13 +377,13 @@ const SalesInboxChat: React.FC = () => {
           <div className={`text-3xl font-bold ${styles.statsValue}`}>{chats.length}</div>
           <div className={`text-sm mt-1 ${styles.statsSubtext}`}>Online now</div>
         </div>
-        <div className="bg-blue-50 p-5 rounded-xl shadow-sm hover:shadow-md transition-all">
+        <div className="bg-rose-50 p-5 rounded-xl shadow-sm hover:shadow-md transition-all">
           <div className="flex items-center gap-3 mb-3">
-            <CheckCircle2 className="w-6 h-6 text-blue-600" />
-            <span className="font-semibold text-blue-700">Resolved</span>
+            <CheckCircle2 className="w-6 h-6 text-rose-500" />
+            <span className="font-semibold text-rose-600">Resolved</span>
           </div>
-          <div className="text-3xl font-bold text-blue-800">48</div>
-          <div className="text-sm text-blue-600 mt-1">Today</div>
+          <div className="text-3xl font-bold text-rose-500">48</div>
+          <div className="text-sm text-rose-500 mt-1">Today</div>
         </div>
         <div className="bg-yellow-50 p-5 rounded-xl shadow-sm hover:shadow-md transition-all">
           <div className="flex items-center gap-3 mb-3">
@@ -538,7 +538,7 @@ const SalesInboxChat: React.FC = () => {
                       >
                         <div
                           className={`p-4 rounded-2xl shadow max-w-[70%] break-words ${isOperator
-                              ? "bg-blue-600 text-white"
+                              ? "bg-rose-500 text-white"
                               : "bg-gray-100 text-gray-800"
                             }`}
                         >

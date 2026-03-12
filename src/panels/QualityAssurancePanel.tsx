@@ -121,7 +121,7 @@ function QualityAssurancePanel() {
 
   const getScoreColor = (score: number) => {
     if (score >= 90) return 'text-green-600';
-    if (score >= 80) return 'text-blue-600';
+    if (score >= 80) return 'text-rose-500';
     if (score >= 70) return 'text-yellow-600';
     return 'text-red-600';
   };
@@ -153,9 +153,9 @@ function QualityAssurancePanel() {
               5% increase
             </div>
           </div>
-          <div className="bg-blue-50 p-4 rounded-lg">
+          <div className="bg-rose-50 p-4 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
-              <FileCheck className="w-5 h-5 text-blue-600" />
+              <FileCheck className="w-5 h-5 text-rose-500" />
               <span className="font-medium">Evaluations</span>
             </div>
             <div className="text-2xl font-bold">248</div>
@@ -287,7 +287,7 @@ function QualityAssurancePanel() {
                         className="p-2 hover:bg-gray-100 rounded-lg"
                         title="View Details"
                       >
-                        <ListChecks className="w-5 h-5 text-blue-600" />
+                        <ListChecks className="w-5 h-5 text-rose-500" />
                       </button>
                       <button
                         className="p-2 hover:bg-gray-100 rounded-lg"

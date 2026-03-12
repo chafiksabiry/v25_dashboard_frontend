@@ -16,7 +16,7 @@ const channelConfig: Record<ChannelType, ChannelConfig> = {
     color: 'green'
   },
   tiktok: {
-    icon: <MessageSquare className="w-5 h-5 text-blue-600" />,
+    icon: <MessageSquare className="w-5 h-5 text-rose-500" />,
     label: 'TikTok',
     color: 'blue'
   }

@@ -25,8 +25,8 @@ function StatCard({ title, value, icon: Icon, trend, trendUp = true, detail = nu
     <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
-          <div className="p-2 bg-indigo-50 rounded-lg">
-            <Icon className="w-5 h-5 text-indigo-600" />
+          <div className="p-2 bg-rose-50 rounded-lg">
+            <Icon className="w-5 h-5 text-rose-500" />
           </div>
           <h3 className="text-sm font-medium text-gray-600">{title}</h3>
         </div>
@@ -53,7 +53,7 @@ function AgentsPanel() {
           <h1 className="text-2xl font-bold text-gray-900">Agent Management</h1>
           <p className="text-gray-500">Monitor and manage your global workforce</p>
         </div>
-        <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+        <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-rose-500 hover:bg-rose-600">
           <UserPlus className="w-4 h-4 mr-2" />
           Add New Agent
         </button>
@@ -81,13 +81,13 @@ function AgentsPanel() {
                   placeholder="Search agents..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-rose-400 focus:border-rose-400"
                 />
               </div>
               <select
                 value={regionFilter}
                 onChange={(e) => setRegionFilter(e.target.value)}
-                className="border border-gray-300 rounded-md py-2 pl-3 pr-10 focus:ring-indigo-500 focus:border-indigo-500"
+                className="border border-gray-300 rounded-md py-2 pl-3 pr-10 focus:ring-rose-400 focus:border-rose-400"
               >
                 <option value="all">All Regions</option>
                 <option value="na">North America</option>

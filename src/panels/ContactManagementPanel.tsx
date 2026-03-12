@@ -76,15 +76,15 @@ function ContactManagementPanel() {
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Users className="w-6 h-6 text-blue-600" />
+            <div className="p-3 bg-rose-100 rounded-lg">
+              <Users className="w-6 h-6 text-rose-500" />
             </div>
             <h2 className="text-xl font-semibold" onClick={fetchContacts}>
               Contact Management
             </h2>
           </div>
           <div className="flex gap-2">
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+            <button className="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 flex items-center gap-2">
               <Upload className="w-5 h-5" />
               Import Contacts
             </button>
@@ -94,7 +94,7 @@ function ContactManagementPanel() {
         {/* Statistiques */}
         <div className="grid grid-cols-4 gap-4 mb-6">
           <StatCard
-            icon={<Users className="w-5 h-5 text-blue-600" />}
+            icon={<Users className="w-5 h-5 text-rose-500" />}
             title="Total Contacts"
             value={contacts.length}
             trend="12% increase"
@@ -148,7 +148,7 @@ function ContactManagementPanel() {
                 >
                   <td className="py-3 px-3 text-gray-900">{contact.Last_Name || "-"}</td>
                   <td className="py-3 px-3 text-gray-900">{contact.First_Name || "-"}</td>
-                  <td className="py-3 px-3 text-blue-600 italic font-medium">{contact.Email_1 || "-"}</td>
+                  <td className="py-3 px-3 text-rose-500 italic font-medium">{contact.Email_1 || "-"}</td>
                   <td className="py-3 px-3 text-gray-600">{contact.Address || "-"}</td>
                   <td className="py-3 px-3 text-gray-900">{contact.Postal_Code || "-"}</td>
                   <td className="py-3 px-3 text-gray-900">{contact.City || "-"}</td>

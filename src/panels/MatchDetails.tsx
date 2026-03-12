@@ -25,7 +25,7 @@ const MatchDetails: React.FC<MatchDetailsProps> = ({ match }) => {
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex items-center space-x-2 mb-4">
-        <BarChart2 size={20} className="text-indigo-600" />
+        <BarChart2 size={20} className="text-rose-500" />
         <h3 className="text-lg font-medium text-gray-800">Match Details</h3>
       </div>
       
@@ -38,7 +38,7 @@ const MatchDetails: React.FC<MatchDetailsProps> = ({ match }) => {
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2.5">
               <div 
-                className="bg-indigo-600 h-2.5 rounded-full" 
+                className="bg-rose-500 h-2.5 rounded-full" 
                 style={{ width: value }}
               ></div>
             </div>
@@ -49,7 +49,7 @@ const MatchDetails: React.FC<MatchDetailsProps> = ({ match }) => {
       <div className="mt-6 pt-4 border-t border-gray-200">
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium text-gray-700">Overall Match Score</span>
-          <span className="text-lg font-semibold text-indigo-700">{formatScore(match.score)}</span>
+          <span className="text-lg font-semibold text-rose-600">{formatScore(match.score)}</span>
         </div>
       </div>
     </div>

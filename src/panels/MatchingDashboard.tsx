@@ -224,13 +224,13 @@ const MatchingDashboard: React.FC = () => {
            {reps.length > 0 ? `${Math.round((topPerformersCount / reps.length) * 100)}% of reps` : 'Loading...'}
          </div>
        </div>
-       <div className="bg-blue-50 p-4 rounded-lg">
+       <div className="bg-rose-50 p-4 rounded-lg">
          <div className="flex items-center gap-2 mb-2">
-           <Filter className="w-5 h-5 text-blue-600" />
+           <Filter className="w-5 h-5 text-rose-500" />
            <span className="font-medium">Avg Match Score</span>
          </div>
          <div className="text-2xl font-bold">{matches.length > 0 ? `${averageMatchScore.toFixed(1)}%` : 'N/A'}</div>
-         <div className="text-sm text-blue-600">
+         <div className="text-sm text-rose-500">
            {matches.length > 0 ? `Across ${matches.length} matches` : 'No matches yet'}
          </div>
        </div>
@@ -253,14 +253,14 @@ const MatchingDashboard: React.FC = () => {
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-indigo-100 rounded-lg">
-              <Users className="w-6 h-6 text-indigo-500" />
+            <div className="p-3 bg-rose-100 rounded-lg">
+              <Users className="w-6 h-6 text-rose-400" />
             </div>
             <h2 className="text-xl  font-semibold">HARX Smart Matching System</h2>
           </div>
           <button 
             onClick={() => setShowWeights(!showWeights)}
-            className="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-md transition"
+            className="flex items-center space-x-2 bg-rose-500 hover:bg-rose-400 text-white px-4 py-2 rounded-md transition"
           >
             <Settings size={18} />
             <span>Adjust Weights</span>
@@ -272,7 +272,7 @@ const MatchingDashboard: React.FC = () => {
    
       </div>
       {/* Header 
-      <header className="bg-indigo-700 text-white p-6 shadow-md">
+      <header className="bg-rose-600 text-white p-6 shadow-md">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <Zap size={28} className="text-yellow-300" />
@@ -294,7 +294,7 @@ const MatchingDashboard: React.FC = () => {
         {/* Loading Indicator */}
         {loading && (
           <div className="flex justify-center items-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rose-400"></div>
           </div>
         )}
         
@@ -340,7 +340,7 @@ const MatchingDashboard: React.FC = () => {
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
           <div className="flex border-b">
             <button 
-              className={`flex-1 py-4 px-6 text-center font-medium ${activeTab === 'gigs' ? 'bg-indigo-50 text-indigo-700 border-b-2 border-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
+              className={`flex-1 py-4 px-6 text-center font-medium ${activeTab === 'gigs' ? 'bg-rose-50 text-rose-600 border-b-2 border-rose-600' : 'text-gray-600 hover:bg-gray-50'}`}
               onClick={() => setActiveTab('gigs')}
             >
               <div className="flex items-center justify-center space-x-2">
@@ -349,7 +349,7 @@ const MatchingDashboard: React.FC = () => {
               </div>
             </button>
             {/*<button 
-              className={`flex-1 py-4 px-6 text-center font-medium ${activeTab === 'reps' ? 'bg-indigo-50 text-indigo-700 border-b-2 border-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
+              className={`flex-1 py-4 px-6 text-center font-medium ${activeTab === 'reps' ? 'bg-rose-50 text-rose-600 border-b-2 border-rose-600' : 'text-gray-600 hover:bg-gray-50'}`}
               onClick={() => setActiveTab('reps')}
             >
               <div className="flex items-center justify-center space-x-2">
@@ -358,7 +358,7 @@ const MatchingDashboard: React.FC = () => {
               </div>
             </button>*/}
             <button 
-              className={`flex-1 py-4 px-6 text-center font-medium ${activeTab === 'optimal' ? 'bg-indigo-50 text-indigo-700 border-b-2 border-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
+              className={`flex-1 py-4 px-6 text-center font-medium ${activeTab === 'optimal' ? 'bg-rose-50 text-rose-600 border-b-2 border-rose-600' : 'text-gray-600 hover:bg-gray-50'}`}
               onClick={() => setActiveTab('optimal')}
             >
               <div className="flex items-center justify-center space-x-2">
@@ -377,12 +377,12 @@ const MatchingDashboard: React.FC = () => {
               {gigs.map(gig => (
                 <div 
                   key={gig._id}
-                  className={`border rounded-lg p-4 cursor-pointer transition ${selectedGig?._id === gig._id ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300'}`}
+                  className={`border rounded-lg p-4 cursor-pointer transition ${selectedGig?._id === gig._id ? 'border-rose-400 bg-rose-50' : 'border-gray-200 hover:border-rose-300'}`}
                   onClick={() => setSelectedGig(gig)}
                 >
                   <div className="flex justify-between items-start">
                     <h3 className="font-medium text-gray-800">{gig.title}</h3>
-                    <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">{gig.industry}</span>
+                    <span className="text-xs px-2 py-1 bg-rose-100 text-rose-500 rounded-full">{gig.industry}</span>
                   </div>
                   <p className="text-sm text-gray-500 mt-1">{gig.companyName}</p>
                   <div className="mt-3 text-xs text-gray-600">
@@ -403,7 +403,7 @@ const MatchingDashboard: React.FC = () => {
               {paginatedReps.map(rep => (
                 <div 
                   key={rep._id}
-                  className={`border rounded-lg p-4 cursor-pointer transition ${selectedRep?._id === rep._id ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300'}`}
+                  className={`border rounded-lg p-4 cursor-pointer transition ${selectedRep?._id === rep._id ? 'border-rose-400 bg-rose-50' : 'border-gray-200 hover:border-rose-300'}`}
                   onClick={() => setSelectedRep(rep)}
                 >
                   <div className="flex justify-between items-start">
@@ -453,7 +453,7 @@ const MatchingDashboard: React.FC = () => {
                   className={`px-3 py-1 rounded ${
                     currentPage === 1 
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                      : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                      : 'bg-rose-100 text-rose-600 hover:bg-rose-200'
                   }`}
                 >
                   Previous
@@ -467,7 +467,7 @@ const MatchingDashboard: React.FC = () => {
                   className={`px-3 py-1 rounded ${
                     currentPage === totalPages 
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                      : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                      : 'bg-rose-100 text-rose-600 hover:bg-rose-200'
                   }`}
                 >
                   Next
@@ -481,7 +481,7 @@ const MatchingDashboard: React.FC = () => {
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-3">
-                <Activity size={24} className="text-indigo-600" />
+                <Activity size={24} className="text-rose-500" />
                 <h2 className="text-xl font-semibold text-gray-800">Optimal Matching Results</h2>
               </div>
               <div className="flex items-center space-x-4">
@@ -518,7 +518,7 @@ const MatchingDashboard: React.FC = () => {
                         setLoading(false);
                       });
                   }}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm flex items-center space-x-2"
+                  className="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-md text-sm flex items-center space-x-2"
                 >
                   <Zap size={16} />
                   <span>Regenerate Matches</span>
@@ -543,9 +543,9 @@ const MatchingDashboard: React.FC = () => {
                     : 'N/A'}
                 </div>
               </div>
-              <div className="bg-blue-50 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-blue-800 mb-2">Total Matches</h4>
-                <div className="text-2xl font-bold text-blue-600">
+              <div className="bg-rose-50 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-rose-500 mb-2">Total Matches</h4>
+                <div className="text-2xl font-bold text-rose-500">
                   {matches.length}
                 </div>
               </div>
@@ -609,7 +609,7 @@ const MatchingDashboard: React.FC = () => {
                           <div className="flex items-center">
                             <div className="w-16 bg-gray-200 rounded-full h-2.5">
                               <div 
-                                className="bg-indigo-600 h-2.5 rounded-full" 
+                                className="bg-rose-500 h-2.5 rounded-full" 
                                 style={{ width: `${match.score * 100}%` }}
                               ></div>
                             </div>
@@ -626,7 +626,7 @@ const MatchingDashboard: React.FC = () => {
                               </span>
                             )}
                             {match.matchDetails.industryScore > 0.7 && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-rose-100 text-rose-500">
                                 Industry Fit
                               </span>
                             )}

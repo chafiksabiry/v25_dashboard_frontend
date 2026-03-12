@@ -82,15 +82,15 @@ function DealManagementPanel() {
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-indigo-100 rounded-lg">
-              <Users className="w-6 h-6 text-indigo-600" />
+            <div className="p-3 bg-rose-100 rounded-lg">
+              <Users className="w-6 h-6 text-rose-500" />
             </div>
             <h2 className="text-xl font-semibold text-gray-800" onClick={fetchDeals}>
               Deal Management
             </h2>
           </div>
           <div className="flex gap-2">
-            <button className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg">
+            <button className="px-4 py-2 bg-gradient-to-r from-rose-500 to-purple-600 text-white rounded-lg hover:from-rose-600 hover:to-purple-700 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg">
               <Upload className="w-5 h-5" />
               Import Deals
             </button>
@@ -100,12 +100,12 @@ function DealManagementPanel() {
         {/* Statistiques */}
         <div className="grid grid-cols-4 gap-4 mb-6">
           <StatCard
-            icon={<Users className="w-5 h-5 text-indigo-600" />}
+            icon={<Users className="w-5 h-5 text-rose-500" />}
             title="Total Deals"
             value={deals.length}
             trend="12% increase"
             trendColor="text-emerald-600"
-            bgColor="bg-indigo-50"
+            bgColor="bg-rose-50"
           />
           <StatCard
             icon={<DollarSign className="w-5 h-5 text-emerald-600" />}
@@ -137,7 +137,7 @@ function DealManagementPanel() {
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-gray-700">
-              <thead className="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50">
+              <thead className="bg-gradient-to-r from-purple-50 via-rose-50 to-rose-50">
                 <tr className="border-b border-gray-200">
                   <th className="py-4 px-6 font-semibold text-gray-900">
                     Deal Details
@@ -160,31 +160,31 @@ function DealManagementPanel() {
                 {deals.map((deal) => (
                   <tr
                     key={deal.id}
-                    className="hover:bg-gradient-to-r hover:from-purple-50/30 hover:to-blue-50/30 transition-all duration-300"
+                    className="hover:bg-gradient-to-r hover:from-purple-50/30 hover:to-rose-50/30 transition-all duration-300"
                   >
                     <td className="py-4 px-6">
                       <div className="space-y-2">
-                        <div className="font-medium text-gray-900 text-base hover:text-indigo-600 cursor-pointer transition-colors duration-200">
+                        <div className="font-medium text-gray-900 text-base hover:text-rose-500 cursor-pointer transition-colors duration-200">
                           {deal.Deal_Name || "N/A"}
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <div className="text-sm text-gray-500 flex items-center gap-2 hover:text-indigo-500 transition-colors duration-200">
-                            <MapPin className="w-4 h-4 text-indigo-400" />
+                          <div className="text-sm text-gray-500 flex items-center gap-2 hover:text-rose-400 transition-colors duration-200">
+                            <MapPin className="w-4 h-4 text-orange-400" />
                             {deal.Location || "N/A"}
                           </div>
-                          <div className="text-sm text-gray-500 flex items-center gap-2 hover:text-indigo-500 transition-colors duration-200">
-                            <Phone className="w-4 h-4 text-indigo-400" />
+                          <div className="text-sm text-gray-500 flex items-center gap-2 hover:text-rose-400 transition-colors duration-200">
+                            <Phone className="w-4 h-4 text-orange-400" />
                             {deal.Telephony || "123-456-7890"}
                           </div>
-                          <div className="text-sm text-gray-500 flex items-center gap-2 hover:text-indigo-500 transition-colors duration-200">
-                            <Mail className="w-4 h-4 text-indigo-400" />
+                          <div className="text-sm text-gray-500 flex items-center gap-2 hover:text-rose-400 transition-colors duration-200">
+                            <Mail className="w-4 h-4 text-orange-400" />
                             {deal.Email_1 || "abc@gmail.com"}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="py-4 px-6 text-center">
-                      <span className="px-4 py-1.5 text-sm font-medium rounded-full bg-gradient-to-r from-indigo-50 to-blue-50 text-indigo-700 border border-indigo-100 shadow-sm">
+                      <span className="px-4 py-1.5 text-sm font-medium rounded-full bg-gradient-to-r from-rose-50 to-rose-50 text-rose-600 border border-rose-100 shadow-sm">
                         {deal.Stage || "N/A"}
                       </span>
                     </td>

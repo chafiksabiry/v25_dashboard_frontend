@@ -140,7 +140,7 @@ export function Sidebar() {
     <div className="w-64 bg-gray-900 h-screen fixed left-0 top-0 text-white p-4 flex flex-col">
       {/* Sidebar Header */}
       <div className="flex items-center gap-2 mb-4">
-        <LayoutDashboard className="w-8 h-8 text-blue-500" />
+        <LayoutDashboard className="w-8 h-8 text-rose-500" />
         <span className="text-xl font-bold">HARX</span>
       </div>
 
@@ -153,8 +153,8 @@ export function Sidebar() {
               to={item.path}
               className={({ isActive }) =>
                 `flex items-center gap-3 w-full p-3 rounded-lg transition-colors ${isActive
-                  ? "bg-blue-600 text-white"
-                  : "hover:bg-gray-800 text-gray-300 hover:text-white"
+                  ? "bg-gradient-to-r from-orange-400 to-rose-500 text-white shadow-lg shadow-rose-900/20"
+                  : "hover:bg-gray-800 text-gray-300 hover:text-rose-400"
                 }`
               }
             >
@@ -183,7 +183,7 @@ export function Sidebar() {
                     to="/knowledge-base"
                     className={({ isActive }) =>
                       `flex items-center gap-3 w-full p-2 rounded-lg transition-colors ${isActive
-                        ? "bg-blue-600 text-white"
+                        ? "bg-rose-500 text-white"
                         : "hover:bg-gray-800 text-gray-300 hover:text-white"
                       }`
                     }
@@ -195,8 +195,8 @@ export function Sidebar() {
                     to="/kb-insight"
                     className={({ isActive }) =>
                       `flex items-center gap-3 w-full p-2 rounded-lg transition-colors ${isActive
-                        ? "bg-blue-600 text-white"
-                        : "hover:bg-gray-800 text-gray-300 hover:text-white"
+                        ? "bg-gradient-to-r from-orange-400 to-rose-500 text-white"
+                        : "hover:bg-gray-800 text-gray-300 hover:text-rose-400"
                       }`
                     }
                   >

@@ -67,7 +67,7 @@ export function Leads() {
           <div key={lead.id} className="p-4 bg-white rounded-lg shadow">
             <h3 className="font-medium">{lead.name}</h3>
             <p className="text-gray-600">{lead.email}</p>
-            <span className="inline-block px-2 py-1 text-sm bg-blue-100 text-blue-800 rounded">
+            <span className="inline-block px-2 py-1 text-sm bg-rose-100 text-rose-500 rounded">
               {lead.status}
             </span>
           </div>

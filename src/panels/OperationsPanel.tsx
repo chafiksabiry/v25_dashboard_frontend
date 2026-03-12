@@ -133,8 +133,8 @@ function OperationsPanel() {
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <ScrollText className="w-6 h-6 text-blue-600" />
+            <div className="p-3 bg-rose-100 rounded-lg">
+              <ScrollText className="w-6 h-6 text-rose-500" />
             </div>
             <h2 className="text-xl font-semibold">Operations Center</h2>
           </div>
@@ -152,9 +152,9 @@ function OperationsPanel() {
               8% increase
             </div>
           </div>
-          <div className="bg-blue-50 p-4 rounded-lg">
+          <div className="bg-rose-50 p-4 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
-              <BookOpen className="w-5 h-5 text-blue-600" />
+              <BookOpen className="w-5 h-5 text-rose-500" />
               <span className="font-medium">Knowledge Base</span>
             </div>
             <div className="text-2xl font-bold">156</div>
@@ -192,8 +192,8 @@ function OperationsPanel() {
             onClick={() => setActiveTab('scripts')}
             className={`px-4 py-2 border-b-2 ${
               activeTab === 'scripts'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-blue-600'
+                ? 'border-rose-500 text-rose-500'
+                : 'border-transparent text-gray-600 hover:text-rose-500'
             }`}
           >
             Scripts
@@ -202,8 +202,8 @@ function OperationsPanel() {
             onClick={() => setActiveTab('knowledge')}
             className={`px-4 py-2 border-b-2 ${
               activeTab === 'knowledge'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-blue-600'
+                ? 'border-rose-500 text-rose-500'
+                : 'border-transparent text-gray-600 hover:text-rose-500'
             }`}
           >
             Knowledge Base
@@ -212,8 +212,8 @@ function OperationsPanel() {
             onClick={() => setActiveTab('telephony')}
             className={`px-4 py-2 border-b-2 ${
               activeTab === 'telephony'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-blue-600'
+                ? 'border-rose-500 text-rose-500'
+                : 'border-transparent text-gray-600 hover:text-rose-500'
             }`}
           >
             Telephony
@@ -222,8 +222,8 @@ function OperationsPanel() {
             onClick={() => setActiveTab('lms')}
             className={`px-4 py-2 border-b-2 ${
               activeTab === 'lms'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-blue-600'
+                ? 'border-rose-500 text-rose-500'
+                : 'border-transparent text-gray-600 hover:text-rose-500'
             }`}
           >
             Learning Management
@@ -239,12 +239,12 @@ function OperationsPanel() {
                 placeholder={`Search ${activeTab}...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="pl-10 pr-4 py-2 border rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-rose-400"
               />
             </div>
           </div>
 
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+          <button className="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 flex items-center gap-2">
             <Plus className="w-5 h-5" />
             Add New
           </button>

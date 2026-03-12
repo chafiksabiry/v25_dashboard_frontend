@@ -343,7 +343,7 @@ Date: ${formatDate(email.receivedTime)}
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rose-400"></div>
       </div>
     );
   }
@@ -384,13 +384,13 @@ Date: ${formatDate(email.receivedTime)}
         </div>
 
         <div className="grid grid-cols-4 gap-6 mb-8">
-          <div className="bg-blue-50 p-6 rounded-xl hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
+          <div className="bg-rose-50 p-6 rounded-xl hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
             <div className="flex items-center gap-3 mb-3">
-              <Inbox className="w-6 h-6 text-blue-600" />
-              <span className="font-semibold text-blue-800">Inbox</span>
+              <Inbox className="w-6 h-6 text-rose-500" />
+              <span className="font-semibold text-rose-500">Inbox</span>
             </div>
-            <div className="text-3xl font-bold text-blue-800">{inboxCount}</div>
-            <div className="text-sm font-medium text-blue-600">
+            <div className="text-3xl font-bold text-rose-500">{inboxCount}</div>
+            <div className="text-sm font-medium text-rose-500">
               {unreadCount} unread
             </div>
           </div>
@@ -478,7 +478,7 @@ Date: ${formatDate(email.receivedTime)}
                   <td className="py-3">Question about product features</td>
                   <td className="py-3">3 hours ago</td>
                   <td className="py-3">
-                    <span className="px-2 py-1 bg-blue-100 text-blue-600 rounded-full text-sm">
+                    <span className="px-2 py-1 bg-rose-100 text-rose-500 rounded-full text-sm">
                       New
                     </span>
                   </td>

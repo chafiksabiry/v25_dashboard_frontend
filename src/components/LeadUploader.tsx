@@ -218,7 +218,7 @@ export function LeadUploader({ onComplete, onClose }: LeadUploaderProps) {
           <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-600 mb-2">
             Drag and drop your CSV or Excel file here, or{" "}
-            <label className="text-blue-600 hover:text-blue-700 cursor-pointer">
+            <label className="text-rose-500 hover:text-rose-600 cursor-pointer">
               browse
               <input
                 type="file"
@@ -245,7 +245,7 @@ export function LeadUploader({ onComplete, onClose }: LeadUploaderProps) {
           API Integration
         </h4>
         <div className="grid grid-cols-2 gap-4">
-          <button className="p-4 border rounded-lg text-left hover:border-blue-500 hover:bg-blue-50">
+          <button className="p-4 border rounded-lg text-left hover:border-rose-400 hover:bg-rose-50">
             <h5 className="font-medium mb-1">Salesforce</h5>
             <p className="text-sm text-gray-500">
               Import leads from Salesforce CRM
@@ -253,7 +253,7 @@ export function LeadUploader({ onComplete, onClose }: LeadUploaderProps) {
           </button>
           {!zohoConnected && (
             <button
-              className="p-4 border rounded-lg text-left hover:border-blue-500 hover:bg-blue-50"
+              className="p-4 border rounded-lg text-left hover:border-rose-400 hover:bg-rose-50"
               onClick={checkZohoConnection}
             >
               <h5 className="font-medium mb-1">Zoho CRM</h5>
@@ -280,7 +280,7 @@ export function LeadUploader({ onComplete, onClose }: LeadUploaderProps) {
         <button
           onClick={handleUpload}
           disabled={!file || uploading}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 flex items-center gap-2"
+          className="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 disabled:bg-orange-400 flex items-center gap-2"
         >
           {uploading ? (
             <>

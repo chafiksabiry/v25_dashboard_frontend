@@ -89,13 +89,13 @@ const BaseChatComponent: React.FC<BaseChatProps> = ({
           <div className={`text-3xl font-bold ${styles.statsValue}`}>0</div>
           <div className={`text-sm mt-1 ${styles.statsSubtext}`}>Online now</div>
         </div>
-        <div className="bg-blue-50 p-5 rounded-xl shadow-sm hover:shadow-md transition-all">
+        <div className="bg-rose-50 p-5 rounded-xl shadow-sm hover:shadow-md transition-all">
           <div className="flex items-center gap-3 mb-3">
-            <CheckCircle2 className="w-6 h-6 text-blue-600" />
-            <span className="font-semibold text-blue-700">Resolved</span>
+            <CheckCircle2 className="w-6 h-6 text-rose-500" />
+            <span className="font-semibold text-rose-600">Resolved</span>
           </div>
-          <div className="text-3xl font-bold text-blue-800">0</div>
-          <div className="text-sm text-blue-600 mt-1">Today</div>
+          <div className="text-3xl font-bold text-rose-500">0</div>
+          <div className="text-sm text-rose-500 mt-1">Today</div>
         </div>
         <div className="bg-yellow-50 p-5 rounded-xl shadow-sm hover:shadow-md transition-all">
           <div className="flex items-center gap-3 mb-3">
@@ -193,7 +193,7 @@ const BaseChatComponent: React.FC<BaseChatProps> = ({
                           {msg.message.text}
                         </div>
                       )}
-                      <div className={`text-xs ${isOperator ? "text-blue-100" : "text-gray-500"}`}>
+                      <div className={`text-xs ${isOperator ? "text-rose-100" : "text-gray-500"}`}>
                         {formatDate(msg.time)}
                       </div>
                     </div>

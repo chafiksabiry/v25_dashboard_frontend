@@ -152,7 +152,7 @@ function SettingsPanel() {
           <span className="text-[10px] font-bold text-slate-500 uppercase">Readiness</span>
           <div className="h-1.5 w-24 bg-slate-200 rounded-full overflow-hidden">
             <div
-              className="h-full bg-indigo-600 transition-all duration-1000"
+              className="h-full bg-rose-500 transition-all duration-1000"
               style={{ width: `${(onboardingProgress?.completedSteps?.length || 0) / 13 * 100}%` }}
             />
           </div>
@@ -166,13 +166,13 @@ function SettingsPanel() {
           const isCurrent = (onboardingProgress?.currentPhase || 1) === phase.id;
 
           return (
-            <div key={phase.id} className="group border border-slate-200 rounded-xl overflow-hidden bg-white hover:border-indigo-200 transition-all shadow-sm">
+            <div key={phase.id} className="group border border-slate-200 rounded-xl overflow-hidden bg-white hover:border-rose-200 transition-all shadow-sm">
               <button
                 onClick={() => togglePhase(phase.id)}
                 className="w-full flex items-center justify-between p-3 text-left"
               >
                 <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isExpanded || isCurrent ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-slate-100 text-slate-400'}`}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isExpanded || isCurrent ? 'bg-rose-500 text-white shadow-lg shadow-rose-100' : 'bg-slate-100 text-slate-400'}`}>
                     <PhaseIcon className="w-4 h-4" />
                   </div>
                   <div>
@@ -191,12 +191,12 @@ function SettingsPanel() {
                       <div
                         key={step.id}
                         className={`p-2.5 rounded-lg border flex items-center gap-3 group/step transition-all ${status === 'completed' ? 'bg-emerald-50/30 border-emerald-100' :
-                          status === 'in_progress' ? 'bg-indigo-50/30 border-indigo-100 ring-1 ring-indigo-500/10' :
+                          status === 'in_progress' ? 'bg-rose-50/30 border-rose-100 ring-1 ring-rose-400/10' :
                             'bg-slate-50 border-slate-100'
-                          } ${step.disabled ? 'opacity-40' : 'hover:border-indigo-300 cursor-default'}`}
+                          } ${step.disabled ? 'opacity-40' : 'hover:border-rose-300 cursor-default'}`}
                       >
                         <div className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${status === 'completed' ? 'bg-emerald-100 text-emerald-600' :
-                          status === 'in_progress' ? 'bg-indigo-600 text-white' :
+                          status === 'in_progress' ? 'bg-rose-500 text-white' :
                             'bg-slate-200 text-slate-400'
                           }`}>
                           {status === 'completed' ? <CheckCircle2 className="w-3.5 h-3.5" /> : getStepIcon(step.id)}
@@ -230,7 +230,7 @@ function SettingsPanel() {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-24">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-rose-500"></div>
       </div>
     );
   }
@@ -241,7 +241,7 @@ function SettingsPanel() {
       <div className="w-64 flex-shrink-0 border-r border-slate-100 bg-slate-50/50 p-3 flex flex-col">
         <div className="mb-6 p-2">
           <div className="flex items-center gap-2 mb-1">
-            <div className="p-1.5 bg-indigo-600 rounded-lg shadow-lg shadow-indigo-200">
+            <div className="p-1.5 bg-rose-500 rounded-lg shadow-lg shadow-rose-200">
               <Settings className="w-4 h-4 text-white" />
             </div>
             <span className="font-black text-slate-900 tracking-tighter text-sm uppercase">Nexus Settings</span>
@@ -255,21 +255,21 @@ function SettingsPanel() {
               key={item.id}
               onClick={() => setActiveSection(item.id)}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-black uppercase tracking-tight transition-all duration-200 ${activeSection === item.id
-                ? 'bg-white text-indigo-600 shadow-md border border-slate-100 translate-x-1'
+                ? 'bg-white text-rose-500 shadow-md border border-slate-100 translate-x-1'
                 : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100 group'
                 }`}
             >
-              <item.icon className={`w-4 h-4 transition-colors ${activeSection === item.id ? 'text-indigo-600' : 'text-slate-300 group-hover:text-slate-400'}`} />
+              <item.icon className={`w-4 h-4 transition-colors ${activeSection === item.id ? 'text-rose-500' : 'text-slate-300 group-hover:text-slate-400'}`} />
               {item.label}
-              {activeSection === item.id && <div className="ml-auto w-1 h-3 rounded-full bg-indigo-600 animate-pulse" />}
+              {activeSection === item.id && <div className="ml-auto w-1 h-3 rounded-full bg-rose-500 animate-pulse" />}
             </button>
           ))}
         </nav>
 
-        <div className="mt-auto p-3 bg-indigo-600/5 rounded-2xl border border-indigo-100/50">
-          <p className="text-[10px] font-black text-indigo-900/40 uppercase mb-2">Strategy Tier</p>
+        <div className="mt-auto p-3 bg-rose-500/5 rounded-2xl border border-rose-100/50">
+          <p className="text-[10px] font-black text-rose-500/40 uppercase mb-2">Strategy Tier</p>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-indigo-600 flex items-center justify-center text-[10px] font-black text-white">E</div>
+            <div className="w-6 h-6 rounded-lg bg-rose-500 flex items-center justify-center text-[10px] font-black text-white">E</div>
             <span className="text-[11px] font-black text-slate-900 tracking-tight">Enterprise Elite</span>
           </div>
         </div>

@@ -93,7 +93,7 @@ function GigsPanel() {
       case "available":
         return "bg-green-100 text-green-600";
       case "assigned":
-        return "bg-blue-100 text-blue-600";
+        return "bg-rose-100 text-rose-500";
       case "completed":
         return "bg-gray-100 text-gray-600";
       case "cancelled":
@@ -413,8 +413,8 @@ function GigsPanel() {
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-indigo-100 rounded-lg">
-              <Briefcase className="w-6 h-6 text-indigo-600" />
+            <div className="p-3 bg-rose-100 rounded-lg">
+              <Briefcase className="w-6 h-6 text-rose-500" />
             </div>
             <div>
               <h2 className="text-xl font-semibold">Gig Management</h2>
@@ -425,7 +425,7 @@ function GigsPanel() {
           </div>
           <button
             onClick={() => (window.location.href = "/app6")}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2"
+            className="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
             New Gig
@@ -443,7 +443,7 @@ function GigsPanel() {
                 placeholder="Search gigs..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="pl-10 pr-4 py-2 border rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-rose-400"
               />
             </div>
             <Filter className="w-5 h-5 text-gray-400" />
@@ -455,7 +455,7 @@ function GigsPanel() {
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
                 className={`px-4 py-2 rounded-lg ${activeFilter === filter
-                  ? "bg-indigo-600 text-white"
+                  ? "bg-rose-500 text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
               >
@@ -476,7 +476,7 @@ function GigsPanel() {
 
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-500"></div>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -491,20 +491,20 @@ function GigsPanel() {
               <tbody className="divide-y">
                 {filteredGigs && filteredGigs.length > 0 ? (
                   filteredGigs.map((gig, idx) => (
-                    <tr key={gig._id} className={`transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-indigo-50`}>
+                    <tr key={gig._id} className={`transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-rose-50`}>
                       <td className="py-4 px-4 align-middle">
                         <div>
                           <div className="font-semibold text-gray-900 text-base mb-1">
                             {gig?.title || 'No title'}
                           </div>
                           <div className="text-sm text-gray-500 flex items-center gap-1">
-                            <MapPin className="w-4 h-4 text-indigo-400" />
+                            <MapPin className="w-4 h-4 text-orange-400" />
                             {gig?.destination_zone ? getCountryName(gig.destination_zone) : 'No location specified'}
                           </div>
                         </div>
                       </td>
                       <td className="py-4 px-4 align-middle">
-                        <span className="inline-block px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-medium shadow-sm">
+                        <span className="inline-block px-3 py-1 rounded-full bg-rose-100 text-rose-600 text-xs font-medium shadow-sm">
                           {gig?.category || 'Not specified'}
                         </span>
                       </td>
@@ -535,7 +535,7 @@ function GigsPanel() {
                           </button>
                           <button
                             onClick={() => handleEdit(gig)}
-                            className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition"
+                            className="p-2 text-rose-500 hover:bg-rose-100 rounded-lg transition"
                             title="Edit"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -573,8 +573,8 @@ function GigsPanel() {
           <div className="bg-white rounded-xl p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl transform transition-all duration-300 ease-in-out modal-slide-in">
             <div className="flex justify-between items-center mb-6 border-b pb-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-100 rounded-lg">
-                  <Briefcase className="w-6 h-6 text-indigo-600" />
+                <div className="p-2 bg-rose-100 rounded-lg">
+                  <Briefcase className="w-6 h-6 text-rose-500" />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-800">
                   {modalMode === 'edit' ? 'Edit Gig' : 'Gig Details'}
@@ -594,7 +594,7 @@ function GigsPanel() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    <Building2 className="w-5 h-5 text-indigo-500" />
+                    <Building2 className="w-5 h-5 text-rose-400" />
                     Basic Information
                   </h3>
                   <div className="space-y-4">
@@ -605,7 +605,7 @@ function GigsPanel() {
                           type="text"
                           value={editedGig?.title || ''}
                           onChange={(e) => handleInputChange('title', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-400 focus:border-rose-400"
                         />
                       ) : (
                         <p className="text-gray-800 font-medium">{selectedGig.title}</p>
@@ -618,10 +618,10 @@ function GigsPanel() {
                           type="text"
                           value={editedGig?.category || ''}
                           onChange={(e) => handleInputChange('category', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-400 focus:border-rose-400"
                         />
                       ) : (
-                        <span className="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">
+                        <span className="inline-block px-3 py-1 bg-rose-100 text-rose-600 rounded-full text-sm font-medium">
                           {selectedGig.category}
                         </span>
                       )}
@@ -629,7 +629,7 @@ function GigsPanel() {
                     <div>
                       <label className="block text-sm font-medium text-gray-600 mb-1">Location</label>
                       <div className="flex items-center gap-2 text-gray-800">
-                        <MapPin className="w-4 h-4 text-indigo-500" />
+                        <MapPin className="w-4 h-4 text-rose-400" />
                         {getCountryName(selectedGig.destination_zone)}
                       </div>
                     </div>
@@ -650,13 +650,13 @@ function GigsPanel() {
                             type="text"
                             value={editedGig?.commission.baseAmount || ''}
                             onChange={(e) => handleInputChange('commission.baseAmount', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-400 focus:border-rose-400"
                             placeholder="Amount"
                           />
                           <select
                             value={editedGig?.commission.base || ''}
                             onChange={(e) => handleInputChange('commission.base', e.target.value)}
-                            className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-400 focus:border-rose-400"
                           >
                             <option value="hour">per hour</option>
                             <option value="day">per day</option>
@@ -676,7 +676,7 @@ function GigsPanel() {
 
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-blue-500" />
+                  <Calendar className="w-5 h-5 text-rose-400" />
                   Schedule
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -684,7 +684,7 @@ function GigsPanel() {
                     <label className="block text-sm font-medium text-gray-600 mb-1">Working Days</label>
                     <div className="flex flex-wrap gap-2">
                       {selectedGig.availability?.schedule?.map((schedule, index) => (
-                        <span key={index} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+                        <span key={index} className="px-3 py-1 bg-rose-100 text-rose-600 rounded-full text-sm">
                           {schedule.day}
                         </span>
                       )) || <span className="text-gray-500">No schedule specified</span>}
@@ -702,7 +702,7 @@ function GigsPanel() {
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">Time Zone</label>
                     <div className="flex flex-wrap gap-2">
-                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+                      <span className="px-3 py-1 bg-rose-100 text-rose-600 rounded-full text-sm">
                         {selectedGig.availability?.time_zone?.zoneName || 'Not specified'}
                       </span>
                     </div>
@@ -731,7 +731,7 @@ function GigsPanel() {
                     <label className="block text-sm font-medium text-gray-600 mb-2">Technical Skills</label>
                     <div className="flex flex-wrap gap-2">
                       {selectedGig.skills?.technical?.map((skill, index) => (
-                        <span key={index} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+                        <span key={index} className="px-3 py-1 bg-rose-100 text-rose-600 rounded-full text-sm">
                           {skill.skill?.name || skill.name || 'Unknown skill'}
                         </span>
                       )) || <span className="text-gray-500">No technical skills specified</span>}
@@ -779,12 +779,12 @@ function GigsPanel() {
 
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-indigo-500" />
+                  <Building2 className="w-5 h-5 text-rose-400" />
                   Industries
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {selectedGig.industries?.map((industry, index) => (
-                    <span key={index} className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm">
+                    <span key={index} className="px-3 py-1 bg-rose-100 text-rose-600 rounded-full text-sm">
                       {industry.name || 'Unknown industry'}
                     </span>
                   )) || <span className="text-gray-500">No industries specified</span>}
@@ -815,7 +815,7 @@ function GigsPanel() {
                   </button>
                   <button
                     onClick={handleSaveChanges}
-                    className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200 font-medium flex items-center gap-2"
+                    className="px-6 py-2.5 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors duration-200 font-medium flex items-center gap-2"
                   >
                     <CheckCircle2 className="w-5 h-5" />
                     Save Changes

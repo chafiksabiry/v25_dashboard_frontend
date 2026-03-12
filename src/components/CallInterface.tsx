@@ -707,7 +707,7 @@ export function CallInterface({ phoneNumber, agentId, onEnd, onCallSaved, provid
         <div className="text-xl font-semibold mb-2">{phoneNumber}</div>
         <div className="text-gray-500">{formatDuration(duration)}</div>
         {callStatus === 'initiating' && (
-          <div className="text-blue-600">Initiating call...</div>
+          <div className="text-rose-500">Initiating call...</div>
         )}
       </div>
 

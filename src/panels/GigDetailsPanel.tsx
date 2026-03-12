@@ -157,7 +157,7 @@ function GigDetailsPanel() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading gig details...</p>
         </div>
       </div>
@@ -177,7 +177,7 @@ function GigDetailsPanel() {
           <p className="text-gray-600 mb-4">{error || 'Gig not found'}</p>
           <button
             onClick={handleBack}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors"
           >
             Back to Gigs
           </button>
@@ -232,7 +232,7 @@ function GigDetailsPanel() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <h3 className="font-medium text-gray-900 mb-2">Category</h3>
-                    <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                    <span className="inline-block px-3 py-1 bg-rose-100 text-rose-500 rounded-full text-sm">
                       {gig.category}
                     </span>
                   </div>
@@ -250,7 +250,7 @@ function GigDetailsPanel() {
             {/* Commission */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-indigo-600" />
+                <DollarSign className="w-5 h-5 text-rose-500" />
                 Commission
               </h2>
 
@@ -348,7 +348,7 @@ function GigDetailsPanel() {
                   <h3 className="font-medium text-gray-900 mb-3">Technical Skills</h3>
                   <div className="flex flex-wrap gap-2">
                     {gig.skills?.technical?.map((skill, index) => (
-                      <span key={index} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+                      <span key={index} className="px-3 py-1 bg-rose-100 text-rose-600 rounded-full text-sm">
                         {skill.skill?.name || 'Unknown skill'}
                       </span>
                     )) || <span className="text-gray-500">No technical skills specified</span>}
@@ -392,7 +392,7 @@ function GigDetailsPanel() {
                   <h3 className="font-medium text-gray-900 mb-3">Industries</h3>
                   <div className="flex flex-wrap gap-2">
                     {gig.industries?.map((industry, index) => (
-                      <span key={index} className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm">
+                      <span key={index} className="px-3 py-1 bg-rose-100 text-rose-600 rounded-full text-sm">
                         {industry.name || 'Unknown industry'}
                       </span>
                     )) || <span className="text-gray-500">No industries specified</span>}
@@ -426,7 +426,7 @@ function GigDetailsPanel() {
                   <h3 className="font-medium text-gray-900">Working Days</h3>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {gig.availability?.schedule?.map((schedule, index) => (
-                      <span key={index} className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
+                      <span key={index} className="px-2 py-1 bg-rose-100 text-rose-600 rounded text-xs">
                         {schedule.day}
                       </span>
                     )) || <span className="text-gray-500 text-sm">No schedule specified</span>}

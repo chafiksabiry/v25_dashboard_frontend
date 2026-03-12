@@ -369,7 +369,7 @@ const KnowledgeInsights: React.FC = () => {
   const getResourceIcon = (type: string) => {
     switch (type) {
       case 'document':
-        return <FileText size={16} className="text-blue-500" />;
+        return <FileText size={16} className="text-rose-400" />;
       case 'video':
         return <Video size={16} className="text-red-500" />;
       case 'link':
@@ -387,7 +387,7 @@ const KnowledgeInsights: React.FC = () => {
       case 'recommendation':
         return <TrendingUp size={20} className="text-green-500" />;
       case 'strength':
-        return <BarChart2 size={20} className="text-blue-500" />;
+        return <BarChart2 size={20} className="text-rose-400" />;
       case 'weakness':
         return <Search size={20} className="text-orange-500" />;
       default:
@@ -403,7 +403,7 @@ const KnowledgeInsights: React.FC = () => {
       case 'recommendation':
         return 'bg-green-50';
       case 'strength':
-        return 'bg-blue-50';
+        return 'bg-rose-50';
       case 'weakness':
         return 'bg-orange-50';
       default:
@@ -446,8 +446,8 @@ const KnowledgeInsights: React.FC = () => {
                 
                 <div className="space-y-6">
                   {analysis.results.topicAnalysis.mainTopics.map((topic, i) => (
-                    <div key={i} className="bg-blue-50 p-4 rounded-lg">
-                      <h4 className="font-bold text-lg text-blue-800">{topic.topic}</h4>
+                    <div key={i} className="bg-rose-50 p-4 rounded-lg">
+                      <h4 className="font-bold text-lg text-rose-500">{topic.topic}</h4>
                       <p className="my-2">{topic.description}</p>
                       
                       {topic.relatedDocuments.length > 0 && (
@@ -531,7 +531,7 @@ const KnowledgeInsights: React.FC = () => {
                         <span className={`px-2 py-1 rounded-full text-xs font-bold ${
                           rec.priority === 'HIGH' ? 'bg-red-100 text-red-800' :
                           rec.priority === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-blue-100 text-blue-800'
+                          'bg-rose-100 text-rose-500'
                         }`}>
                           {rec.priority}
                         </span>
@@ -625,7 +625,7 @@ const KnowledgeInsights: React.FC = () => {
     return (
       <div className="p-6 bg-gray-50 min-h-screen">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500"></div>
         </div>
       </div>
     );
@@ -676,8 +676,8 @@ const KnowledgeInsights: React.FC = () => {
               <p className="text-sm text-gray-500 mb-1">Documents</p>
               <p className="text-2xl font-bold">{documentCount}</p>
             </div>
-            <div className="bg-blue-100 p-3 rounded-full">
-              <FileText size={24} className="text-blue-600" />
+            <div className="bg-rose-100 p-3 rounded-full">
+              <FileText size={24} className="text-rose-500" />
             </div>
           </div>
         </div>
@@ -738,12 +738,12 @@ const KnowledgeInsights: React.FC = () => {
           {analysis.status === 'in_progress' && (
             <div className="flex flex-col items-center justify-center p-8">
               <div className="flex items-center mb-4">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-500 mr-3"></div>
                 <span className="text-gray-600">Analyzing knowledge base...</span>
               </div>
               <div className="w-full max-w-md bg-gray-200 rounded-full h-2.5">
                 <div 
-                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-500"
+                  className="bg-rose-500 h-2.5 rounded-full transition-all duration-500"
                   style={{ width: `${analysis.progress}%` }}
                 ></div>
               </div>
@@ -783,7 +783,7 @@ const KnowledgeInsights: React.FC = () => {
               </p>
               <button
                 onClick={startAnalysis}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center mx-auto"
+                className="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-lg flex items-center mx-auto"
               >
                 <Brain size={18} className="mr-2" />
                 Start Analysis
@@ -796,7 +796,7 @@ const KnowledgeInsights: React.FC = () => {
       {/* Recent Resources */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-100">
         <div className="p-4 border-b border-gray-100 flex items-center">
-          <FileText size={20} className="text-blue-600 mr-2" />
+          <FileText size={20} className="text-rose-500 mr-2" />
           <h2 className="text-lg font-semibold">Recently Added Resources</h2>
         </div>
         
@@ -837,7 +837,7 @@ const KnowledgeInsights: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      resource.type === 'document' ? 'bg-blue-100 text-blue-800' : 
+                      resource.type === 'document' ? 'bg-rose-100 text-rose-500' : 
                       resource.type === 'video' ? 'bg-red-100 text-red-800' : 
                       'bg-green-100 text-green-800'
                     }`}>
@@ -851,7 +851,7 @@ const KnowledgeInsights: React.FC = () => {
                     <div className="flex items-center">
                       <div className="w-16 bg-gray-200 rounded-full h-2.5">
                         <div 
-                          className="bg-blue-600 h-2.5 rounded-full" 
+                          className="bg-rose-500 h-2.5 rounded-full" 
                           style={{ width: `${resource.usagePercentage}%` }}
                         ></div>
                       </div>
@@ -861,7 +861,7 @@ const KnowledgeInsights: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button 
                       onClick={() => handleViewDocument(resource)}
-                      className="text-blue-600 hover:text-blue-900"
+                      className="text-rose-500 hover:text-rose-500"
                     >
                       View
                     </button>
@@ -919,7 +919,7 @@ const KnowledgeInsights: React.FC = () => {
                   <div className="flex items-center mt-1">
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
                       <div 
-                        className="bg-blue-600 h-2.5 rounded-full" 
+                        className="bg-rose-500 h-2.5 rounded-full" 
                         style={{ width: `${selectedDocument.usagePercentage}%` }}
                       ></div>
                     </div>
@@ -948,7 +948,7 @@ const KnowledgeInsights: React.FC = () => {
                 <div className="pt-4">
                   <button
                     onClick={() => openDocumentInNewTab(selectedDocument.fileUrl)}
-                    className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="w-full flex items-center justify-center px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors"
                   >
                     <ExternalLink size={18} className="mr-2" />
                     Open Document

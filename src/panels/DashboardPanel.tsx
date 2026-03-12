@@ -10,7 +10,7 @@ export function DashboardPanel() {
       {/* Orchestrator Button - Centered */}
       <button
         onClick={handleOrchestratorClick}
-        className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 px-6 rounded-lg shadow-lg transform transition-all duration-200 hover:scale-105 hover:shadow-xl text-xl"
+        className="bg-gradient-to-r from-orange-400 to-rose-500 hover:from-orange-500 hover:to-rose-600 text-white font-bold py-4 px-10 rounded-xl shadow-xl transform transition-all duration-300 hover:scale-105 hover:shadow-rose-200 text-xl"
       >
         Orchestrator
       </button>

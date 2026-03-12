@@ -117,15 +117,15 @@ function CallsPanel() {
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Phone className="w-6 h-6 text-blue-600" />
+              <div className="p-3 bg-rose-100 rounded-lg">
+                <Phone className="w-6 h-6 text-rose-500" />
               </div>
               <h2 className="text-xl font-semibold">Calls Dashboard</h2>
             </div>
             {!showPhoneInput ? (
               <button
                 onClick={() => setShowPhoneInput(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600"
               >
                 New Call
               </button>
@@ -158,7 +158,7 @@ function CallsPanel() {
           <div className="flex items-center gap-4 mb-6">
             <button
               className={`px-4 py-2 rounded-lg ${activeFilter === 'all'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-rose-500 text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               onClick={() => setActiveFilter('all')}
@@ -167,7 +167,7 @@ function CallsPanel() {
             </button>
             <button
               className={`px-4 py-2 rounded-lg ${activeFilter === 'incoming'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-rose-500 text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               onClick={() => setActiveFilter('incoming')}
@@ -176,7 +176,7 @@ function CallsPanel() {
             </button>
             <button
               className={`px-4 py-2 rounded-lg ${activeFilter === 'outgoing'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-rose-500 text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               onClick={() => setActiveFilter('outgoing')}
@@ -185,7 +185,7 @@ function CallsPanel() {
             </button>
             <button
               className={`px-4 py-2 rounded-lg ${activeFilter === 'missed'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-rose-500 text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               onClick={() => setActiveFilter('missed')}
@@ -214,7 +214,7 @@ function CallsPanel() {
                         {call.direction === "inbound" ? (
                           <PhoneIncoming className="w-5 h-5 text-green-600" />
                         ) : (
-                          <PhoneOutgoing className="w-5 h-5 text-blue-600" />
+                          <PhoneOutgoing className="w-5 h-5 text-rose-500" />
                         )}
                         <span>{call.direction.charAt(0).toUpperCase() + call.direction.slice(1)}</span>
                       </div>
@@ -310,7 +310,7 @@ function CallsPanel() {
                   onClick={() => setSelectedProvider('twilio')}
                   className={`px-4 py-2 rounded-lg ${
                     selectedProvider === 'twilio'
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-rose-500 text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
@@ -320,7 +320,7 @@ function CallsPanel() {
                   onClick={() => setSelectedProvider('qalqul')}
                   className={`px-4 py-2 rounded-lg ${
                     selectedProvider === 'qalqul'
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-rose-500 text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >

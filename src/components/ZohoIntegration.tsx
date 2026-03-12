@@ -120,8 +120,8 @@ export const ZohoIntegration: React.FC = () => {
     <div className="bg-white rounded-lg shadow-sm p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-blue-100 rounded-lg">
-            <Building2 className="w-6 h-6 text-blue-600" />
+          <div className="p-3 bg-rose-100 rounded-lg">
+            <Building2 className="w-6 h-6 text-rose-500" />
           </div>
           <div>
             <h2 className="text-xl font-semibold">Zoho CRM Integration</h2>
@@ -192,7 +192,7 @@ export const ZohoIntegration: React.FC = () => {
         ) : (
           <button
             onClick={() => setShowConfigModal(true)}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2"
+            className="w-full px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 flex items-center justify-center gap-2"
           >
             <Settings2 className="w-4 h-4" />
             Configure Zoho CRM
@@ -223,7 +223,7 @@ export const ZohoIntegration: React.FC = () => {
                   name="clientId"
                   value={formData.clientId}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-400"
                   placeholder="Enter your Zoho Client ID"
                 />
               </div>
@@ -237,7 +237,7 @@ export const ZohoIntegration: React.FC = () => {
                   name="clientSecret"
                   value={formData.clientSecret}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-400"
                   placeholder="Enter your Zoho Client Secret"
                 />
               </div>
@@ -251,7 +251,7 @@ export const ZohoIntegration: React.FC = () => {
                   name="refreshToken"
                   value={formData.refreshToken}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-400"
                   placeholder="Enter your Zoho Refresh Token"
                 />
               </div>
@@ -266,7 +266,7 @@ export const ZohoIntegration: React.FC = () => {
                 <button
                   onClick={handleConnect}
                   disabled={isLoading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300 flex items-center gap-2"
+                  className="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 disabled:bg-rose-300 flex items-center gap-2"
                 >
                   {isLoading ? (
                     <>

@@ -68,7 +68,7 @@ const KnowledgeBase: React.FC = () => {
   const getItemIcon = (type: string) => {
     switch (type) {
       case 'document':
-        return <FileText size={20} className="text-blue-500" />;
+        return <FileText size={20} className="text-rose-400" />;
       case 'video':
         return <Video size={20} className="text-red-500" />;
       case 'link':
@@ -580,7 +580,7 @@ const KnowledgeBase: React.FC = () => {
           <button
             className={`px-6 py-3 text-sm font-medium ${
               activeTab === 'documents' 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
+                ? 'text-rose-500 border-b-2 border-rose-500' 
                 : 'text-gray-500 hover:text-gray-700'
             }`}
             onClick={() => setActiveTab('documents')}
@@ -591,7 +591,7 @@ const KnowledgeBase: React.FC = () => {
           <button
             className={`px-6 py-3 text-sm font-medium ${
               activeTab === 'calls' 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
+                ? 'text-rose-500 border-b-2 border-rose-500' 
                 : 'text-gray-500 hover:text-gray-700'
             }`}
             onClick={() => setActiveTab('calls')}
@@ -611,7 +611,7 @@ const KnowledgeBase: React.FC = () => {
             </div>
             <input
               type="text"
-              className="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5"
+              className="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-rose-400 focus:border-rose-400 block w-full pl-10 p-2.5"
               placeholder={activeTab === 'documents' ? "Search knowledge base..." : "Search call recordings..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -623,7 +623,7 @@ const KnowledgeBase: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <Filter size={18} className="text-gray-500" />
                 <select
-                  className="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5"
+                  className="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-rose-400 focus:border-rose-400 block p-2.5"
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value)}
                 >
@@ -637,7 +637,7 @@ const KnowledgeBase: React.FC = () => {
             )}
             
             <button 
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center"
+              className="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-lg flex items-center"
               onClick={() => setShowUploadModal(true)}
             >
               <Plus size={18} className="mr-2" />
@@ -678,7 +678,7 @@ const KnowledgeBase: React.FC = () => {
                     
                     <div className="flex items-center justify-between">
                       <span className={`px-2 py-1 text-xs rounded-full whitespace-nowrap ${
-                        item.type === 'document' ? 'bg-blue-100 text-blue-800' : 
+                        item.type === 'document' ? 'bg-rose-100 text-rose-500' : 
                         item.type === 'video' ? 'bg-red-100 text-red-800' : 
                         item.type === 'audio' ? 'bg-purple-100 text-purple-800' :
                         'bg-green-100 text-green-800'
@@ -689,7 +689,7 @@ const KnowledgeBase: React.FC = () => {
                       <div className="flex space-x-2 flex-shrink-0">
                         <button 
                           onClick={() => handleView(item)}
-                          className="text-blue-600 hover:text-blue-800 p-1"
+                          className="text-rose-500 hover:text-rose-500 p-1"
                           title="View details"
                         >
                           <Eye size={16} />
@@ -721,7 +721,7 @@ const KnowledgeBase: React.FC = () => {
             </p>
             {!searchTerm && typeFilter === 'all' && (
               <button 
-                className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center mx-auto"
+                className="mt-4 bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-lg flex items-center mx-auto"
                 onClick={() => setShowUploadModal(true)}
               >
                 <Plus size={18} className="mr-2" />
@@ -758,7 +758,7 @@ const KnowledgeBase: React.FC = () => {
                         )}
                         <button 
                           onClick={() => handleView(call)}
-                          className="text-blue-600 hover:text-blue-800 p-1"
+                          className="text-rose-500 hover:text-rose-500 p-1"
                           title="View details"
                         >
                           <Eye size={16} />
@@ -806,7 +806,7 @@ const KnowledgeBase: React.FC = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2 flex-wrap gap-2">
                           <button 
-                            className="flex items-center text-sm text-blue-600 hover:text-blue-800 whitespace-nowrap"
+                            className="flex items-center text-sm text-rose-500 hover:text-rose-500 whitespace-nowrap"
                             onClick={() => togglePlayer(call.id)}
                           >
                             {showPlayer[call.id] ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -836,7 +836,7 @@ const KnowledgeBase: React.FC = () => {
                           <div className="mt-2 p-3 bg-gray-50 rounded-lg">
                             <div className="flex items-center space-x-3">
                               <button 
-                                className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors flex-shrink-0"
+                                className="flex items-center justify-center w-8 h-8 rounded-full bg-rose-100 text-rose-500 hover:bg-rose-200 transition-colors flex-shrink-0"
                                 onClick={() => handlePlayRecording(call.recordingUrl, call.id)}
                                 title={playingCallId === call.id && isPlaying ? "Pause" : "Play"}
                               >
@@ -860,7 +860,7 @@ const KnowledgeBase: React.FC = () => {
                                     title="Seek"
                                   />
                                   <div 
-                                    className="absolute h-full bg-blue-600 rounded-full"
+                                    className="absolute h-full bg-rose-500 rounded-full"
                                     style={{ 
                                       width: `${duration ? 
                                         (playingCallId === call.id ? (currentTime / duration) * 100 : 0) : 0}%` 
@@ -893,7 +893,7 @@ const KnowledgeBase: React.FC = () => {
               </p>
               {!searchTerm && (
                 <button 
-                  className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center mx-auto"
+                  className="mt-4 bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-lg flex items-center mx-auto"
                   onClick={() => setShowUploadModal(true)}
                 >
                   <Plus size={18} className="mr-2" />
@@ -935,12 +935,12 @@ const KnowledgeBase: React.FC = () => {
                             type="button"
                             className={`p-4 rounded-lg border ${
                               uploadType === 'document' 
-                                ? 'border-blue-500 bg-blue-50' 
+                                ? 'border-rose-400 bg-rose-50' 
                                 : 'border-gray-200 hover:bg-gray-50'
                             } flex flex-col items-center justify-center`}
                             onClick={() => setUploadType('document')}
                           >
-                            <FileText size={24} className={uploadType === 'document' ? 'text-blue-500' : 'text-gray-500'} />
+                            <FileText size={24} className={uploadType === 'document' ? 'text-rose-400' : 'text-gray-500'} />
                             <span className="mt-2 text-sm">Document</span>
                           </button>
                           
@@ -948,12 +948,12 @@ const KnowledgeBase: React.FC = () => {
                             type="button"
                             className={`p-4 rounded-lg border ${
                               uploadType === 'video' 
-                                ? 'border-blue-500 bg-blue-50' 
+                                ? 'border-rose-400 bg-rose-50' 
                                 : 'border-gray-200 hover:bg-gray-50'
                             } flex flex-col items-center justify-center`}
                             onClick={() => setUploadType('video')}
                           >
-                            <Video size={24} className={uploadType === 'video' ? 'text-blue-500' : 'text-gray-500'} />
+                            <Video size={24} className={uploadType === 'video' ? 'text-rose-400' : 'text-gray-500'} />
                             <span className="mt-2 text-sm">Video</span>
                           </button>
                           
@@ -961,12 +961,12 @@ const KnowledgeBase: React.FC = () => {
                             type="button"
                             className={`p-4 rounded-lg border ${
                               uploadType === 'link' 
-                                ? 'border-blue-500 bg-blue-50' 
+                                ? 'border-rose-400 bg-rose-50' 
                                 : 'border-gray-200 hover:bg-gray-50'
                             } flex flex-col items-center justify-center`}
                             onClick={() => setUploadType('link')}
                           >
-                            <LinkIcon size={24} className={uploadType === 'link' ? 'text-blue-500' : 'text-gray-500'} />
+                            <LinkIcon size={24} className={uploadType === 'link' ? 'text-rose-400' : 'text-gray-500'} />
                             <span className="mt-2 text-sm">Link</span>
                           </button>
                           
@@ -974,12 +974,12 @@ const KnowledgeBase: React.FC = () => {
                             type="button"
                             className={`p-4 rounded-lg border ${
                               uploadType === 'audio' 
-                                ? 'border-blue-500 bg-blue-50' 
+                                ? 'border-rose-400 bg-rose-50' 
                                 : 'border-gray-200 hover:bg-gray-50'
                             } flex flex-col items-center justify-center`}
                             onClick={() => setUploadType('audio')}
                           >
-                            <Mic size={24} className={uploadType === 'audio' ? 'text-blue-500' : 'text-gray-500'} />
+                            <Mic size={24} className={uploadType === 'audio' ? 'text-rose-400' : 'text-gray-500'} />
                             <span className="mt-2 text-sm">Audio</span>
                           </button>
                         </div>
@@ -992,7 +992,7 @@ const KnowledgeBase: React.FC = () => {
                         <input
                           type="text"
                           id="name"
-                          className="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                          className="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-rose-400 focus:border-rose-400 block w-full p-2.5"
                           placeholder="Enter a name for this resource"
                           value={uploadName}
                           onChange={(e) => setUploadName(e.target.value)}
@@ -1007,7 +1007,7 @@ const KnowledgeBase: React.FC = () => {
                         <textarea
                           id="description"
                           rows={3}
-                          className="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                          className="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-rose-400 focus:border-rose-400 block w-full p-2.5"
                           placeholder="Describe what this resource contains"
                           value={uploadDescription}
                           onChange={(e) => setUploadDescription(e.target.value)}
@@ -1023,7 +1023,7 @@ const KnowledgeBase: React.FC = () => {
                           <input
                             type="url"
                             id="url"
-                            className="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                            className="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-rose-400 focus:border-rose-400 block w-full p-2.5"
                             placeholder="https://example.com"
                             value={uploadUrl}
                             onChange={(e) => setUploadUrl(e.target.value)}
@@ -1079,7 +1079,7 @@ const KnowledgeBase: React.FC = () => {
                         </label>
                         <input
                           type="text"
-                          className="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                          className="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-rose-400 focus:border-rose-400 block w-full p-2.5"
                           placeholder="Enter tags separated by commas"
                           value={uploadTags}
                           onChange={(e) => setUploadTags(e.target.value)}
@@ -1098,7 +1098,7 @@ const KnowledgeBase: React.FC = () => {
                         <input
                           type="text"
                           id="name"
-                          className="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                          className="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-rose-400 focus:border-rose-400 block w-full p-2.5"
                           placeholder="Enter a name for this recording"
                           value={uploadName}
                           onChange={(e) => setUploadName(e.target.value)}
@@ -1113,7 +1113,7 @@ const KnowledgeBase: React.FC = () => {
                         <textarea
                           id="description"
                           rows={3}
-                          className="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                          className="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-rose-400 focus:border-rose-400 block w-full p-2.5"
                           placeholder="Describe what this recording contains"
                           value={uploadDescription}
                           onChange={(e) => setUploadDescription(e.target.value)}
@@ -1156,7 +1156,7 @@ const KnowledgeBase: React.FC = () => {
                         </label>
                         <input
                           type="text"
-                          className="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                          className="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-rose-400 focus:border-rose-400 block w-full p-2.5"
                           placeholder="Enter tags separated by commas"
                           value={uploadTags}
                           onChange={(e) => setUploadTags(e.target.value)}
@@ -1175,7 +1175,7 @@ const KnowledgeBase: React.FC = () => {
                             <input
                               type="checkbox"
                               id="transcription"
-                              className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                              className="h-4 w-4 text-rose-500 rounded border-gray-300 focus:ring-rose-400"
                               checked={processingOptions.transcription}
                               onChange={(e) => setProcessingOptions(prev => ({
                                 ...prev,
@@ -1190,7 +1190,7 @@ const KnowledgeBase: React.FC = () => {
                             <input
                               type="checkbox"
                               id="sentiment"
-                              className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                              className="h-4 w-4 text-rose-500 rounded border-gray-300 focus:ring-rose-400"
                               checked={processingOptions.sentiment}
                               onChange={(e) => setProcessingOptions(prev => ({
                                 ...prev,
@@ -1205,7 +1205,7 @@ const KnowledgeBase: React.FC = () => {
                             <input
                               type="checkbox"
                               id="insights"
-                              className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                              className="h-4 w-4 text-rose-500 rounded border-gray-300 focus:ring-rose-400"
                               checked={processingOptions.insights}
                               onChange={(e) => setProcessingOptions(prev => ({
                                 ...prev,
@@ -1233,7 +1233,7 @@ const KnowledgeBase: React.FC = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center"
+                    className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg flex items-center"
                     disabled={isUploading}
                   >
                     {isUploading ? (
@@ -1319,7 +1319,7 @@ const KnowledgeBase: React.FC = () => {
                     <div className="pt-4">
                       <button
                         onClick={() => openInNewTab(selectedItem.fileUrl)}
-                        className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        className="w-full flex items-center justify-center px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors"
                       >
                         <ExternalLink size={18} className="mr-2" />
                         Open Document
@@ -1382,7 +1382,7 @@ const KnowledgeBase: React.FC = () => {
                     <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center space-x-3">
                         <button 
-                          className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors flex-shrink-0"
+                          className="flex items-center justify-center w-8 h-8 rounded-full bg-rose-100 text-rose-500 hover:bg-rose-200 transition-colors flex-shrink-0"
                           onClick={() => handlePlayRecording(selectedItem.recordingUrl, selectedItem.id)}
                           title={playingCallId === selectedItem.id && isPlaying ? "Pause" : "Play"}
                         >
@@ -1406,7 +1406,7 @@ const KnowledgeBase: React.FC = () => {
                               title="Seek"
                             />
                             <div 
-                              className="absolute h-full bg-blue-600 rounded-full"
+                              className="absolute h-full bg-rose-500 rounded-full"
                               style={{ 
                                 width: `${duration ? 
                                   (playingCallId === selectedItem.id ? (currentTime / duration) * 100 : 0) : 0}%` 

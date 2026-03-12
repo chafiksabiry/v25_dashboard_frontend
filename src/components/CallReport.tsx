@@ -123,7 +123,7 @@ function CallReportCard() {
     const LoadingSpinner = ({ text }: { text: string }) => (
         <div className="flex flex-col items-center py-4">
             <svg
-                className="animate-spin h-10 w-10 text-blue-600 mb-2"
+                className="animate-spin h-10 w-10 text-rose-500 mb-2"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
@@ -140,8 +140,8 @@ function CallReportCard() {
             {/* Call Information */}
             <div className="border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center space-x-2 mb-3">
-                    <Info className="h-5 w-5 text-blue-500" />
-                    <h3 className="text-sm font-medium text-blue-900">Call Details</h3>
+                    <Info className="h-5 w-5 text-rose-400" />
+                    <h3 className="text-sm font-medium text-rose-500">Call Details</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
                     <div className="flex items-center gap-2">
@@ -178,8 +178,8 @@ function CallReportCard() {
             {/* Call Recording */}
             <div className="border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center space-x-2 mb-3">
-                    <Volume2 className="h-5 w-5 text-blue-500" />
-                    <h3 className="text-sm font-medium text-blue-900">Call Recording</h3>
+                    <Volume2 className="h-5 w-5 text-rose-400" />
+                    <h3 className="text-sm font-medium text-rose-500">Call Recording</h3>
                 </div>
                 {call?.recording_url ? (
                     <audio controls className="w-full">
@@ -207,8 +207,8 @@ function CallReportCard() {
             {/* Call Summarization */}
             <div className="border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center space-x-2 mb-3">
-                    <BookOpen className="h-5 w-5 text-blue-500" />
-                    <h3 className="text-sm font-medium text-blue-900">Call Summary</h3>
+                    <BookOpen className="h-5 w-5 text-rose-400" />
+                    <h3 className="text-sm font-medium text-rose-500">Call Summary</h3>
                 </div>
                 {loadingSummary ? <LoadingSpinner text="Generating call Summary ..." /> : errorSummary ? <p className="text-red-500">{errorSummary}</p> : (
                     <div className="text-sm text-gray-800">
@@ -222,7 +222,7 @@ function CallReportCard() {
                                         const [idea, details] = Object.entries(ideaObj)[0]; // Extract key-value pair
                                         return (
                                             <li key={index} className="flex items-start space-x-2">
-                                                <ArrowRight className="h-4 w-4 text-blue-500 mt-1 flex-shrink-0" />
+                                                <ArrowRight className="h-4 w-4 text-rose-400 mt-1 flex-shrink-0" />
                                                 <div className="flex-1">
                                                     <span className="font-medium text-black">{idea} :</span>{" "}
                                                     <span className="text-gray-800">{details}</span>
@@ -240,8 +240,8 @@ function CallReportCard() {
             {/* Call Post Actions */}
             <div className="border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center space-x-2 mb-3">
-                    <ClipboardList className="h-5 w-5 text-blue-500" />
-                    <h3 className="text-sm font-medium text-blue-900">Call Follow Up Actions</h3>
+                    <ClipboardList className="h-5 w-5 text-rose-400" />
+                    <h3 className="text-sm font-medium text-rose-500">Call Follow Up Actions</h3>
                 </div>
                 {loadingPostActions ? <LoadingSpinner text="Generating call Follow Up Actions ..." /> : errorPostActions ? <p className="text-red-500">{errorPostActions}</p> : (
                     <div className="text-sm text-black-800">
@@ -249,7 +249,7 @@ function CallReportCard() {
                             <ul className="space-y-2">
                                 {callPostActions.map((action, index) => (
                                     <li key={index} className="flex items-start space-x-2">
-                                        <ArrowRight className="h-4 w-4 text-blue-500 mt-1 flex-shrink-0" />
+                                        <ArrowRight className="h-4 w-4 text-rose-400 mt-1 flex-shrink-0" />
                                         <div className="flex-1">
                                             <span className="text-gray-800">{action}</span>
                                         </div>
@@ -263,8 +263,8 @@ function CallReportCard() {
             {/* Call Report */}
             <div className="border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center space-x-2 mb-3">
-                    <Target className="h-5 w-5 text-blue-500" />
-                    <h3 className="text-sm font-medium text-blue-900">Call Scoring metrix</h3>
+                    <Target className="h-5 w-5 text-rose-400" />
+                    <h3 className="text-sm font-medium text-rose-500">Call Scoring metrix</h3>
                 </div>
 
                 {loadingReport ? <LoadingSpinner text="Generating call scoring ..." /> : errorReport ? <p className="text-red-500">{errorReport}</p> : (
@@ -294,7 +294,7 @@ function CallReportCard() {
                         <div className="space-y-6">
                             <div className="bg-gray-50 rounded-lg p-4">
                                 <h4 className="text-sm font-medium text-gray-900 mb-3">Overall Score</h4>
-                                <div className="text-4xl font-bold text-blue-600 mb-2">
+                                <div className="text-4xl font-bold text-rose-500 mb-2">
                                     {report.overall.score}%
                                 </div>
                                 <p className="text-sm text-gray-600">{report.overall.feedback}</p>

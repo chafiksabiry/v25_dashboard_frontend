@@ -175,7 +175,7 @@ function CompanyProfile() {
                   [field]: e.target.value,
                 }))
               }
-              className="w-full px-3 py-2 border border-indigo-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full px-3 py-2 border border-rose-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-rose-400 outline-none"
               style={{ color: '#111827', backgroundColor: 'white' }}
 
               placeholder={isHeroField ? value || "Enter text..." : ""}
@@ -203,7 +203,7 @@ function CompanyProfile() {
                 <button
                   className={`p-1 rounded-full shadow-sm ${isHeroField
                     ? 'bg-white/20 backdrop-blur-sm text-white hover:text-yellow-300'
-                    : 'bg-white text-gray-600 hover:text-indigo-600 border border-gray-100'
+                    : 'bg-white text-gray-600 hover:text-rose-500 border border-gray-100'
                     }`}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -483,7 +483,7 @@ function CompanyProfile() {
                 "url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80')",
             }}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/90 via-indigo-800/85 to-blue-900/80" />
+            <div className="absolute inset-0 bg-gradient-to-br from-rose-500/90 via-rose-500/85 to-rose-500/80" />
 
 
 
@@ -526,7 +526,7 @@ function CompanyProfile() {
                       }}
                     />
                   ) : (
-                    <Globe className="w-full h-full text-indigo-600" />
+                    <Globe className="w-full h-full text-rose-500" />
                   )}
                   {editMode && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -548,7 +548,7 @@ function CompanyProfile() {
                         value={logoUrl}
                         onChange={handleLogoChange}
                         placeholder="Enter logo URL..."
-                        className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                        className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-400 focus:border-rose-400 outline-none"
                       />
                       <div className="flex justify-end gap-2 mt-2">
                         <button
@@ -566,7 +566,7 @@ function CompanyProfile() {
                             setEditingField(null);
                             setHasChanges(true);
                           }}
-                          className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                          className="px-3 py-1 text-sm bg-rose-500 text-white rounded-md hover:bg-rose-600"
                         >
                           Save
                         </button>
@@ -579,7 +579,7 @@ function CompanyProfile() {
                     onClick={() =>
                       setEditingField(editingField === "logo" ? null : "logo")
                     }
-                    className="absolute -right-2 -top-2 w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center text-gray-600 hover:text-indigo-600 transition-colors"
+                    className="absolute -right-2 -top-2 w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center text-gray-600 hover:text-rose-500 transition-colors"
                   >
                     <Edit2 size={12} />
                   </button>
@@ -636,7 +636,7 @@ function CompanyProfile() {
               {hasContactInfo && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                    <Mail className="text-blue-600" size={20} />
+                    <Mail className="text-rose-500" size={20} />
                     Contact Information
                   </h3>
                   <div className="space-y-3">
@@ -645,7 +645,7 @@ function CompanyProfile() {
                         value={profile.contact.email}
                         field="contact.email"
                         icon={Mail}
-                        className="flex items-center gap-3 text-gray-600 hover:text-blue-600 transition-colors text-sm"
+                        className="flex items-center gap-3 text-gray-600 hover:text-rose-500 transition-colors text-sm"
                       />
                     )}
                     {profile.contact?.phone && (
@@ -653,7 +653,7 @@ function CompanyProfile() {
                         value={profile.contact.phone}
                         field="contact.phone"
                         icon={Phone}
-                        className="flex items-center gap-3 text-gray-600 hover:text-blue-600 transition-colors text-sm"
+                        className="flex items-center gap-3 text-gray-600 hover:text-rose-500 transition-colors text-sm"
                       />
                     )}
                     {profile.contact?.website && (
@@ -661,7 +661,7 @@ function CompanyProfile() {
                         value={profile.contact.website}
                         field="contact.website"
                         icon={Globe}
-                        className="flex items-center gap-3 text-gray-600 hover:text-blue-600 transition-colors text-sm"
+                        className="flex items-center gap-3 text-gray-600 hover:text-rose-500 transition-colors text-sm"
                       />
                     )}
                     {profile.contact?.address && (
@@ -695,7 +695,7 @@ function CompanyProfile() {
                                 href={getGoogleMapsDirectionsUrl()!}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="absolute bottom-2 right-2 px-3 py-1.5 bg-white/90 hover:bg-white text-sm text-blue-600 rounded-lg shadow-lg backdrop-blur-sm flex items-center gap-1.5 transition-all hover:scale-105"
+                                className="absolute bottom-2 right-2 px-3 py-1.5 bg-white/90 hover:bg-white text-sm text-rose-500 rounded-lg shadow-lg backdrop-blur-sm flex items-center gap-1.5 transition-all hover:scale-105"
                               >
                                 <MapPin size={14} />
                                 Get Directions
@@ -717,7 +717,7 @@ function CompanyProfile() {
               {hasSocialMedia && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                    <Globe className="text-blue-600" size={20} />
+                    <Globe className="text-rose-500" size={20} />
                     Digital Presence
                   </h3>
                   <div className="flex gap-3">
@@ -726,7 +726,7 @@ function CompanyProfile() {
                         href={profile.socialMedia.linkedin}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-10 h-10 flex items-center justify-center rounded-lg bg-white border border-gray-200 hover:border-blue-400 hover:text-blue-600 transition-all duration-300 text-gray-600"
+                        className="w-10 h-10 flex items-center justify-center rounded-lg bg-white border border-gray-200 hover:border-orange-400 hover:text-rose-500 transition-all duration-300 text-gray-600"
                       >
                         <Linkedin size={20} />
                       </a>
@@ -736,7 +736,7 @@ function CompanyProfile() {
                         href={profile.socialMedia.twitter}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-10 h-10 flex items-center justify-center rounded-lg bg-white border border-gray-200 hover:border-blue-400 hover:text-blue-600 transition-all duration-300 text-gray-600"
+                        className="w-10 h-10 flex items-center justify-center rounded-lg bg-white border border-gray-200 hover:border-orange-400 hover:text-rose-500 transition-all duration-300 text-gray-600"
                       >
                         <Twitter size={20} />
                       </a>
@@ -746,7 +746,7 @@ function CompanyProfile() {
                         href={profile.socialMedia.facebook}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-10 h-10 flex items-center justify-center rounded-lg bg-white border border-gray-200 hover:border-blue-400 hover:text-blue-600 transition-all duration-300 text-gray-600"
+                        className="w-10 h-10 flex items-center justify-center rounded-lg bg-white border border-gray-200 hover:border-orange-400 hover:text-rose-500 transition-all duration-300 text-gray-600"
                       >
                         <Facebook size={20} />
                       </a>
@@ -756,7 +756,7 @@ function CompanyProfile() {
                         href={profile.socialMedia.instagram}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-10 h-10 flex items-center justify-center rounded-lg bg-white border border-gray-200 hover:border-blue-400 hover:text-blue-600 transition-all duration-300 text-gray-600"
+                        className="w-10 h-10 flex items-center justify-center rounded-lg bg-white border border-gray-200 hover:border-orange-400 hover:text-rose-500 transition-all duration-300 text-gray-600"
                       >
                         <Instagram size={20} />
                       </a>
@@ -772,11 +772,11 @@ function CompanyProfile() {
             <div className="p-12 space-y-16">
               {/* Overview Section */}
               <section className="relative">
-                <div className="absolute -left-6 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 to-blue-500 rounded-full" />
+                <div className="absolute -left-6 top-0 bottom-0 w-1 bg-gradient-to-b from-rose-400 to-rose-400 rounded-full" />
                 <div className="space-y-8">
                   <div className="flex items-start gap-6">
-                    <div className="w-12 h-12 rounded-2xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                      <Building2 className="text-indigo-600" size={24} />
+                    <div className="w-12 h-12 rounded-2xl bg-rose-100 flex items-center justify-center flex-shrink-0">
+                      <Building2 className="text-rose-500" size={24} />
                     </div>
                     <div className="flex-1">
                       <h2 className="text-2xl font-bold text-gray-900 mb-4">
@@ -791,13 +791,13 @@ function CompanyProfile() {
                   </div>
 
                   {profile.mission && (
-                    <div className="ml-18 p-8 bg-gradient-to-br from-indigo-50 via-blue-50 to-white rounded-2xl border border-indigo-100/50 shadow-sm">
+                    <div className="ml-18 p-8 bg-gradient-to-br from-rose-50 via-rose-50 to-white rounded-2xl border border-rose-100/50 shadow-sm">
                       <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-indigo-500 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-2xl bg-rose-400 flex items-center justify-center">
                           <Target className="text-white" size={24} />
                         </div>
                         <div>
-                          <h3 className="text-xl font-bold text-indigo-700 mb-3">
+                          <h3 className="text-xl font-bold text-rose-600 mb-3">
                             Our Mission
                           </h3>
                           <EditableField

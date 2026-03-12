@@ -6,7 +6,7 @@ interface ProgressBarProps {
 }
 
 const variantStyles = {
-  primary: 'bg-indigo-600',
+  primary: 'bg-rose-500',
   success: 'bg-green-600',
   warning: 'bg-yellow-600'
 };
