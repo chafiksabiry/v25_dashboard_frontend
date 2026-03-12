@@ -137,11 +137,15 @@ export function Sidebar() {
   });
 
   return (
-    <div className="w-64 bg-gray-900 h-screen fixed left-0 top-0 text-white p-4 flex flex-col">
+    <div className="w-64 bg-slate-950 h-screen fixed left-0 top-0 text-white p-6 flex flex-col border-r border-white/5 backdrop-blur-xl shadow-2xl z-50">
+      {/* Background Decorative Gradient */}
+      <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-rose-500/10 to-transparent pointer-events-none" />
       {/* Sidebar Header */}
-      <div className="flex items-center gap-2 mb-4">
-        <LayoutDashboard className="w-8 h-8 text-rose-500" />
-        <span className="text-xl font-bold">HARX</span>
+      <div className="flex items-center gap-3 mb-10 px-2 relative group cursor-pointer">
+        <div className="p-2 bg-gradient-to-br from-orange-400 to-rose-500 rounded-xl shadow-lg shadow-rose-500/20 group-hover:scale-110 transition-transform duration-300">
+          <LayoutDashboard className="w-6 h-6 text-white" />
+        </div>
+        <span className="text-2xl font-black tracking-tighter bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent italic">HARX</span>
       </div>
 
       {/* Scrollable Menu with Custom Scrollbar */}
@@ -152,9 +156,9 @@ export function Sidebar() {
               key={item.label}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-3 w-full p-3 rounded-lg transition-colors ${isActive
-                  ? "bg-gradient-to-r from-orange-400 to-rose-500 text-white shadow-lg shadow-rose-900/20"
-                  : "hover:bg-gray-800 text-gray-300 hover:text-rose-400"
+                `flex items-center gap-3 w-full p-3 rounded-xl transition-all duration-300 relative group overflow-hidden ${isActive
+                  ? "bg-gradient-to-r from-orange-400 to-rose-500 text-white shadow-lg shadow-rose-500/30 scale-[1.02]"
+                  : "text-slate-400 hover:text-white hover:bg-white/5 hover:translate-x-1"
                 }`
               }
             >
@@ -194,9 +198,9 @@ export function Sidebar() {
                   <NavLink
                     to="/kb-insight"
                     className={({ isActive }) =>
-                      `flex items-center gap-3 w-full p-2 rounded-lg transition-colors ${isActive
-                        ? "bg-gradient-to-r from-orange-400 to-rose-500 text-white"
-                        : "hover:bg-gray-800 text-gray-300 hover:text-rose-400"
+                      `flex items-center gap-3 w-full p-3 rounded-xl transition-all duration-300 ${isActive
+                        ? "bg-gradient-to-r from-orange-400 to-rose-500 text-white shadow-md shadow-rose-500/20"
+                        : "text-slate-400 hover:text-white hover:bg-white/5 hover:translate-x-1"
                       }`
                     }
                   >
@@ -211,13 +215,15 @@ export function Sidebar() {
       </div>
 
       {/* Sidebar Footer - Logout */}
-      <div className="mt-auto pt-4 border-t border-gray-800">
+      <div className="mt-auto pt-6 border-t border-white/5">
         <button
           onClick={logout}
-          className="flex items-center gap-3 w-full p-3 rounded-lg transition-colors text-red-400 hover:bg-red-500/10 hover:text-red-300"
+          className="flex items-center gap-3 w-full p-4 rounded-xl transition-all duration-300 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 group"
         >
-          <LogOut size={20} />
-          <span>Logout</span>
+          <div className="p-1.5 bg-rose-500/10 rounded-lg group-hover:scale-110 transition-transform">
+            <LogOut size={18} />
+          </div>
+          <span className="font-medium">Logout</span>
         </button>
       </div>
     </div>
