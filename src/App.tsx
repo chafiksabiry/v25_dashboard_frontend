@@ -26,13 +26,15 @@ import ContactManagementPanel from './panels/ContactManagementPanel';
 import DashboardPanel from './panels/DashboardPanel';
 import TelnyxCallTest from './panels/TelnyxCallTest';
 function App() {
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
+
   return (
     <AuthProvider>
       <Provider store={store}>
         <Router>
           <div className="flex min-h-screen bg-[#F8FAFC]">
-            <Sidebar />
-            <div className="flex-1 pl-64">
+            <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
+            <div className={`flex-1 transition-all duration-300 ${isSidebarCollapsed ? 'pl-20' : 'pl-64'}`}>
               <div className="p-8">
                 <Routes>
                   <Route path="/" element={<DashboardPanel />} />

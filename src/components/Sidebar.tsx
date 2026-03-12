@@ -17,6 +17,7 @@ import {
   Book,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   Lightbulb,
   LogOut
 } from 'lucide-react';
@@ -24,7 +25,12 @@ import { getHiddenSections } from '../config/sections';
 import Cookies from 'js-cookie';
 import { useAuth } from '../contexts/AuthContext';
 
-export function Sidebar() {
+interface SidebarProps {
+  isCollapsed: boolean;
+  onToggle: () => void;
+}
+
+export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const location = useLocation();
   const { logout } = useAuth();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -137,33 +143,53 @@ export function Sidebar() {
   });
 
   return (
-    <div className="w-64 bg-[#020617] h-screen fixed left-0 top-0 text-white p-5 flex flex-col border-r border-white/5 backdrop-blur-2xl shadow-2xl z-50 overflow-x-hidden">
+    <div className={`${isCollapsed ? 'w-20' : 'w-64'} bg-[#020617] h-screen fixed left-0 top-0 text-white flex flex-col border-r border-white/5 backdrop-blur-2xl shadow-2xl z-50 overflow-x-hidden transition-all duration-300`}>
       {/* Background Decorative Gradient */}
-      <div className="absolute top-0 left-0 w-full h-48 bg-gradient-to-br from-rose-500/10 via-transparent to-transparent pointer-events-none" />
+      <div className={`absolute top-0 left-0 w-full h-48 bg-gradient-to-br from-rose-500/10 via-transparent to-transparent pointer-events-none transition-opacity duration-300 ${isCollapsed ? 'opacity-50' : 'opacity-100'}`} />
+
+      {/* Toggle Button - Modern Floating Style */}
+      <button 
+        onClick={onToggle}
+        className="absolute -right-3 top-12 bg-rose-500 text-white rounded-full p-1.5 shadow-lg shadow-rose-500/30 hover:scale-110 active:scale-95 transition-all z-[60]"
+      >
+        {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+      </button>
+
       {/* Sidebar Header */}
-      <div className="flex items-center gap-3 mb-10 px-2 relative group cursor-pointer">
-        <div className="p-2 bg-gradient-to-br from-orange-400 to-rose-500 rounded-xl shadow-lg shadow-rose-500/20 group-hover:scale-110 transition-transform duration-300">
-          <LayoutDashboard className="w-6 h-6 text-white" />
+      <div className={`flex items-center gap-3 mt-8 mb-10 relative group cursor-pointer transition-all duration-300 ${isCollapsed ? 'px-6' : 'px-8'}`}>
+        <div className="p-2.5 bg-gradient-to-br from-orange-400 to-rose-500 rounded-xl shadow-lg shadow-rose-500/20 group-hover:scale-110 transition-transform duration-300 shrink-0">
+          <LayoutDashboard className="w-5 h-5 text-white" />
         </div>
-        <span className="text-2xl font-black tracking-tighter bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent italic">HARX</span>
+        {!isCollapsed && (
+          <span className="text-2xl font-black tracking-tighter bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent italic whitespace-nowrap overflow-hidden">HARX</span>
+        )}
       </div>
 
       {/* Scrollable Menu with Custom Scrollbar */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent pr-1">
-        <nav className="space-y-2">
+      <div className={`flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent pr-1 transition-all duration-300 ${isCollapsed ? 'px-3' : 'px-4'}`}>
+        <nav className="space-y-1.5">
           {menuItems.map((item) => (
             <NavLink
               key={item.label}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-3 w-full p-3 rounded-xl transition-all duration-300 relative group overflow-hidden ${isActive
-                  ? "bg-gradient-to-r from-orange-400 to-rose-500 text-white shadow-lg shadow-rose-500/30 scale-[1.02]"
-                  : "text-slate-400 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                `flex items-center gap-4 w-full p-3.5 rounded-2xl transition-all duration-300 relative group overflow-hidden ${isActive
+                  ? "bg-gradient-to-r from-orange-400 to-rose-500 text-white shadow-lg shadow-rose-500/30 scale-[1.02] z-10"
+                  : "text-slate-400 hover:text-white hover:bg-white/5"
                 }`
               }
             >
-              {item.icon}
-              <span>{item.label}</span>
+              <div className="shrink-0 group-hover:scale-110 transition-transform duration-300">
+                {item.icon}
+              </div>
+              {!isCollapsed && (
+                <span className="font-medium whitespace-nowrap overflow-hidden text-sm transition-all duration-300">{item.label}</span>
+              )}
+              {isCollapsed && (
+                <div className="absolute left-16 bg-slate-900 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-xl border border-white/10">
+                  {item.label}
+                </div>
+              )}
             </NavLink>
           ))}
 
@@ -171,41 +197,49 @@ export function Sidebar() {
           {hasKb && (
             <div>
               <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="flex items-center justify-between w-full p-3 rounded-lg transition-colors hover:bg-gray-800 text-gray-300 hover:text-white"
+                onClick={() => !isCollapsed && setIsExpanded(!isExpanded)}
+                className={`flex items-center justify-between w-full p-3.5 rounded-2xl transition-all duration-300 relative group ${isCollapsed ? 'justify-center' : ''} text-slate-400 hover:text-white hover:bg-white/5`}
               >
-                <div className="flex items-center gap-3">
-                  <Book size={20} />
-                  <span>Knowledge Base</span>
+                <div className="flex items-center gap-4">
+                  <div className="shrink-0 group-hover:scale-110 transition-transform duration-300">
+                    <Book size={20} />
+                  </div>
+                  {!isCollapsed && <span className="font-medium text-sm">Knowledge Base</span>}
                 </div>
-                {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                {!isCollapsed && (isExpanded ? <ChevronDown size={14} className="opacity-50" /> : <ChevronRight size={14} className="opacity-50" />)}
+                
+                {isCollapsed && (
+                  <div className="absolute left-16 bg-slate-900 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-xl border border-white/10">
+                    Knowledge Base
+                  </div>
+                )}
               </button>
 
-              {isExpanded && (
+              {isExpanded && !isCollapsed && (
                 <div className="ml-6 space-y-2 mt-2">
                   <NavLink
                     to="/knowledge-base"
                     className={({ isActive }) =>
-                      `flex items-center gap-3 w-full p-2 rounded-lg transition-colors ${isActive
-                        ? "bg-rose-500 text-white"
-                        : "hover:bg-gray-800 text-gray-300 hover:text-white"
+                      `flex items-center gap-4 w-full p-3 rounded-xl transition-all duration-300 ${isActive
+                        ? "text-rose-400 bg-rose-500/5 shadow-sm"
+                        : "text-slate-500 hover:text-slate-300 hover:bg-white/5"
                       }`
                     }
                   >
                     <Book size={18} />
-                    <span>Knowledge Base</span>
+                    <span className="text-sm font-medium">Knowledge Base</span>
                   </NavLink>
                   <NavLink
                     to="/kb-insight"
                     className={({ isActive }) =>
-                      `flex items-center gap-3 w-full p-3 rounded-xl transition-all duration-300 ${isActive
-                        ? "bg-gradient-to-r from-orange-400 to-rose-500 text-white shadow-md shadow-rose-500/20"
-                        : "text-slate-400 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                      `flex items-center gap-4 w-full p-3 rounded-xl transition-all duration-300 ${isActive
+                        ? "text-rose-400 bg-rose-500/5 shadow-sm"
+                        : "text-slate-500 hover:text-slate-300 hover:bg-white/5"
                       }`
                     }
                   >
                     <Lightbulb size={18} />
-                    <span>Knowledge Base Insight</span>
+                    <span className="text-sm font-medium">Knowledge Base Insight</span>
                   </NavLink>
                 </div>
               )}
@@ -215,15 +249,21 @@ export function Sidebar() {
       </div>
 
       {/* Sidebar Footer - Logout */}
-      <div className="mt-auto pt-6 border-t border-white/5">
+      <div className={`mt-auto pt-6 border-t border-white/5 transition-all duration-300 ${isCollapsed ? 'px-3' : 'px-4 pb-8'}`}>
         <button
           onClick={logout}
-          className="flex items-center gap-3 w-full p-4 rounded-xl transition-all duration-300 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 group"
+          className={`flex items-center gap-4 w-full p-4 rounded-2xl transition-all duration-300 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 group relative ${isCollapsed ? 'justify-center' : ''}`}
         >
-          <div className="p-1.5 bg-rose-500/10 rounded-lg group-hover:scale-110 transition-transform">
+          <div className="p-2 bg-rose-500/10 rounded-xl group-hover:scale-110 transition-transform duration-300 shrink-0">
             <LogOut size={18} />
           </div>
-          <span className="font-medium">Logout</span>
+          {!isCollapsed && <span className="font-bold text-sm tracking-tight">Logout</span>}
+          
+          {isCollapsed && (
+            <div className="absolute left-16 bg-rose-500 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-xl">
+              Logout
+            </div>
+          )}
         </button>
       </div>
     </div>
