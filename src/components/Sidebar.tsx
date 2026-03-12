@@ -137,9 +137,9 @@ export function Sidebar() {
   });
 
   return (
-    <div className="w-64 bg-slate-950 h-screen fixed left-0 top-0 text-white p-6 flex flex-col border-r border-white/5 backdrop-blur-xl shadow-2xl z-50">
+    <div className="w-64 bg-[#020617] h-screen fixed left-0 top-0 text-white p-5 flex flex-col border-r border-white/5 backdrop-blur-2xl shadow-2xl z-50 overflow-x-hidden">
       {/* Background Decorative Gradient */}
-      <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-rose-500/10 to-transparent pointer-events-none" />
+      <div className="absolute top-0 left-0 w-full h-48 bg-gradient-to-br from-rose-500/10 via-transparent to-transparent pointer-events-none" />
       {/* Sidebar Header */}
       <div className="flex items-center gap-3 mb-10 px-2 relative group cursor-pointer">
         <div className="p-2 bg-gradient-to-br from-orange-400 to-rose-500 rounded-xl shadow-lg shadow-rose-500/20 group-hover:scale-110 transition-transform duration-300">
@@ -149,7 +149,7 @@ export function Sidebar() {
       </div>
 
       {/* Scrollable Menu with Custom Scrollbar */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent pr-1">
         <nav className="space-y-2">
           {menuItems.map((item) => (
             <NavLink

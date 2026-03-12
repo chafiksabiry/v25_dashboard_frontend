@@ -30,7 +30,7 @@ function App() {
     <AuthProvider>
       <Provider store={store}>
         <Router>
-          <div className="flex min-h-screen" style={{ backgroundColor: 'rgb(243, 244, 246)' }}>
+          <div className="flex min-h-screen bg-[#F8FAFC]">
             <Sidebar />
             <div className="flex-1 pl-64">
               <div className="p-8">
