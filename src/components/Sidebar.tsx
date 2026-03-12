@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -7,7 +7,6 @@ import {
   Mail,
   MessageSquare,
   TrendingUp,
-  Settings,
   Plug,
   Briefcase,
   ClipboardCheck,
@@ -123,7 +122,6 @@ export function Sidebar() {
     { icon: <ScrollText size={20} />, label: 'Operations', path: '/operations', key: 'operations', requiresRepMatching: true },
     { icon: <TrendingUp size={20} />, label: 'Analytics', path: '/analytics', key: 'analytics', requiresRepMatching: true },
     { icon: <Plug size={20} />, label: 'Integrations', path: '/integrations', key: 'integrations', alwaysShow: true },
-    { icon: <Settings size={20} />, label: 'Settings', path: '/settings', key: 'settings', alwaysShow: true },
   ];
 
   // Filter out hidden sections and apply onboarding logic

@@ -9,15 +9,11 @@ import {
   Clock,
   FileText,
   CheckCircle2,
-  ChevronRight,
   ChevronDown,
   Rocket,
   BarChart,
   BookOpen,
-  LayoutDashboard,
   Bell,
-  Globe,
-  User,
   CreditCard
 } from 'lucide-react';
 import Cookies from 'js-cookie';
@@ -70,7 +66,7 @@ const PHASES = [
     steps: [
       { id: 11, title: "Subscription", description: "Plan selection" },
       { id: 12, title: "Market Launch", description: "Gig activation" },
-      { id: 13, title: "REP Matching", description: "Talent connection", path: "/rep-matching" }
+      { id: 13, title: "MATCH HARX REPS", description: "Connect with qualified REPS", path: "/rep-matching" }
     ]
   }
 ];
@@ -126,6 +122,25 @@ function SettingsPanel() {
     return 'pending';
   };
 
+  const getStepIcon = (stepId: number) => {
+    switch (stepId) {
+      case 1: return <Building2 className="w-3.5 h-3.5" />;
+      case 2: return <Shield className="w-3.5 h-3.5" />;
+      case 3: return <Building2 className="w-3.5 h-3.5" />;
+      case 4: return <Phone className="w-3.5 h-3.5" />;
+      case 5: return <FileText className="w-3.5 h-3.5" />;
+      case 6: return <FileText className="w-3.5 h-3.5" />;
+      case 7: return <BarChart className="w-3.5 h-3.5" />;
+      case 8: return <BookOpen className="w-3.5 h-3.5" />;
+      case 9: return <Users className="w-3.5 h-3.5" />;
+      case 10: return <Clock className="w-3.5 h-3.5" />;
+      case 11: return <FileText className="w-3.5 h-3.5" />;
+      case 12: return <Rocket className="w-3.5 h-3.5" />;
+      case 13: return <Users className="w-3.5 h-3.5" />;
+      default: return <CheckCircle2 className="w-3.5 h-3.5" />;
+    }
+  };
+
   const renderRoadmap = () => (
     <div className="animate-in space-y-4">
       <div className="flex items-center justify-between mb-4 mt-2">
@@ -176,15 +191,15 @@ function SettingsPanel() {
                       <div
                         key={step.id}
                         className={`p-2.5 rounded-lg border flex items-center gap-3 group/step transition-all ${status === 'completed' ? 'bg-emerald-50/30 border-emerald-100' :
-                            status === 'in_progress' ? 'bg-indigo-50/30 border-indigo-100 ring-1 ring-indigo-500/10' :
-                              'bg-slate-50 border-slate-100'
+                          status === 'in_progress' ? 'bg-indigo-50/30 border-indigo-100 ring-1 ring-indigo-500/10' :
+                            'bg-slate-50 border-slate-100'
                           } ${step.disabled ? 'opacity-40' : 'hover:border-indigo-300 cursor-default'}`}
                       >
                         <div className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${status === 'completed' ? 'bg-emerald-100 text-emerald-600' :
-                            status === 'in_progress' ? 'bg-indigo-600 text-white' :
-                              'bg-slate-200 text-slate-400'
+                          status === 'in_progress' ? 'bg-indigo-600 text-white' :
+                            'bg-slate-200 text-slate-400'
                           }`}>
-                          {status === 'completed' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <div className="text-[10px] font-black">{step.id}</div>}
+                          {status === 'completed' ? <CheckCircle2 className="w-3.5 h-3.5" /> : getStepIcon(step.id)}
                         </div>
                         <div className="min-w-0">
                           <h4 className="text-[11px] font-bold text-slate-900 truncate tracking-tight">{step.title}</h4>
@@ -240,8 +255,8 @@ function SettingsPanel() {
               key={item.id}
               onClick={() => setActiveSection(item.id)}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-black uppercase tracking-tight transition-all duration-200 ${activeSection === item.id
-                  ? 'bg-white text-indigo-600 shadow-md border border-slate-100 translate-x-1'
-                  : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100 group'
+                ? 'bg-white text-indigo-600 shadow-md border border-slate-100 translate-x-1'
+                : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100 group'
                 }`}
             >
               <item.icon className={`w-4 h-4 transition-colors ${activeSection === item.id ? 'text-indigo-600' : 'text-slate-300 group-hover:text-slate-400'}`} />
