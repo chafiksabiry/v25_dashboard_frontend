@@ -1,8 +1,9 @@
+```javascript
 import React from 'react';
 
 export function DashboardPanel() {
   const handleOrchestratorClick = () => {
-    window.location.href = '/auth';
+    window.location.href = '/app11';
   };
 
   return (

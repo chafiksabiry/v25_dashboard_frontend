@@ -2,7 +2,7 @@ import React from 'react';
 
 const OverviewPanel = () => {
   const handleClick = () => {
-    window.location.href = "/comporchestrator";
+    window.location.href = '/app11';
   };
 
   return (
