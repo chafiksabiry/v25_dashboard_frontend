@@ -1353,81 +1353,43 @@ function LeadManagementPanel() {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Zoho CRM Integration Card */}
-          <div className="bg-gradient-to-br from-green-50 to-teal-50 border-2 border-green-200 rounded-2xl p-6 hover:border-green-300 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] flex flex-col h-full">
+          {/* Zoho CRM Integration Card - Disabled */}
+          <div className="bg-gray-50 border-2 border-gray-200 rounded-2xl p-6 opacity-70 flex flex-col h-full pointer-events-none">
             {/* Header */}
-            <div className="flex items-center mb-4 opacity-50 grayscale">
-              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mr-4 border-2 border-green-200 shadow-sm">
+            <div className="flex items-center mb-4 grayscale">
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mr-4 border-2 border-gray-200 shadow-sm">
                 <img
-                  src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2334a853' d='M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z'/%3E%3C/svg%3E"
+                  src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%236b7280' d='M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z'/%3E%3C/svg%3E"
                   alt="Zoho"
-                  className="h-6 w-6"
+                  className="h-6 w-6 opacity-60"
                 />
               </div>
               <div className="flex-1">
-                <h4 className="text-xl font-bold text-green-900">Zoho CRM Integration</h4>
-                <p className="text-sm text-green-700">Connect and sync with your Zoho CRM (Disabled)</p>
+                <h4 className="text-xl font-bold text-gray-700">Zoho CRM Integration</h4>
+                <p className="text-sm text-gray-500">Connect and sync with your Zoho CRM (Disabled)</p>
               </div>
             </div>
 
             {/* Connection Status */}
             <div className="mb-4">
-              {hasZohoAccessToken ? (
-                <div className="flex items-center justify-between bg-green-100 border border-green-200 rounded-lg p-3">
-                  <span className="text-sm font-medium text-green-800 flex items-center">
-                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                    ✓ Connected to Zoho CRM
-                  </span>
-                  <button
-                    onClick={handleZohoDisconnect}
-                    disabled={isDisconnectingZoho}
-                    className="px-3 py-1 text-xs font-medium text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition-colors duration-200 disabled:opacity-50"
-                  >
-                    {isDisconnectingZoho ? 'Disconnecting...' : 'Disconnect'}
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                  <span className="text-sm font-medium text-yellow-800">⚠ Not connected</span>
-                  <button
-                    onClick={handleZohoConnect}
-                    className="px-3 py-1 text-xs font-medium text-rose-600 bg-rose-100 hover:bg-rose-200 rounded-lg transition-colors duration-200"
-                  >
-                    Connect
-                  </button>
-                </div>
-              )}
+              <div className="flex items-center justify-between bg-gray-100 border border-gray-200 rounded-lg p-3">
+                <span className="text-sm font-medium text-gray-500">⚠ Not connected</span>
+                <button
+                  disabled
+                  className="px-3 py-1 text-xs font-medium text-gray-400 bg-gray-100 rounded-lg"
+                >
+                  Connect
+                </button>
+              </div>
             </div>
 
             {/* Action Button - Pushed to bottom */}
             <div className="mt-auto">
               <button
-                onClick={async () => {
-                  if (!selectedGig) {
-                    toast.error('Please select a gig first');
-                    return;
-                  }
-                  await handleImportFromZoho();
-                }}
-                disabled={!hasZohoAccessToken || isImporting}
-                className="w-full bg-gradient-to-r from-green-600 to-teal-600 text-white font-bold py-4 px-6 rounded-xl hover:from-green-700 hover:to-teal-700 disabled:opacity-50 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center"
+                disabled
+                className="w-full bg-gray-300 text-gray-500 font-bold py-4 px-6 rounded-xl flex items-center justify-center"
               >
-                {isImporting ? (
-                  <>
-                    <RefreshCw className="mr-3 h-5 w-5 animate-spin" />
-                    Importing from Zoho...
-                  </>
-                ) : !hasZohoAccessToken ? (
-                  <>
-                    <Settings className="h-5 w-5 mr-3" />
-                    Connect to Zoho CRM First
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="h-5 w-5 mr-3" />
-                    Sync with Zoho CRM
-                  </>
-                )}
+                Connect to Zoho CRM First
               </button>
             </div>
           </div>
