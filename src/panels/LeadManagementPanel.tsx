@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { LeadsTableSkeleton } from "../components/common/Skeleton";
 import {
   Users,
   Search,
@@ -1285,8 +1286,19 @@ function LeadManagementPanel() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rose-400"></div>
+      <div className="space-y-6 max-w-7xl mx-auto">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+          <div className="flex items-center mb-4 animate-pulse">
+            <div className="p-3 bg-rose-100 rounded-lg mr-3 h-12 w-12" />
+            <div className="space-y-2">
+              <div className="h-5 w-24 bg-gray-200 rounded-lg" />
+              <div className="h-3 w-48 bg-gray-100 rounded" />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+          <LeadsTableSkeleton rows={7} />
+        </div>
       </div>
     );
   }

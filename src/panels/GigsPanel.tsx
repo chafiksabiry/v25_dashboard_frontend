@@ -21,6 +21,7 @@ import {
 import Cookies from 'js-cookie';
 import axios from 'axios';
 import countries from 'i18n-iso-countries';
+import { GigsTableSkeleton, PanelHeaderSkeleton } from "../components/common/Skeleton";
 
 interface Gig {
   _id: string;
@@ -475,8 +476,9 @@ function GigsPanel() {
         )}
 
         {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-500"></div>
+          <div className="py-4">
+            <PanelHeaderSkeleton />
+            <GigsTableSkeleton rows={5} />
           </div>
         ) : (
           <div className="overflow-x-auto">

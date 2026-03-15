@@ -14,6 +14,7 @@ import {
   Star,
   Target
 } from 'lucide-react';
+import { Skeleton } from '../components/common/Skeleton';
 
 interface GigDetails {
   _id: string;
@@ -155,10 +156,83 @@ function GigDetailsPanel() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading gig details...</p>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header skeleton */}
+        <div className="bg-white shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-4 h-16">
+              <Skeleton className="h-9 w-9 rounded-lg" />
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-48" />
+                <Skeleton className="h-3 w-20 opacity-60" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Content skeleton */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Basic Info */}
+              <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6 opacity-70" />
+                <Skeleton className="h-4 w-4/5 opacity-60" />
+                <div className="grid grid-cols-2 gap-4 pt-2">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-6 w-28 rounded-full" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                </div>
+              </div>
+              {/* Commission cards */}
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <Skeleton className="h-5 w-32 mb-6" />
+                <div className="grid grid-cols-2 gap-4">
+                  {[1,2,3,4].map(i => (
+                    <div key={i} className="rounded-xl border p-4 space-y-3">
+                      <Skeleton className="h-9 w-9 rounded-lg" />
+                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="h-7 w-16" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Skills */}
+              <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
+                <Skeleton className="h-5 w-36" />
+                <div className="flex flex-wrap gap-2">
+                  {[80, 100, 70, 90, 60].map(w => <Skeleton key={w} className={`h-6 w-${w/4} rounded-full`} />)}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {[70, 90, 60].map(w => <Skeleton key={w} className={`h-6 w-${w/4} rounded-full`} />)}
+                </div>
+              </div>
+            </div>
+            {/* Sidebar skeleton */}
+            <div className="space-y-6">
+              <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
+                <Skeleton className="h-5 w-24" />
+                <div className="flex flex-wrap gap-1">
+                  {[1,2,3].map(i => <Skeleton key={i} className="h-6 w-16 rounded" />)}
+                </div>
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-28" />
+              </div>
+              <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-6 w-24 rounded-full" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
