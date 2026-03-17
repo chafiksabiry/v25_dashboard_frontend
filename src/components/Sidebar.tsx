@@ -119,9 +119,9 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
     // Needs Rep Matching
     { icon: <Users size={20} />, label: 'Rep Matching', path: '/rep-matching', key: 'rep-matching', requiresRepMatching: true },
     // After that, requires Rep Matching ideally, but for now we link it to leads/gigs as a baseline
-    { icon: <Phone size={20} />, label: 'Calls', path: '/calls', key: 'calls', requiresRepMatching: true },
+    // { icon: <Phone size={20} />, label: 'Calls', path: '/calls', key: 'calls', requiresRepMatching: true },
     { icon: <Calendar size={20} />, label: 'Scheduler', path: '/scheduler', key: 'scheduler', requiresRepMatching: true },
-    { icon: <Phone size={20} />, label: 'Telnyx Call Test', path: '/telnyx-call-test', key: 'telnyx-call-test', requiresRepMatching: true },
+    // { icon: <Phone size={20} />, label: 'Telnyx Call Test', path: '/telnyx-call-test', key: 'telnyx-call-test', requiresRepMatching: true },
     { icon: <Mail size={20} />, label: 'Emails', path: '/emails', key: 'emails', requiresRepMatching: true },
     { icon: <MessageSquare size={20} />, label: 'Live Chat', path: '/chat', key: 'live-chat', requiresRepMatching: true },
     { icon: <ClipboardCheck size={20} />, label: 'Quality Assurance', path: '/quality-assurance', key: 'quality-assurance', requiresRepMatching: true },
