@@ -25,6 +25,8 @@ import DealManagementPanel from './panels/DealManagementPanel';
 import ContactManagementPanel from './panels/ContactManagementPanel';
 import DashboardPanel from './panels/DashboardPanel';
 import TelnyxCallTest from './panels/TelnyxCallTest';
+import KnowledgeBase from './panels/KnowledgeBase';
+import KnowledgeInsights from './panels/KnowledgeInsights';
 function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
 
@@ -56,6 +58,8 @@ function App() {
                   <Route path="/analytics" element={<AnalyticsPanel />} />
                   <Route path="/integrations" element={<IntegrationsPanel />} />
                   <Route path="/settings" element={<SettingsPanel />} />
+                  <Route path="/knowledge-base" element={<KnowledgeBase />} />
+                  <Route path="/kb-insight" element={<KnowledgeInsights />} />
                 </Routes>
               </div>
             </div>
