@@ -34,6 +34,7 @@ export interface Contact {
     usagePercentage: number;
     companyId?: string; // Company this knowledge item belongs to
     isPublic: boolean; // Whether this item is shared across companies
+    duration?: number; // duration in seconds (for video/audio)
   }
   
   export interface CallRecord {

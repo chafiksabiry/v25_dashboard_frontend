@@ -21,8 +21,6 @@ import OperationsPanel from './panels/OperationsPanel';
 import AnalyticsPanel from './panels/AnalyticsPanel';
 import IntegrationsPanel from './panels/IntegrationsPanel';
 import SettingsPanel from './panels/SettingsPanel';
-import DealManagementPanel from './panels/DealManagementPanel';
-import ContactManagementPanel from './panels/ContactManagementPanel';
 import DashboardPanel from './panels/DashboardPanel';
 import TelnyxCallTest from './panels/TelnyxCallTest';
 import KnowledgeBase from './panels/KnowledgeBase';

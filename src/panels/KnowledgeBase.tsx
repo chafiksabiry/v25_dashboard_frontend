@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, File, FileText, Video, Link as LinkIcon, Plus, Trash2, Filter, Download, Mic, Play, Clock, Pause, ChevronDown, ChevronUp, X, ExternalLink, Eye, ArrowLeft, Brain, Loader2, RefreshCw, Languages, CheckCircle, ChevronRight } from 'lucide-react';
+import { Upload, File, FileText, Video, Plus, Trash2, Filter, Mic, Play, Clock, Pause, X, ExternalLink, Eye, Brain, Loader2, RefreshCw, Languages, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { KnowledgeItem, CallRecord } from '../types';
 import apiClient from '../api/knowledgeClient';
@@ -117,6 +117,8 @@ const KnowledgeBase: React.FC = () => {
         return <FileText size={20} className="text-blue-500" />;
       case 'audio':
         return <Mic size={20} className="text-purple-500" />;
+      case 'video':
+        return <Video size={20} className="text-rose-500" />;
       default:
         return <File size={20} className="text-gray-500" />;
     }
@@ -250,6 +252,7 @@ const KnowledgeBase: React.FC = () => {
         tags: doc.tags,
         usagePercentage: 0,
         isPublic: true,
+        duration: doc.duration,
         analysis: doc.analysis
       }));
 
@@ -919,6 +922,7 @@ const KnowledgeBase: React.FC = () => {
         tags: call.tags,
         date: call.date,
         isCallRecording: true,
+        duration: (call.duration || 0) * 60, // Convert minutes to seconds for unified display
         callData: call
       }));
 
@@ -1208,9 +1212,11 @@ const KnowledgeBase: React.FC = () => {
                         <div className="flex items-center justify-between">
                           <span className={`px-2 py-1 text-xs rounded-full whitespace-nowrap ${item.type === 'document' ? 'bg-blue-100 text-blue-800' :
                             item.type === 'audio' ? 'bg-purple-100 text-purple-800' :
+                            item.type === 'video' ? 'bg-rose-100 text-rose-800' :
                               'bg-gray-100 text-gray-800'
                             }`}>
                             {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+                            {item.duration && ` • ${formatTime(item.duration)}`}
                           </span>
 
                           <div className="flex space-x-2 flex-shrink-0">
