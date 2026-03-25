@@ -439,7 +439,6 @@ const KnowledgeBase: React.FC = () => {
       // Reset form and close modal
       setUploadName('');
       setUploadDescription('');
-      setUploadUrl('');
       setUploadFile(null);
       setUploadTags('');
       setShowUploadModal(false);
@@ -659,7 +658,6 @@ const KnowledgeBase: React.FC = () => {
       setShowUploadModal(false);
       setUploadName('');
       setUploadDescription('');
-      setUploadUrl('');
       setUploadFile(null);
       setUploadTags('');
     }
@@ -1752,6 +1750,4 @@ const KnowledgeBase: React.FC = () => {
 
 export default KnowledgeBase;
 
-function setUploadUrl(arg0: string) {
-  throw new Error('Function not implemented.');
-}
+
