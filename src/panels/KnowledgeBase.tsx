@@ -57,31 +57,23 @@ const KnowledgeBase: React.FC = () => {
   const [uploadType, setUploadType] = useState<string>('document');
   const [uploadName, setUploadName] = useState('');
   const [uploadDescription, setUploadDescription] = useState('');
-  const [uploadUrl, setUploadUrl] = useState('');
   const [uploadFile, setUploadFile] = useState<File | null>(null);
 
   const [uploadTags, setUploadTags] = useState<string>('');
   const [knowledgeItems, setKnowledgeItems] = useState<KnowledgeItem[]>([]);
   const [callRecords, setCallRecords] = useState<CallRecord[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [isFirstUpload, setIsFirstUpload] = useState(true);
-  const [contactId, setContactId] = useState('');
-  const [sentiment, setSentiment] = useState<'positive' | 'negative' | 'neutral'>('neutral');
-  const [aiInsights, setAiInsights] = useState<string[]>([]);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playingCallId, setPlayingCallId] = useState<string | null>(null);
-  const [showPlayer, setShowPlayer] = useState<{ [key: string]: boolean }>({});
-  const [showTranscript, setShowTranscript] = useState<{ [key: string]: boolean }>({});
   const [processingOptions, setProcessingOptions] = useState({
     transcription: true,
     sentiment: true,
     insights: true
   });
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [analyzingDocument, setAnalyzingDocument] = useState<string | null>(null);
   const [documentAnalysis, setDocumentAnalysis] = useState<{ [key: string]: AnalysisResult }>({});
   const [showAnalysisPage, setShowAnalysisPage] = useState(false);
@@ -148,15 +140,6 @@ const KnowledgeBase: React.FC = () => {
   };
 
   // Create a blob URL for a file
-  const createFileUrl = async (file: File): Promise<string> => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        resolve(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    });
-  };
 
   // Function to get companyId from JWT
   const getUserId = () => {
@@ -261,8 +244,24 @@ const KnowledgeBase: React.FC = () => {
       console.log('Documents count:', documents.length);
       console.log('Has multiple documents:', hasMultipleDocuments);
 
-      setIsFirstUpload(!hasMultipleDocuments);
-      setKnowledgeItems(documents);
+      // setIsFirstUpload(!hasMultipleDocuments);
+      
+      // Add a mock video item for demonstration as requested by the user
+      const mockVideo: KnowledgeItem = {
+        id: 'mock-video-1',
+        name: 'Training Session - Product Demo',
+        description: 'A comprehensive video showing the core features of the platform.',
+        type: 'video',
+        fileUrl: '#',
+        uploadedAt: format(new Date(), 'yyyy-MM-dd'),
+        uploadedBy: 'System',
+        tags: ['training', 'demo'],
+        usagePercentage: 0,
+        isPublic: true,
+        duration: 600 // 10 minutes in seconds
+      };
+
+      setKnowledgeItems([...documents, mockVideo]);
 
       // Auto-complete if at least one document exists
       if (documents.length > 0) {
@@ -283,7 +282,6 @@ const KnowledgeBase: React.FC = () => {
       return hasMultipleDocuments;
     } catch (error) {
       console.error('Error fetching documents:', error);
-      setIsFirstUpload(true);
       return false;
     }
   };
@@ -668,17 +666,6 @@ const KnowledgeBase: React.FC = () => {
   };
 
   // Handle details modal close
-  const handleDetailsModalClose = () => {
-    // Stop audio playback if it's playing
-    if (currentAudio) {
-      currentAudio.pause();
-      setIsPlaying(false);
-      setCurrentTime(0);
-      setPlayingCallId(null);
-    }
-    setIsModalOpen(false);
-    setSelectedItem(null);
-  };
 
 
 
@@ -732,28 +719,8 @@ const KnowledgeBase: React.FC = () => {
   };
 
   // Handle audio position change
-  const handleTimeChange = (newTime: number) => {
-    if (currentAudio) {
-      currentAudio.currentTime = newTime;
-      setCurrentTime(newTime);
-    }
-  };
 
   // Toggle player visibility
-  const togglePlayer = (callId: string) => {
-    setShowPlayer(prev => ({
-      ...prev,
-      [callId]: !prev[callId]
-    }));
-  };
-
-  // Toggle transcript visibility
-  const toggleTranscript = (callId: string) => {
-    setShowTranscript(prev => ({
-      ...prev,
-      [callId]: !prev[callId]
-    }));
-  };
 
   // Format time for audio player
   const formatTime = (time: number) => {
@@ -788,12 +755,6 @@ const KnowledgeBase: React.FC = () => {
     };
   }, []);
 
-  const handleBackToOrchestrator = () => {
-    const event = new CustomEvent('tabChange', {
-      detail: { tab: 'company-onboarding' }
-    });
-    window.dispatchEvent(event);
-  };
 
   // Ajouter une fonction pour retourner à la liste
   const handleBackToList = () => {
@@ -802,32 +763,6 @@ const KnowledgeBase: React.FC = () => {
   };
 
   // Fonction pour analyser un enregistrement d'appel
-  const analyzeCallRecording = async (recordingId: string) => {
-    try {
-      setAnalyzingDocument(recordingId);
-
-      // Get summary analysis
-      const summaryResponse = await apiClient.post(`/call-recordings/${recordingId}/analyze/summary`);
-      console.log('Summary analysis response:', summaryResponse.data);
-
-      // Get transcription analysis
-      const transcriptionResponse = await apiClient.post(`/call-recordings/${recordingId}/analyze/transcription`);
-      console.log('Transcription analysis response:', transcriptionResponse.data);
-
-      setDocumentAnalysis(prev => ({
-        ...prev,
-        [recordingId]: {
-          summary: summaryResponse.data.summary,
-          transcription: transcriptionResponse.data.transcription
-        } as CallAnalysis
-      }));
-    } catch (error) {
-      console.error('Error analyzing call recording:', error);
-      alert('Failed to analyze call recording. Please try again.');
-    } finally {
-      setAnalyzingDocument(null);
-    }
-  };
 
 
 
@@ -912,7 +847,7 @@ const KnowledgeBase: React.FC = () => {
 
     // Convert call recordings to unified format  
     const callItems = callRecords
-      .filter(call => typeFilter === 'all' || typeFilter === 'audio')
+      .filter(() => typeFilter === 'all' || typeFilter === 'audio')
       .map(call => ({
         id: call.id,
         name: call.contactId,
