@@ -1134,7 +1134,7 @@ const KnowledgeBase: React.FC = () => {
                         <p className="text-sm text-gray-500 mb-3 break-words line-clamp-2">{item.description}</p>
 
                         <div className="flex flex-wrap gap-1 mb-3">
-                          {item.tags.map((tag: string, index: number) => (
+                          {item.tags.map((tag: string) => (
                             <span
                               key={`${item.id}-${tag}`}
                               className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-700 whitespace-nowrap"
