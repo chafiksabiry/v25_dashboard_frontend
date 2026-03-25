@@ -1751,3 +1751,7 @@ const KnowledgeBase: React.FC = () => {
 };
 
 export default KnowledgeBase;
+
+function setUploadUrl(arg0: string) {
+  throw new Error('Function not implemented.');
+}
