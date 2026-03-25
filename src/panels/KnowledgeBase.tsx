@@ -922,7 +922,7 @@ const KnowledgeBase: React.FC = () => {
                         </div>
                         <p className="text-sm text-gray-700 mb-3 break-words overflow-hidden">{call.summary}</p>
                         <div className="flex flex-wrap gap-1 mb-3">
-                          {call.tags.map((tag: string, index: number) => (
+                          {call.tags.map((tag: string) => (
                             <span
                               key={`${call.id}-${tag}`}
                               className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-700 whitespace-nowrap"
